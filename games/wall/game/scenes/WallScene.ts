@@ -32,6 +32,7 @@ import { TRAY_TOP } from '../ui/Tray';
 import { BAR_FOOT, WallHud } from '../ui/WallHud';
 import { Debris } from '../wall/Debris';
 import { Bite, Cell, VoxelWall } from '../wall/VoxelWall';
+import { HitMark } from '../wall/HitMark';
 import { Tunnel, WALL_HEIGHT, WALL_WIDTH } from '../wall/Tunnel';
 import { WeakSpot } from '../wall/WeakSpot';
 
@@ -53,13 +54,15 @@ const INSET = 0.12;
 /** Time nearly stops this long (seconds) on a big hit, and when the wall comes down. */
 const HIT_STOP = { big: 0.03, collapse: 0.09 };
 /** A hit that takes this share of the wall is a big one. */
-const BIG_HIT = 0.08;
+const BIG_HIT = 0.2;
 /** After a wall: its burst, then the player walks through to the next one (`bob`: its steps, how many and how high). */
 const ADVANCE = { wait: 0.6, seconds: 1.35, steps: 4, bob: 0.16 };
 /** New looks are held up this long (seconds). */
 const FLAUNT_SEC = 1.7;
 /** The hands rest no lower than this share of the screen's height (and so, with nothing to buy yet). */
 const HANDS_LOWEST = 0.1;
+/** The mark a hit leaves: how far off the wall it's drawn, the smallest, its colours. */
+const MARK = { front: 0.16, least: 0.45, plain: 0xffffff, big: 0xffe14a, weak: 0xff8a3a };
 const MAX_FRAME_SEC = 0.1;
 
 interface Landing {
@@ -76,6 +79,7 @@ export default class WallScene extends ThreeScene {
     private readonly hands = new Hands();
     private readonly debris = new Debris();
     private readonly tunnel = new Tunnel();
+    private readonly mark = new HitMark();
     private readonly around = new THREE.HemisphereLight(LIGHT.sky, LIGHT.ground, LIGHT.around);
     private readonly sun = new THREE.DirectionalLight(LIGHT.sun, LIGHT.strength);
     private readonly weak = new WeakSpot();
@@ -113,7 +117,7 @@ export default class WallScene extends ThreeScene {
         this.threeScene.fog = new THREE.Fog(0, 1, 100);
         this.sun.position.set(-3.5, 6.5, 10);
         this.threeScene.add(this.around, this.sun);
-        this.threeScene.add(this.tunnel.group, this.debris.group, this.crew.group, this.weak.group);
+        this.threeScene.add(this.tunnel.group, this.mark.group, this.debris.group, this.crew.group, this.weak.group);
         this.buildWall();
         this.game.uiLayer.addChild(this.tapZone);
         this.tapZone.eventMode = 'static';
@@ -142,6 +146,7 @@ export default class WallScene extends ThreeScene {
         // (Not while one's falling and the next coming up: that one's whole.)
         WallProgress.setWallState(() => (this.phase === 'playing' ? { seed: this.wall.seed, gone: this.wall.save() } : undefined));
         this.crew.refresh(true);
+        this.handOut(true);
         this.buildDebug();
         buildEffectsPanel();
         this.resize();
@@ -218,6 +223,7 @@ export default class WallScene extends ThreeScene {
     /** Through the gate, to the next wall (the crew runs along); there, everything's moved back by a gap. */
     private advance(): void {
         this.phase = 'advancing';
+        this.mark.clear();
         this.wall.dispose();
         this.wall = this.next;
         const { material } = wallAt(WallProgress.wall);
@@ -248,6 +254,7 @@ export default class WallScene extends ThreeScene {
         this.phase = 'playing';
         this.showWall();
         WallAnalytics.wallStart(WallProgress.wall);
+        if (this.handOut()) return;
         // The first time it's there to do (each time round): what it is.
         if (WallProgress.canRewind && WallProgress.markStep(`rewind-offer-${WallProgress.rewinds}`) && WallProgress.rewinds < 2) this.hud.rewindPopup.setOpen(true);
     }
@@ -332,6 +339,7 @@ export default class WallScene extends ThreeScene {
         const took = before - this.wall.share;
         const big = weak || took >= BIG_HIT || fallen.length > 24;
         this.scatter(cells, fallen, aimed.point, PIECES.hit, big ? 1.25 : 1);
+        this.showMark(aimed.point, cells, weak ? MARK.weak : big ? MARK.big : MARK.plain);
         const front = aimed.point.clone();
         front.z += 0.5;
         this.debris.puff(front, weak ? '#ffd75e' : material.dust, big ? 3.2 : 1.9);
@@ -352,6 +360,17 @@ export default class WallScene extends ThreeScene {
             WallAnalytics.combo(step);
         }
         if (this.wall.down) this.bringDown();
+    }
+
+    /** Where the hit was and how far it reached: a light on the wall's face, where it's seen from here, and the tiles round it flash. */
+    private showMark(at: THREE.Vector3, cells: Cell[], color: number): void {
+        // Nearly all of what it took (a stray few go farther).
+        const far = cells.map(({ position }) => Math.hypot(position.x - at.x, position.y - at.y)).sort((a, b) => a - b);
+        const reach = Math.max(MARK.least, (far[Math.floor(far.length * 0.9)] ?? 0) + WALL.cell / 2);
+        this.wall.flash(at, reach);
+        const eye = this.threeCamera.position;
+        const t = (MARK.front - eye.z) / (at.z - eye.z);
+        this.mark.show(eye.clone().lerp(at, t), reach * t, color);
     }
 
     /** The pieces off a hit (the ones at the edge of the bite too, not all in the middle). */
@@ -405,16 +424,47 @@ export default class WallScene extends ThreeScene {
 
     // ---------------------------------------------------------------- buying
 
+    /**
+     * What's given: the first PUNCH HARDER (wall 1 down), the first chick (its wall reached), the first tool (if it hasn't been
+     * bought by some wall). `quietly`: no show (the start).
+     */
+    private handOut(quietly = false): boolean {
+        if (WallProgress.giftWaiting && WallProgress.punchHarder()) {
+            WallAnalytics.punch(WallProgress.punchLevel, true);
+            if (quietly) return true;
+            this.hud.showGift('Wall_fists', 'x2 PUNCH!', 'FREE UPGRADE', () => this.hud.tray.punchAt);
+            this.flaunt();
+            return true;
+        }
+        if (WallProgress.giveTool()) {
+            const level = WallProgress.punchLevel;
+            const tool = toolAt(level);
+            WallAnalytics.punch(level, true);
+            WallAnalytics.tool(level, tool.id);
+            this.applyTool(quietly);
+            if (!quietly) this.hud.showGift(`Wall_${tool.base}`, `${tool.name.toUpperCase()}!`, 'A GIFT: HITS HARDER', () => this.hud.tray.punchAt);
+            return true;
+        }
+        const [first] = CREW;
+        if (!WallProgress.giveFirst(first)) return false;
+        WallAnalytics.hire(first.id, 1, true);
+        if (quietly) {
+            this.crew.refresh(true);
+            return true;
+        }
+        this.hud.showGift(`Wall_${first.id}`, `A ${first.name.toUpperCase()}!`, 'IT HITS ON ITS OWN', () => this.hud.tray.crewAt(0));
+        this.crew.refresh();
+        return true;
+    }
+
     private punchHarder(): boolean {
         const before = toolAt(WallProgress.punchLevel);
-        const free = WallProgress.giftWaiting;
         if (!WallProgress.punchHarder()) {
             WallAudio.play('error');
             return false;
         }
         WallAnalytics.punch(WallProgress.punchLevel);
         WallAudio.play('claim');
-        if (free) this.hud.announce('x2 DAMAGE!', '', 0.7);
         const tool = toolAt(WallProgress.punchLevel);
         if (tool.id === before.id) return true;
         WallAnalytics.tool(WallProgress.punchLevel, tool.id);
@@ -558,6 +608,8 @@ export default class WallScene extends ThreeScene {
         this.hands.setFloor(this.handsFloor());
         this.hands.update(delta);
         this.debris.update(step);
+        this.mark.update(delta);
+        this.wall.updateFlash(delta);
         this.crewSound -= delta;
         this.crewNumber -= delta;
         this.crew.update(step, this.phase === 'playing' && this.wall.share > 0 && !this.hud.busy, this.phase === 'advancing');

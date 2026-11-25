@@ -13,9 +13,10 @@
 //   run        <nn>                     start, complete    from wall 1 to a rewind (01: the first)
 //
 // ITEMS (one category for each family; the action says how it was got or what was done with it)
-//   punch      lv-<nn>                  gift, bought       a PUNCH HARDER level (lv-01: the gift)
+//   punch      lv-<nn>                  gift, bought       a PUNCH HARDER level (given: lv-01, and lv-02 at wall 4
+//                                                          if it hadn't been bought)
 //   tool       <nn>-<tier>-<type>       unlocked, equip    a new tool (nn: the level it comes with), one picked
-//   crew       <n>-<id>-<nn>            bought             the 1st, 5th, 10th, 25th... of one of the crew (once per player)
+//   crew       <n>-<id>-<nn>            gift, bought       the 1st, 5th, 10th, 25th... of one of the crew (once per player)
 //   boost      <id>                     bought
 //   look       <slot>-<id>              bought, unlocked, gift, no-video, equip   for cash, for a video, for nothing, its
 //                                                          video not watched, an owned one put on (wardrobe and offers alike)
@@ -29,6 +30,8 @@
 //   playtime   min-<nn>                 reached            minutes of play this session (only while gameplay's on)
 //   combo      <nn>                     reached            a longer one than any this session (3 and up)
 //
+// (From the build where the first PUNCH HARDER and the first chick are given, steps 03 and 05 do themselves: 18 bought-punch
+// and 19 bought-helper are the first ones really bought.)
 // The steps' numbers are their place here: new ones go on the end once this has been released.
 
 import PlatformHandler from 'core/platforms/PlatformHandler';
@@ -40,14 +43,17 @@ const STEPS = [
     'first-hit', 'wall-01', 'punch-harder', 'wall-02', 'first-helper', 'wall-03', 'first-boost', 'wall-04', 'weak-spot', 'wall-05', 'wall-06', 'first-medal', 'wall-07',
     'wall-08', 'wall-10', 'wall-12', 'rewind',
 ] as const;
-export type Step = (typeof STEPS)[number];
+/** Added since: numbered on from those, started as they're done (they've no place in the order). */
+const EXTRA = ['bought-punch', 'bought-helper'] as const;
+export type Step = (typeof STEPS)[number] | (typeof EXTRA)[number];
 
 /** How a look was got, or what was done with it. */
 export type LookAction = 'bought' | 'unlocked' | 'gift' | 'no-video' | 'equip';
 
 const COUNTS = [1, 5, 10, 25, 50, 100];
 const two = (n: number) => String(n).padStart(2, '0');
-const stepName = (index: number) => `${two(index + 1)}-${STEPS[index]}`;
+const ALL: readonly Step[] = [...STEPS, ...EXTRA];
+const stepName = (index: number) => `${two(index + 1)}-${ALL[index]}`;
 const send = (category: string, what: string, action: AnalyticsAction) => PlatformHandler.instance.measure(category, what, action);
 let seconds = 0;
 let comboBest = 2;
@@ -99,7 +105,7 @@ export const WallAnalytics = {
 
     step(step: Step): void {
         if (!once(step)) return;
-        const index = STEPS.indexOf(step);
+        const index = ALL.indexOf(step);
         // (Done out of order: its start first, so each complete has one.)
         stepStart(index);
         send('step', stepName(index), 'complete');
@@ -115,7 +121,7 @@ export const WallAnalytics = {
     wallDown(number: number): void {
         if (once(`down-${number}`)) send('wall', two(number), 'complete');
         const step = `wall-${two(number)}` as Step;
-        if (STEPS.includes(step)) this.step(step);
+        if (ALL.includes(step)) this.step(step);
     },
 
     /** Rewound, for the nth time: that run's over, the next begins. */
@@ -127,9 +133,11 @@ export const WallAnalytics = {
 
     // ---------------------------------------------------------------- items
 
-    punch(level: number): void {
-        send('punch', `lv-${two(level)}`, level === 1 ? 'gift' : 'bought');
+    /** `given`: it was free. */
+    punch(level: number, given = false): void {
+        send('punch', `lv-${two(level)}`, given ? 'gift' : 'bought');
         this.step('punch-harder');
+        if (!given) this.step('bought-punch');
     },
 
     tool(level: number, id: string): void {
@@ -140,11 +148,13 @@ export const WallAnalytics = {
         send('tool', `${two(level)}-${id}`, 'equip');
     },
 
-    hire(id: string, count: number): void {
+    /** `given`: it was free. */
+    hire(id: string, count: number, given = false): void {
         this.step('first-helper');
+        if (!given) this.step('bought-helper');
         if (!COUNTS.includes(count)) return;
         const place = CREW.findIndex((def) => def.id === id) + 1;
-        if (once(`crew-${id}-${count}`)) send('crew', `${place}-${id}-${two(count)}`, 'bought');
+        if (once(`crew-${id}-${count}`)) send('crew', `${place}-${id}-${two(count)}`, given ? 'gift' : 'bought');
     },
 
     boost(id: string): void {

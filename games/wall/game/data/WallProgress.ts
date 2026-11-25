@@ -6,7 +6,7 @@
 // the browser's away), shortly after any change and as the game's left.
 
 import { SaveStorage } from 'core/platforms/SaveStorage';
-import { BOOSTS, BoostDef, CREW, CrewDef, REWIND, SHOWS, WEAK, bricksOf, crewCost, ToolDef, punchCost, punchDamage, toolAt, toolsUpTo, medalsOf } from './WallConfig';
+import { BOOSTS, BoostDef, CREW, CrewDef, FIRST_TOOL, REWIND, SHOWS, WEAK, bricksOf, crewCost, ToolDef, punchCost, punchDamage, toolAt, toolsUpTo, medalsOf } from './WallConfig';
 
 const KEY = 'wall.save';
 const VERSION = 1;
@@ -289,6 +289,14 @@ export const WallProgress = {
         return true;
     },
 
+    /** One given (the first of the first kind, when it's there), if there's none yet; false if not. */
+    giveFirst(def: CrewDef): boolean {
+        if (state.wall < def.wall || this.owned(def.id) > 0) return false;
+        state.crew[def.id] = 1;
+        changed();
+        return true;
+    },
+
     // ---------------------------------------------------------------- boosts
 
     /** Those there to buy, the cheapest first. */
@@ -361,6 +369,15 @@ export const WallProgress = {
         state.cash -= punchCost(state.punch);
         state.punch++;
         // (A new tool's held at once; bare hands are kept if they're wanted.)
+        if (state.held !== 'fists') state.held = '';
+        changed();
+        return true;
+    },
+
+    /** The first tool, if it hasn't been bought by the wall it's given at; false if not. */
+    giveTool(): boolean {
+        if (state.wall < FIRST_TOOL.givenAt || state.punch >= FIRST_TOOL.level) return false;
+        state.punch = FIRST_TOOL.level;
         if (state.held !== 'fists') state.held = '';
         changed();
         return true;

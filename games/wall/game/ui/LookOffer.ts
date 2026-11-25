@@ -105,7 +105,7 @@ export class LookOffer extends PIXI.Container {
         const kinds: [Kind, number][] = [
             ['gift', OFFERS.gift],
             ['buy', WallProgress.cash >= price ? OFFERS.buy : 0],
-            ['video', WallProgress.playSec >= OFFERS.videoAfter ? OFFERS.video : 0],
+            ['video', WallProgress.playSec >= OFFERS.videoAfter && OFFERS.videoSlots.includes(found.slot) ? OFFERS.video : 0],
         ];
         let roll = Math.random() * kinds.reduce((sum, [, weight]) => sum + weight, 0);
         const kind = first ? 'gift' : (kinds.find(([, weight]) => (roll -= weight) <= 0)?.[0] ?? 'gift');

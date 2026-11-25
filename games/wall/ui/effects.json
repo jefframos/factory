@@ -9,6 +9,8 @@
     "numbers": 1,
     "words": 1,
     "barJolt": 0,
+    "impact": 1,
+    "tileFlash": 1,
     "pieces": 1,
     "piecesAtYou": 0.6,
     "dust": 0.8,

@@ -23,6 +23,8 @@ import { fit, sprite, text, write } from './parts';
 const BAR = { width: 430, height: 42, y: 100, wideY: 44, color: 0xffb52e, low: 0xff5a3d };
 /** Upright, how far down the screen its bar comes (the HUD's units). */
 export const BAR_FOOT = BAR.y + BAR.height / 2;
+/** Something given: held up this long, and its flight (seconds). */
+const GIFT = { held: 1.15, flies: 0.5 };
 const FLOATS = 14;
 const BUTTON_SIZE = 58;
 const WARDROBE_SIZE = 82;
@@ -225,6 +227,38 @@ export class WallHud extends PIXI.Container {
     }
 
     // ---------------------------------------------------------------- frame
+
+    /** Something given: big in the middle in a burst of light, then off to its card. */
+    public showGift(icon: string, words: string, sub: string, to: () => PIXI.Point): void {
+        const screen = Game.overlayScreenData;
+        if (!screen) return;
+        const from = new PIXI.Point(screen.center.x, screen.topLeft.y + screen.height * 0.47);
+        const rays = sprite('Image_Effect_Rotate', 520);
+        const big = sprite(icon, 210);
+        const size = big.scale.x;
+        const show = new PIXI.Container();
+        show.eventMode = 'none';
+        rays.position.copyFrom(from);
+        big.position.copyFrom(from);
+        show.addChild(rays, big);
+        this.addChildAt(show, this.getChildIndex(this.wardrobe));
+        this.announce(words, sub, 1.3);
+        WallAudio.play('tool');
+        gsap.fromTo(rays, { alpha: 0 }, { alpha: 0.9, duration: 0.25 });
+        gsap.to(rays, { rotation: 2, duration: 2, ease: 'none' });
+        gsap.to(rays, { alpha: 0, duration: 0.3, delay: GIFT.held });
+        gsap.fromTo(big.scale, { x: 0, y: 0 }, { x: size, y: size, duration: 0.5, ease: 'back.out(2.4)' });
+        const state = { t: 0 };
+        gsap.to(state, { t: 1, duration: GIFT.flies, delay: GIFT.held, ease: 'power2.in', onUpdate: () => {
+            const { t } = state;
+            const end = to();
+            big.position.set(from.x + (end.x - from.x) * t, from.y + (end.y - from.y) * t - Math.sin(t * Math.PI) * 60);
+            big.scale.set(size * (1 - 0.62 * t));
+        }, onComplete: () => {
+            WallAudio.play('claim');
+            show.destroy({ children: true });
+        } });
+    }
 
     /** Medals won, from (x, y) to the button that counts them. */
     public flyMedals(from: PIXI.Point, count: number): void {

@@ -452,6 +452,14 @@ export class Tray extends PIXI.Container {
         gsap.to(label, { alpha: 0, duration: 0.3, delay: 0.5, onComplete: () => label.destroy() });
     }
 
+    /** Where PUNCH HARDER's card is, and one of the crew's (the HUD's units). */
+    public get punchAt(): PIXI.Point {
+        return this.toLocal(new PIXI.Point(0, 0), this.punch);
+    }
+    public crewAt(kind: number): PIXI.Point {
+        return this.toLocal(new PIXI.Point(0, 0), this.crew[kind]);
+    }
+
     /** Upright, how far up the screen it comes now (the HUD's units): nothing to buy yet, the cards, the boosts over them. */
     public get topNow(): number {
         if (!this.punch.visible) return 0;
@@ -549,9 +557,11 @@ export class Tray extends PIXI.Container {
         this.refreshCrew();
         this.refreshBadges();
         this.arrange();
-        // A hand for the first purchases.
+        // A hand for the first things to buy (the very first are given).
         const chick = CREW[0];
-        const point = gift ? this.punch : there && WallProgress.best >= chick.wall && WallProgress.owned(chick.id) === 0 && WallProgress.rewinds === 0 && WallProgress.cash >= chick.cost ? this.crew[0] : undefined;
+        const first = WallProgress.rewinds === 0;
+        const point = first && level === 1 && WallProgress.canPunchHarder ? this.punch
+            : first && WallProgress.owned(chick.id) === 1 && WallProgress.cash >= WallProgress.costOf(chick) ? this.crew[0] : undefined;
         this.hand.visible = !!point;
         if (point) {
             const box = point === this.punch ? this.punchBox : this.list;

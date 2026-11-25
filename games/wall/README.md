@@ -15,7 +15,7 @@ skip walls, new game) and **Effects** (a switch and a strength for every effect,
   crew runs along.
 - **27 walls, 15 materials** (cardboard, wood, plaster, concrete ... moon rock), then round again from concrete in other
   colours, for as long as it goes.
-- **PUNCH HARDER.** The first level's free after wall 1; from level 2 each one brings another tool: six types in turn, in the
+- **PUNCH HARDER.** The first level's given after wall 1; from level 2 each one brings another tool: six types in turn, in the
   next of nine colours every three levels (stone, copper, iron, gold, emerald ...).
 - **The wardrobe** (top right). Skin, shirt, gloves, rings, wrist and the tool held; things come with the walls, are bought,
   or are for a video (`ui/looks.json`). While playing, cards come up with something new (a gift, a sale, a video): taken, it's worn.
@@ -25,7 +25,7 @@ skip walls, new game) and **Effects** (a switch and a strength for every effect,
   crew's damage, cash, the weak spot, a longer combo.
 - **The weak spot** (from wall 5). x5, and hit again within 2.2 s each time, a combo on every hit up to x4.
 - **Medals** (from wall 6): a golden one turns behind each wall; the wall down, it flies to the Rewind button (a wall's number
-  of them). **REWIND** (from wall 16) cashes them in: back to wall 1 with all damage up for good (+10% each); PUNCH HARDER,
+  of them). **REWIND** (from wall 10) cashes them in: back to wall 1 with all damage up for good (+20% each); PUNCH HARDER,
   boosts and looks are kept. Its popup says so, opens by itself the first times, and its show spins the clock back.
 - **The save** (SaveStorage) and **the events** (`game/analytics/WallAnalytics.ts`: the table of them all).
 - **Gameplay and ads** (`game/ads/Gameplay.ts`): gameplayStart on the first click, stop while the wardrobe, the rewind popup or an
@@ -48,8 +48,10 @@ skip walls, new game) and **Effects** (a switch and a strength for every effect,
 
 ## Pacing
 
-Simulated, 4 taps a second with some weak spots hit and buying well: wall 5 at 1:00, 8 at 1:50, 12 at 3:50, 16 at 6:15. At
-2.5 taps a second without them: 1:35, 3:00, 5:55, 9:20. Real players are slower than both.
+From the first playtest (2026-11-25, 491 new players, `data/`): walls 3 and 4 lost half of them (190 and 480 HP then), a fifth
+never took the free PUNCH HARDER, 5% got to Rewind at wall 16 and nearly all who did kept rewinding. So the first upgrade and the
+first chick are given, the early walls are lighter and Rewind is at wall 10. Simulated casual player (2.5 taps a second, a look at
+the cards every 6 s, any of what's affordable, sometimes nothing): walls 1-5 take 6-11 s each, 6-9 18-45 s, Rewind's reached in about 2:40.
 
 ## Where it parts from the design
 
@@ -59,5 +61,5 @@ Simulated, 4 taps a second with some weak spots hit and buying well: wall 5 at 1
 - Bricks buy boosts, not new kinds of helper (those come with the walls).
 - Nothing moves or flashes on a hit but the wall and the hands (it made people sick); a wall's fall shakes and flashes
   (`ui/effects.json`).
-- Rewinding is at wall 16 (12 there): the walls go faster. The tease behind the wall is the medal it cashes in, from wall 6.
+- Rewinding is at wall 10 (12 there). The tease behind the wall is the medal it cashes in, from wall 6.
 - Not built: offline earnings.

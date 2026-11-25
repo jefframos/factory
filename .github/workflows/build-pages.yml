@@ -5,27 +5,52 @@ on:
     branches: [main]
     paths:
       - 'cachedBuilds/**'
+      - '.github/workflows/build-pages.yml'
+  workflow_dispatch:
 
 permissions:
+  contents: read
   pages: write
   id-token: write
+  actions: read
 
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: cachedBuilds
+
+  # (A job of its own, which waits until the artifact can be found: deployed a second after the upload, it often couldn't be,
+  # "No artifacts named github-pages were found".)
   deploy:
+    needs: upload
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: cachedBuilds
+      - name: Wait for the artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for attempt in $(seq 1 24); do
+            count=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=github-pages" --jq .total_count || echo 0)
+            if [ "${count:-0}" -ge 1 ]; then
+              echo "found after attempt $attempt"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::the github-pages artifact never showed up"
+          exit 1
 
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

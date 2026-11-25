@@ -26,6 +26,9 @@ const OWN_SHADE = 0.1;
 const CORE_LAYERS = 2;
 /** The weak lines: how big, and how much the bottom's weaker. */
 const WEAK = { scale: 0.17, fine: 0.42, bottom: 0.35 };
+/** Tiles round a hit flash: how long (seconds), how white at first, and how far past what was hit. */
+const FLASH = { seconds: 0.22, white: 0.8, past: 0.5 };
+const WHITE = new THREE.Color(1, 1, 1);
 /** Strain: from this share of its HP on, it trembles. */
 const STRAIN_FROM = 0.3;
 
@@ -100,6 +103,8 @@ export class VoxelWall {
     private readonly color = new THREE.Color();
     private readonly palette: THREE.Color[];
     private readonly core: THREE.Color[];
+    /** Cells flashing: the seconds left, and how white. */
+    private readonly flashing = new Map<number, { left: number; white: number }>();
     private readonly seen: Uint8Array;
     private readonly stack: Int32Array;
 
@@ -401,6 +406,33 @@ export class VoxelWall {
         this.mesh.count = 0;
         this.mesh.visible = false;
         return cells;
+    }
+
+    /** The tiles that show within `reach` of a hit (the wall's space) flash white, the nearer the more. */
+    public flash(point: THREE.Vector3, reach: number): void {
+        const strong = Math.min(1, FLASH.white * fx('tileFlash'));
+        if (strong <= 0) return;
+        const far = reach + FLASH.past;
+        for (let n = 0; n < this.mesh.count; n++) {
+            const distance = this.placeOf(this.cellOf[n], this.position).distanceTo(point);
+            if (distance < far) this.flashing.set(this.cellOf[n], { left: FLASH.seconds, white: strong * (1 - 0.55 * (distance / far)) });
+        }
+        this.updateFlash(0);
+    }
+
+    /** The flash fades. */
+    public updateFlash(delta: number): void {
+        if (this.flashing.size === 0) return;
+        for (const [cell, flash] of this.flashing) {
+            flash.left -= delta;
+            const n = this.instanceOf[cell];
+            if (n >= 0) {
+                const t = Math.max(0, flash.left / FLASH.seconds);
+                this.mesh.setColorAt(n, this.colorOf(cell, this.color).lerp(WHITE, flash.white * t * t));
+            }
+            if (n < 0 || flash.left <= 0) this.flashing.delete(cell);
+        }
+        if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
     }
 
     /** Nearly down, it trembles. */

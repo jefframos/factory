@@ -84,6 +84,8 @@ export interface BoostDef {
 export const WALL = data.wall;
 export const CAMERA = data.camera;
 const MATERIALS = data.materials as unknown as Record<string, MaterialDef>;
+/** The level the first tool comes with, and the wall it's given at if it hasn't been bought by then. */
+export const FIRST_TOOL = { level: data.tools.from, givenAt: data.punch.toolGivenAt };
 /** The types of tool (not the fists). */
 export const TOOL_TYPES = data.tools.types as unknown as (Omit<ToolDef, 'base'> & { model: string })[];
 export const FISTS: ToolDef = { id: 'fists', base: 'fists', name: 'Fists', bite: data.tools.fists.bite };
