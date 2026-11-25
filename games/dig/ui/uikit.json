@@ -800,6 +800,50 @@
           "stroke": "#1d140e",
           "strokeWidth": 4,
           "style": "primary"
+        },
+        "cardBuy": {
+          "type": "image",
+          "image": "ItemFrame01_Single_Blue",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "cardPoor": {
+          "type": "image",
+          "image": "ItemFrame01_Single_Navy",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "buyButton": {
+          "type": "image",
+          "image": "Button01_s_Green",
+          "slice": [
+            30,
+            40,
+            30,
+            40
+          ],
+          "tint": "#ffffff"
+        },
+        "poorButton": {
+          "type": "image",
+          "image": "Button01_s_Gray",
+          "slice": [
+            30,
+            40,
+            30,
+            40
+          ],
+          "tint": "#ffffff"
         }
       }
     },

@@ -66,8 +66,7 @@ export class DigMap extends PIXI.Container {
         title.name = 'title';
         const zones = DIG.zones.map((zone, i) => {
             const fill = DIG.materials.find((m) => m.id === zone.fill);
-            const tool = DIG.tools.find((t) => t.power >= (fill?.minPower ?? 1));
-            return `${i + 1} ${zone.name} (${tool?.name ?? '?'})`;
+            return `${i + 1} ${zone.name} (power ${fill?.minPower ?? 1})`;
         });
         this.legend = new PIXI.Text(
             `${zones.join('   ')}\n● gallery finds (hover a dot for its name): ${DIG.finds.map((f) => f.name).join(', ')}`,

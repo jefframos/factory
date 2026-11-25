@@ -16,7 +16,12 @@
 //   forced       backpack | tool | hat             visible    a forced tutorial purchase's screen appears (once)
 //   upgrade      tool-<nn>-<toolId>                complete   a tool bought (nn = its level)
 //   upgrade      bag-<nn>-<capacity>               complete   a backpack bought (nn = its level)
-//   upgrade      count-<n>                         complete   the player's nth upgrade (tool or bag), for the first 10
+//   upgrade      blades-<nn>                       complete   sharper blades (nn = their level)
+//   upgrade      count-<n>                         complete   the player's nth upgrade, for the first 10
+//   level        <nn>                              complete   the player's level nn reached
+//   panel        powerups | tractor                interact   POWER-UPS or the tractor's panel opened
+//   tractor-skin <kind>-<id>                       bought | gift | unlocked | no-video | equip   in the tractor's panel
+//   skin-offer   <kind>-<id>                       visible | interact | gift | unlocked | no-video   a skin offered while driving
 //   shop         hat-<id> | face-<id> | color-<nn> bought     a wardrobe item bought with cash (colours by their
 //                                                             place in wardrobe.colors, 01 = the first)
 //   shop         hat-<id> | face-<id> | color-<nn> equip      an owned wardrobe item put on
@@ -180,6 +185,27 @@ export const GameAnalytics = {
         upgradeCount();
     },
 
+    bladesBought(level: number): void {
+        send('upgrade', `blades-${pad(level)}`, 'complete');
+        upgradeCount();
+    },
+
+    levelReached(level: number): void {
+        send('level', pad(level), 'complete');
+    },
+
+    panelOpened(panel: 'powerups' | 'tractor'): void {
+        send('panel', panel, 'interact');
+    },
+
+    /** A skin in the tractor's panel; one offered while driving. */
+    tractor(kind: string, id: string, action: 'bought' | 'gift' | 'unlocked' | 'no-video' | 'equip'): void {
+        send('tractor-skin', `${kind}-${id || 'none'}`, action);
+    },
+    skinOffer(kind: string, id: string, action: 'visible' | 'interact' | 'gift' | 'unlocked' | 'no-video'): void {
+        send('skin-offer', `${kind}-${id}`, action);
+    },
+
     backpackBought(level: number, capacity: number): void {
         send('upgrade', `bag-${pad(level)}-${capacity}`, 'complete');
         upgradeCount();
@@ -195,7 +221,7 @@ export const GameAnalytics = {
     },
 
     /** A panel tab tapped, once per player per tab: do players find the other pages (wardrobe colours/faces, ATM boosts)? */
-    tabOpened(panel: 'wardrobe' | 'atm', tab: string): void {
+    tabOpened(panel: 'wardrobe' | 'tractor', tab: string): void {
         if (DigProgress.once(`tab-${panel}-${tab}`)) send('tab', `${panel}-${tab}`, 'interact');
     },
 
@@ -225,7 +251,7 @@ export const GameAnalytics = {
         send('bag', `full-${capacity}`, 'complete');
     },
 
-    sold(where: 'atm' | 'boost' | 'anywhere', count: number): void {
+    sold(where: 'atm' | 'anywhere', count: number): void {
         send('sell', where, 'complete');
         if (count <= 10) send('sell', `count-${count}`, 'complete');
     },

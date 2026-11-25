@@ -106,7 +106,30 @@ export class BendService {
         uOccPlayerPos: { value: new THREE.Vector3() },
         /** Running clock driving applyReveal()'s wavy fill line — see updateTime()'s own doc. */
         uTime: { value: 0 },
+        /** The ground's height over the map (red, 0-1 of uGroundMax), the map's half size, and the highest it gets. */
+        uGround: { value: null as THREE.Texture | null },
+        uGroundHalf: { value: 1 },
+        uGroundMax: { value: 0 },
     };
+
+    /** The ground's height at a point, as the shaders lift things (setGround()); 0 without one. */
+    private static groundAt?: (x: number, z: number) => number;
+
+    /**
+     * The ground isn't flat: everything bent is also lifted by the ground's height under it (a texture over the map,
+     * `half` units each way from the middle, `max` at its brightest). The game itself stays flat: positions, collisions.
+     */
+    public static setGround(texture: THREE.Texture | null, half = 1, max = 0, at?: (x: number, z: number) => number): void {
+        this.uniforms.uGround.value = texture;
+        this.uniforms.uGroundHalf.value = half;
+        this.uniforms.uGroundMax.value = max;
+        this.groundAt = at;
+    }
+
+    /** How high the ground is there (for what isn't bent: sprites, the camera). */
+    public static ground(x: number, z: number): number {
+        return this.groundAt?.(x, z) ?? 0;
+    }
 
     /**
      * How many segments a flat plane spanning `length` world units needs to follow the bend.
@@ -174,7 +197,7 @@ export class BendService {
         const strength = this.uniforms.uBendStrength.value;
         const dx = pos.x - origin.x;
         const dz = pos.z - origin.z;
-        return new THREE.Vector3(pos.x, pos.y - (dx * dx + dz * dz) * strength, pos.z);
+        return new THREE.Vector3(pos.x, pos.y - (dx * dx + dz * dz) * strength + this.ground(pos.x, pos.z), pos.z);
     }
 
     /**
@@ -716,10 +739,16 @@ export class BendService {
             prev(shader, renderer);
             shader.uniforms.uBendOrigin = BendService.uniforms.uBendOrigin;
             shader.uniforms.uBendStrength = BendService.uniforms.uBendStrength;
+            shader.uniforms.uGround = BendService.uniforms.uGround;
+            shader.uniforms.uGroundHalf = BendService.uniforms.uGroundHalf;
+            shader.uniforms.uGroundMax = BendService.uniforms.uGroundMax;
 
             shader.vertexShader = `
                 uniform vec3  uBendOrigin;
                 uniform float uBendStrength;
+                uniform sampler2D uGround;
+                uniform float uGroundHalf;
+                uniform float uGroundMax;
             ` + shader.vertexShader;
 
             // Replace the standard project_vertex with a world-space version.
@@ -743,6 +772,7 @@ export class BendService {
                 float _dx = _bendWorld.x - uBendOrigin.x;
                 float _dz = _bendWorld.z - uBendOrigin.z;
                 _bendWorld.y -= ( _dx * _dx + _dz * _dz ) * uBendStrength;
+                if ( uGroundMax > 0.0 ) _bendWorld.y += texture2D( uGround, _bendWorld.xz / ( uGroundHalf * 2.0 ) + 0.5 ).r * uGroundMax;
                 vec4 mvPosition = viewMatrix * _bendWorld;
                 gl_Position = projectionMatrix * mvPosition;
                 `

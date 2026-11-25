@@ -29,6 +29,7 @@ import type { Box } from './GuidePath';
 import { DIG, FindDef } from '../data/DigConfig';
 import { CanvasArt } from '../ui/CanvasArt';
 import { t, names } from '../i18n/Localization';
+import { UpgradePads } from './UpgradePads';
 
 const ORIGIN = new THREE.Vector3();
 const WALL_SETUP: WallSetupConfig = { height: 2.2, thickness: 0.3, doorHeight: 2, tallDoorHeight: 2.2, windowHeight: 1 };
@@ -42,8 +43,6 @@ const MODEL_BASE = './dig/models/';
  */
 export const STATION_LOOK: Record<StationKind, { color: number; icon: string; label: string; model: string; height: number; pedestal: number; hue?: number }> = {
     atm: { color: 0x3fd16b, icon: 'ItemIcon_Money_Bill', label: 'ATM', model: 'mine/atm-01.glb', height: 2.1, pedestal: 0 },
-    // The same ATM in purple (its greens turned round to violet), with a star.
-    boost: { color: 0xa66bff, icon: 'ItemIcon_Star_Gold', label: 'BOOSTS', model: 'mine/atm-01.glb', height: 2.1, pedestal: 0, hue: 150 },
     collection: { color: 0xf4b400, icon: 'ItemIcon_Trophy_Gold', label: 'COLLECTION', model: 'mine/idol-a.glb', height: 1.4, pedestal: 0.8 },
     wardrobe: { color: 0xe266c8, icon: 'ItemIcon_Heart_Red', label: 'WARDROBE', model: 'hub/cute-furniture-glb-closet-02/cute-furniture-glb-closet-02.glb', height: 2.2, pedestal: 0 },
 };
@@ -400,6 +399,9 @@ export class HubRoom {
             });
             this.building = null;
         }
+        // The pads' stands and the totem: solid.
+        for (const box of UpgradePads.boxes()) this.collider(box.x, box.z, box.halfX, 0.6, box.halfZ, null);
+        if (HUB.totem) this.collider(HUB.totem.x, HUB.totem.z, 0.7, 1, 0.7, null);
         // Earned decorations' colliders now, before their models load.
         this.refreshRewards(false);
         DigProgress.onChange.add(this.onProgress);
@@ -588,7 +590,7 @@ export class HubRoom {
         if (rule === 'firstFind') return DigProgress.collectedCount >= 1;
         if (rule.startsWith('mines:')) return DigProgress.mineCount >= Number(rule.slice('mines:'.length));
         if (rule === 'powerChest') return DigProgress.hasOnce(POWER_CHEST_TAKEN);
-        if (rule === 'boosts') return DigProgress.boostsUnlocked;
+        if (rule.startsWith('level:')) return DigProgress.level >= Number(rule.slice('level:'.length));
         if (rule.startsWith('upgrades:')) return DigProgress.upgradesBought >= Number(rule.slice('upgrades:'.length));
         if (rule.startsWith('sells:')) return DigProgress.timesSold >= Number(rule.slice('sells:'.length));
         if (rule.startsWith('upgradeAfter:')) {

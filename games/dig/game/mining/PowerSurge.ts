@@ -1,8 +1,8 @@
 // PowerSurge.ts
 //
 // The rewarded tractor's power (ui/dig.json chests.power; one fixed offer in The Deep per mine:
-// PowerChestSpawner): for a few seconds the miner digs with a better tool than the one they own — `tool` (the Mega
-// Drill), or one tier above the tool owned if that's higher — and a little faster. While it lasts nothing goes into the backpack: every block is cashed on the spot,
+// PowerChestSpawner): for a few seconds the miner digs with a better tractor than the one they own — `tool`, or one tier
+// above the one owned if that's higher — its blades sharper (powerBonus) and a little faster. While it lasts nothing goes into the backpack: every block is cashed on the spot,
 // so a full bag never cuts the moment short (MiningController). It's the early taste of what the upgrades lead to;
 // when it runs out the HUD says which tool to buy to keep it.
 //
@@ -30,10 +30,19 @@ export const PowerSurge = {
         return tool ?? DigProgress.tool;
     },
 
-    /** Seconds between hits right now (the owned tool's boosts and bonuses apply to the surge's too). */
+    /** Seconds between hits on foot. */
     get hitInterval(): number {
-        if (!tool) return DigProgress.hitInterval;
-        return DigProgress.hitInterval * (tool.hitInterval / DigProgress.tool.hitInterval) / DIG.chests.power.speedMultiplier;
+        return DigProgress.hitInterval;
+    },
+    /** Digging power right now; and how fast the tractor's blades chew, what they dig across. */
+    get power(): number {
+        return tool ? tool.power + DigProgress.bladesLevel + DIG.chests.power.powerBonus : DigProgress.power;
+    },
+    get digRate(): number {
+        return DigProgress.digRate * (tool ? ((tool.rate ?? 1) / (DigProgress.tool.rate ?? 1)) * DIG.chests.power.speedMultiplier : 1);
+    },
+    get width(): number {
+        return tool ? tool.width * (DigProgress.width / DigProgress.tool.width) : DigProgress.width;
     },
 
     get secondsLeft(): number {

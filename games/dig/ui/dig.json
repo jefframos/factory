@@ -1,18 +1,20 @@
 {
   "version": 1,
-  "$comment": "Dig & Discover tuning (GDD §17: everything configurable). Distances in world units (1 block = 1 unit). materials: durability = hit points, minPower = weakest tool power that can dig it, value = sell price per item, drops = items per block; block = the KayKit block model drawn for it, pickup = what flies into the backpack, decor = pieces poking out of the top (nuggets on ores, gems on crystals) so they read from above. zones: rings around the hub by distance (from = where the zone starts; edges are wobbly); fill = the zone's base rock (its minPower gates the zone behind a tool tier), patches/ores = {id, chance} mixed in. finds: the artifacts to collect (GDD §11) — 3 per zone (`zone`, 0-based), each buried exactly once at a seeded spot in its zone and revealed when a tunnel reaches it, worth `reward` cash; `rarity` drives the find banner. The collection totem in the hub shows found vs missing; finding them all completes the collection (`collectionReward`). wardrobe: looks bought with cash at the hub closet (colors, faces under images/non-preload/skins, hats under models/hats; hat placement in ui/hatfits.json). tools: the upgrade path shown as a timeline at the ATM (`rarity` colours a tool once owned, grey until then), ending with the tractor (`vehicle`: ridden in the mine, see `tractor`). tractor: the look of the last tool; the miner rides it outside the hub (smoke puff on the way out and back in): height = tractor height in world units, rotationY turns the model (radians), seat = where the miner sits (tractor-local, world units), speedMultiplier on walking speed, smoke = the puff, exhaust = small puffs while driving (tractor-local position, seconds between puffs). Edited in the level editor Tractor tab. achievements: claimed at the HUD trophy button; stat = blocks (dug) / ores (ore blocks dug) / earned (cash from selling and finds) / finds (artifacts collected); each tier pays its reward when claimed, and claiming the last unlocks its decor (named here, placed in levels/hub.json achievementDecor). firstFindAfterBlocks: the first artifact turns up on this many blocks dug (wherever the miner digs), so every new player finds one early; its buried copy is removed.",
+  "$comment": "Dig & Discover tuning (everything configurable lives here). Distances in world units (1 block = 1 unit). materials: durability = the hand tool's hits, minPower = the digging power it takes (the blades' level gives it: digging), value = sell price per item, drops = items per block; block = the KayKit block model drawn for it, pickup = what flies into the backpack, decor = pieces poking out of the top. digging: the tractor's blades chew everything they and its body touch. A block takes chewSec seconds at just enough power, x falloff for each power over; shortSec[n - 1] when n powers short (more short = locked). zones: rings round the hub by distance (wobbly edges); fill = base rock, patches / ores = {id, chance}; height = how high its ground stands (ramps at the borders, zoneRamp wide); lava = {share, scale}: pools of it (slow to drive through: lava). tools: the pickaxe, then the tractors (vehicle): width = what they dig across, rideScale = their size, rideSpeed x walking speed, capacity = the bag they carry, tint = their colour. upgrades: the pads' repeatable tracks (blades: power; capacity: share more bag). bladeLevels: the blades drawn at each level. boosts: the HUD's POWER-UPS. levels: XP per level (next, then x growth), what gives it, the cash a level pays, the totem. finds, wardrobe, achievements, chests, richOre, prestige, mineThemes: see README.",
   "terrain": {
-    "radius": 80,
+    "radius": 150,
     "blockHeight": 1.6,
     "seed": 1337,
     "bedrockBlock": "mine/metal.glb",
     "bedrockTint": "#2c2c2e",
     "zoneWobble": 5,
     "edge": {
-      "radius": 76,
-      "wobble": 5,
+      "radius": 144,
+      "wobble": 6,
       "roughness": 1.5
-    }
+    },
+    "zoneRamp": 5,
+    "viewRange": 46
   },
   "materials": [
     {
@@ -71,7 +73,7 @@
       "name": "Ancient Bricks",
       "color": "#b0724f",
       "durability": 20,
-      "minPower": 5,
+      "minPower": 4,
       "value": 8,
       "drops": 1,
       "ore": false,
@@ -84,7 +86,7 @@
       "name": "Obsidian",
       "color": "#2e2638",
       "durability": 36,
-      "minPower": 7,
+      "minPower": 5,
       "value": 14,
       "drops": 1,
       "ore": false,
@@ -139,8 +141,8 @@
       "name": "Crystal",
       "color": "#6fe3ff",
       "durability": 28,
-      "minPower": 5,
-      "value": 50,
+      "minPower": 4,
+      "value": 32,
       "drops": 2,
       "ore": true,
       "block": "mine/stone-dark.glb",
@@ -153,8 +155,8 @@
       "name": "Amethyst",
       "color": "#b46cff",
       "durability": 40,
-      "minPower": 7,
-      "value": 120,
+      "minPower": 5,
+      "value": 70,
       "drops": 1,
       "ore": true,
       "block": "mine/stone-dark.glb",
@@ -163,180 +165,234 @@
       "decor": "mine/gem-medium.glb",
       "decorScale": 1.7,
       "decorTint": "#c27bff"
+    },
+    {
+      "id": "basalt",
+      "name": "Basalt",
+      "color": "#4a4145",
+      "durability": 60,
+      "minPower": 6,
+      "value": 26,
+      "drops": 1,
+      "ore": false,
+      "block": "mine/stone-dark.glb",
+      "tint": "#8d6a66",
+      "pickup": "mine/stone-chunks-small.glb"
+    },
+    {
+      "id": "magma",
+      "name": "Magma Rock",
+      "color": "#ff7a2e",
+      "durability": 90,
+      "minPower": 7,
+      "value": 46,
+      "drops": 1,
+      "ore": false,
+      "block": "mine/stone-dark.glb",
+      "tint": "#ff8a4a",
+      "glow": 1.5,
+      "pickup": "mine/stone-chunks-small.glb"
+    },
+    {
+      "id": "ruby",
+      "name": "Ruby",
+      "color": "#ff4d5e",
+      "durability": 70,
+      "minPower": 6,
+      "value": 120,
+      "drops": 2,
+      "ore": true,
+      "block": "mine/stone-dark.glb",
+      "tint": "#8d6a66",
+      "pickup": "mine/gem-large.glb",
+      "decor": "mine/gem-medium.glb",
+      "decorScale": 1.7,
+      "decorTint": "#ff5a6a"
+    },
+    {
+      "id": "diamond",
+      "name": "Diamond",
+      "color": "#bff4ff",
+      "durability": 100,
+      "minPower": 7,
+      "value": 240,
+      "drops": 2,
+      "ore": true,
+      "block": "mine/stone-dark.glb",
+      "tint": "#ff8a4a",
+      "pickup": "mine/gem-large.glb",
+      "decor": "mine/gem-medium.glb",
+      "decorScale": 2,
+      "decorTint": "#e9fcff"
     }
   ],
   "tools": [
-    {
-      "id": "shovel",
-      "name": "Shovel",
-      "model": "shovel",
-      "clip": "Digging",
-      "power": 1,
-      "hitInterval": 0.2,
-      "area": 1,
-      "price": 0,
-      "icon": "shovel",
-      "rarity": "common"
-    },
     {
       "id": "pickaxe",
       "name": "Pickaxe",
       "model": "pickaxe",
       "clip": "StandingPICKAXE",
-      "power": 2,
-      "hitInterval": 0.38,
+      "power": 1,
+      "hitInterval": 0.22,
       "area": 3,
       "depth": 1,
-      "price": 10,
+      "width": 1.5,
+      "price": 0,
+      "capacity": 14,
       "icon": "pickaxe",
       "rarity": "common"
     },
     {
-      "id": "steelpick",
-      "name": "Steel Pickaxe",
+      "id": "mini",
+      "name": "Mini Tractor",
       "model": "pickaxe",
       "clip": "StandingPICKAXE",
-      "power": 3,
-      "hitInterval": 0.32,
+      "power": 2,
+      "hitInterval": 0.2,
       "area": 3,
-      "depth": 2,
-      "price": 120,
-      "icon": "pickaxe",
-      "rarity": "rare"
-    },
-    {
-      "id": "drill",
-      "name": "Power Drill",
-      "model": "pickaxe",
-      "clip": "StandingPICKAXE",
-      "power": 4,
-      "hitInterval": 0.26,
-      "area": 3,
-      "price": 600,
-      "icon": "drill",
-      "rarity": "rare"
-    },
-    {
-      "id": "megadrill",
-      "name": "Mega Drill",
-      "model": "pickaxe",
-      "clip": "StandingPICKAXE",
-      "power": 5,
-      "hitInterval": 0.22,
-      "area": 3,
-      "price": 2500,
-      "icon": "drill",
-      "rarity": "epic"
+      "width": 2.2,
+      "price": 12,
+      "icon": "tractor",
+      "vehicle": true,
+      "rideScale": 1.15,
+      "rideSpeed": 0.95,
+      "capacity": 70,
+      "rate": 1,
+      "tint": "#4cc95a",
+      "rarity": "common"
     },
     {
       "id": "digger",
       "name": "Digger",
       "model": "pickaxe",
       "clip": "StandingPICKAXE",
-      "power": 7,
-      "hitInterval": 0.18,
+      "power": 2,
+      "hitInterval": 0.2,
       "area": 3,
-      "price": 6000,
+      "width": 2.6,
+      "price": 150,
       "icon": "tractor",
       "vehicle": true,
-      "greyscale": true,
-      "rideSpeed": 1.3,
+      "rideScale": 1.25,
+      "rideSpeed": 1.02,
+      "capacity": 140,
+      "rate": 1.1,
+      "tint": "#2f8fff",
+      "rarity": "rare"
+    },
+    {
+      "id": "turbo",
+      "name": "Turbo Tractor",
+      "model": "pickaxe",
+      "clip": "StandingPICKAXE",
+      "power": 2,
+      "hitInterval": 0.2,
+      "area": 3,
+      "width": 3,
+      "price": 800,
+      "icon": "tractor",
+      "vehicle": true,
+      "rideScale": 1.35,
+      "rideSpeed": 1.1,
+      "capacity": 260,
+      "rate": 1.2,
+      "tint": "#e8352b",
+      "rarity": "rare"
+    },
+    {
+      "id": "mega",
+      "name": "Mega Tractor",
+      "model": "pickaxe",
+      "clip": "StandingPICKAXE",
+      "power": 2,
+      "hitInterval": 0.2,
+      "area": 3,
+      "width": 3.4,
+      "price": 4000,
+      "icon": "tractor",
+      "vehicle": true,
+      "rideScale": 1.45,
+      "rideSpeed": 1.18,
+      "capacity": 440,
+      "rate": 1.3,
+      "tint": "#f2b230",
       "rarity": "epic"
     },
     {
       "id": "tractor",
-      "name": "Tractor",
+      "name": "Monster Tractor",
       "model": "pickaxe",
       "clip": "StandingPICKAXE",
-      "power": 9,
-      "hitInterval": 0.14,
+      "power": 2,
+      "hitInterval": 0.2,
       "area": 3,
-      "price": 15000,
+      "width": 3.8,
+      "price": 16000,
       "icon": "tractor",
       "vehicle": true,
+      "rideScale": 1.56,
+      "rideSpeed": 1.26,
+      "capacity": 560,
+      "rate": 1.4,
       "tint": "#a56bff",
+      "rarity": "epic"
+    },
+    {
+      "id": "giant",
+      "name": "Giant Tractor",
+      "model": "pickaxe",
+      "clip": "StandingPICKAXE",
+      "power": 2,
+      "hitInterval": 0.2,
+      "area": 3,
+      "width": 4.2,
+      "price": 60000,
+      "icon": "tractor",
+      "vehicle": true,
+      "rideScale": 1.67,
+      "rideSpeed": 1.34,
+      "capacity": 720,
+      "rate": 1.5,
+      "tint": "#21b6a8",
+      "rarity": "legendary"
+    },
+    {
+      "id": "titan",
+      "name": "Titan Tractor",
+      "model": "pickaxe",
+      "clip": "StandingPICKAXE",
+      "power": 2,
+      "hitInterval": 0.2,
+      "area": 3,
+      "width": 4.6,
+      "price": 200000,
+      "icon": "tractor",
+      "vehicle": true,
+      "rideScale": 1.78,
+      "rideSpeed": 1.42,
+      "capacity": 900,
+      "rate": 1.6,
+      "tint": "#3a3a46",
       "rarity": "legendary"
     },
     {
       "id": "redtractor",
-      "name": "Red Tractor",
+      "name": "Volcano Tractor",
       "model": "pickaxe",
       "clip": "StandingPICKAXE",
-      "power": 11,
-      "hitInterval": 0.11,
-      "area": 5,
-      "price": 100000,
+      "power": 2,
+      "hitInterval": 0.2,
+      "area": 3,
+      "width": 5,
+      "price": 600000,
       "icon": "tractor",
       "vehicle": true,
-      "tint": "#e8352b",
-      "rideSpeed": 1.8,
+      "rideScale": 1.9,
+      "rideSpeed": 1.5,
+      "capacity": 1100,
+      "rate": 1.8,
+      "tint": "#ff5a1f",
       "rarity": "legendary"
-    }
-  ],
-  "backpack": [
-    {
-      "capacity": 10,
-      "price": 0
-    },
-    {
-      "capacity": 45,
-      "price": 10
-    },
-    {
-      "capacity": 60,
-      "price": 90
-    },
-    {
-      "capacity": 75,
-      "price": 160
-    },
-    {
-      "capacity": 90,
-      "price": 260
-    },
-    {
-      "capacity": 110,
-      "price": 400
-    },
-    {
-      "capacity": 130,
-      "price": 600
-    },
-    {
-      "capacity": 145,
-      "price": 850
-    },
-    {
-      "capacity": 180,
-      "price": 1200
-    },
-    {
-      "capacity": 220,
-      "price": 1700
-    },
-    {
-      "capacity": 260,
-      "price": 2400
-    },
-    {
-      "capacity": 300,
-      "price": 3300
-    },
-    {
-      "capacity": 340,
-      "price": 4500
-    },
-    {
-      "capacity": 380,
-      "price": 6000
-    },
-    {
-      "capacity": 400,
-      "price": 8000
-    },
-    {
-      "capacity": 500,
-      "price": 12000
     }
   ],
   "zones": [
@@ -358,12 +414,13 @@
           "id": "copper",
           "chance": 0.06
         }
-      ]
+      ],
+      "height": 0
     },
     {
       "id": "stone",
       "name": "Stone Layer",
-      "from": 20,
+      "from": 24,
       "floor": "#4f4a45",
       "fog": "#4b5466",
       "fill": "stone",
@@ -382,12 +439,13 @@
           "id": "silver",
           "chance": 0.05
         }
-      ]
+      ],
+      "height": 0
     },
     {
       "id": "deep",
       "name": "The Deep",
-      "from": 34,
+      "from": 44,
       "floor": "#323a4e",
       "fog": "#253457",
       "fill": "deeprock",
@@ -406,12 +464,13 @@
           "id": "gold",
           "chance": 0.05
         }
-      ]
+      ],
+      "height": 0.7
     },
     {
       "id": "ruins",
       "name": "Lost Ruins",
-      "from": 48,
+      "from": 64,
       "floor": "#6b3d26",
       "fog": "#6b3a28",
       "fill": "ruins",
@@ -430,12 +489,13 @@
           "id": "crystal",
           "chance": 0.04
         }
-      ]
+      ],
+      "height": 1.5
     },
     {
       "id": "obsidian",
       "name": "Obsidian Depths",
-      "from": 64,
+      "from": 84,
       "floor": "#2a2236",
       "fog": "#2e2245",
       "fill": "obsidian",
@@ -457,6 +517,69 @@
         {
           "id": "amethyst",
           "chance": 0.025
+        }
+      ],
+      "height": 2.4,
+      "lava": {
+        "share": 0.06,
+        "scale": 0.09
+      }
+    },
+    {
+      "id": "magma",
+      "name": "Magma Fields",
+      "from": 104,
+      "floor": "#3a1d18",
+      "fog": "#5a2318",
+      "height": 3.4,
+      "lava": {
+        "share": 0.16,
+        "scale": 0.08
+      },
+      "fill": "basalt",
+      "patches": [
+        {
+          "id": "obsidian",
+          "chance": 0.3
+        }
+      ],
+      "ores": [
+        {
+          "id": "amethyst",
+          "chance": 0.04
+        },
+        {
+          "id": "ruby",
+          "chance": 0.05
+        }
+      ]
+    },
+    {
+      "id": "core",
+      "name": "Volcano Heart",
+      "from": 124,
+      "floor": "#5a1f12",
+      "fog": "#8a2c14",
+      "height": 4.6,
+      "lava": {
+        "share": 0.24,
+        "scale": 0.075
+      },
+      "fill": "magma",
+      "patches": [
+        {
+          "id": "basalt",
+          "chance": 0.35
+        }
+      ],
+      "ores": [
+        {
+          "id": "ruby",
+          "chance": 0.05
+        },
+        {
+          "id": "diamond",
+          "chance": 0.04
         }
       ]
     }
@@ -978,27 +1101,42 @@
     ]
   },
   "tractor": {
-    "model": "hub/kenney-car-kit-tractor-shovel/kenney-car-kit-tractor-shovel.glb",
-    "height": 1.7,
+    "$comment": "The ridden tractor: height at its base size (parts and paints are in that frame), x a tool's rideScale. body = its half width, its back and its front (base frame): all of it digs. seat: where the miner sits, y the seat's top, lift added unscaled (the sitting pose's hips). cut: past the blades.",
+    "model": "hub/lawn-tractor/lawn-tractor.glb",
+    "height": 1.1,
     "rotationY": 0,
-    "bodyRadius": 0.6,
+    "body": {
+      "side": 0.6,
+      "back": 1.05,
+      "front": 1.05
+    },
+    "collide": {
+      "radius": 0.6,
+      "nose": 0.72,
+      "noseRadius": 0.5
+    },
     "seat": {
       "x": 0,
-      "y": 1.24,
-      "z": -0.35
+      "y": 0.73,
+      "z": -0.4,
+      "lift": -0.39
     },
-    "speedMultiplier": 1.6,
+    "speedMultiplier": 1.2,
+    "blades": {
+      "lift": 0.14,
+      "ahead": 0.3
+    },
     "smoke": {
       "count": 16,
       "size": 1.1,
       "color": "#d9d3c9"
     },
     "exhaust": {
-      "x": 0.32,
-      "y": 1.55,
-      "z": -0.55,
+      "x": 0.3,
+      "y": 1.05,
+      "z": 0.45,
       "interval": 0.28,
-      "size": 0.35
+      "size": 0.32
     }
   },
   "achievements": [
@@ -1174,12 +1312,61 @@
     }
   ],
   "boosts": [
-    { "id": "digSpeed", "name": "Dig Speed", "icon": "ToolIcon_pickaxe", "perLevel": 0.03, "maxLevel": 20, "basePrice": 60, "growth": 1.3 },
-    { "id": "sellPrice", "name": "Sell Price", "icon": "ItemIcon_Money_Coin", "perLevel": 0.06, "maxLevel": 20, "basePrice": 80, "growth": 1.3 },
-    { "id": "oreLuck", "name": "Ore Luck", "icon": "ItemIcon_Star_Gold", "perLevel": 0.04, "maxLevel": 20, "basePrice": 100, "growth": 1.3 },
-    { "id": "moveSpeed", "name": "Move Speed", "icon": "ItemIcon_Gear_Boots", "perLevel": 0.03, "maxLevel": 20, "basePrice": 50, "growth": 1.3 }
+    {
+      "id": "digSpeed",
+      "name": "Dig Speed",
+      "icon": "ToolIcon_drill",
+      "perLevel": 0.03,
+      "maxLevel": 20,
+      "basePrice": 60,
+      "growth": 1.4
+    },
+    {
+      "id": "sellPrice",
+      "name": "Sell Price",
+      "icon": "ItemIcon_Money_Coin",
+      "perLevel": 0.06,
+      "maxLevel": 25,
+      "basePrice": 80,
+      "growth": 1.4
+    },
+    {
+      "id": "oreLuck",
+      "name": "Ore Luck",
+      "icon": "ItemIcon_Star_Gold",
+      "perLevel": 0.04,
+      "maxLevel": 20,
+      "basePrice": 100,
+      "growth": 1.4
+    },
+    {
+      "id": "moveSpeed",
+      "name": "Move Speed",
+      "icon": "ItemIcon_Gear_Boots",
+      "perLevel": 0.02,
+      "maxLevel": 20,
+      "basePrice": 50,
+      "growth": 1.4
+    },
+    {
+      "id": "bagSize",
+      "name": "Bag Size",
+      "icon": "ItemIcon_Bag_Brown",
+      "perLevel": 0.1,
+      "maxLevel": 25,
+      "basePrice": 90,
+      "growth": 1.45
+    },
+    {
+      "id": "width",
+      "name": "Digging Width",
+      "icon": "ItemIcon_Gear_Sword",
+      "perLevel": 0.05,
+      "maxLevel": 16,
+      "basePrice": 150,
+      "growth": 1.6
+    }
   ],
-  "boostsUnlockToolLevel": 2,
   "prestige": {
     "$comment": "tool: the tool that lets the player open the next mine (later tools are extras). priceStep: each mine after the first, tools, backpacks and boosts cost this much more (mine #2 x1.15, mine #3 x1.30...): the hub's perks and income, kept from mine to mine, would otherwise make each new run easier.",
     "sellBonus": 0.25,
@@ -1193,20 +1380,64 @@
     "capMinutes": 15
   },
   "mineThemes": [
-    { "name": "Classic" },
+    {
+      "name": "Classic"
+    },
     {
       "name": "Glimmer Caves",
-      "tints": { "dirt": "#7fb7c9", "gravel": "#9aa8e0", "stone": "#8f86e6", "deeprock": "#7fd9b2", "ruins": "#86a4ff", "obsidian": "#4fa38c" },
-      "floors": ["#24404a", "#2c2f55", "#1f4a3a", "#283a66", "#1c3b33"],
-      "hubFloor": ["#a9c4d9", "#93b0c9"],
-      "hubWalls": ["#2f3f66", "#7f9cd0"]
+      "tints": {
+        "dirt": "#7fb7c9",
+        "gravel": "#9aa8e0",
+        "stone": "#8f86e6",
+        "deeprock": "#7fd9b2",
+        "ruins": "#86a4ff",
+        "obsidian": "#4fa38c"
+      },
+      "floors": [
+        "#24404a",
+        "#2c2f55",
+        "#1f4a3a",
+        "#283a66",
+        "#1c3b33",
+        "#2b2348",
+        "#3a1f50"
+      ],
+      "hubFloor": [
+        "#a9c4d9",
+        "#93b0c9"
+      ],
+      "hubWalls": [
+        "#2f3f66",
+        "#7f9cd0"
+      ]
     },
     {
       "name": "Emerald Hollow",
-      "tints": { "dirt": "#94c58e", "gravel": "#a6cfa4", "stone": "#84d0b8", "deeprock": "#a194e6", "ruins": "#d0a6e6", "obsidian": "#6c5c8e" },
-      "floors": ["#2f4a2c", "#264a40", "#2f2a55", "#4a2f4f", "#2a2236"],
-      "hubFloor": ["#c9d9a9", "#b4c993"],
-      "hubWalls": ["#3f5a2f", "#a9c47f"]
+      "tints": {
+        "dirt": "#94c58e",
+        "gravel": "#a6cfa4",
+        "stone": "#84d0b8",
+        "deeprock": "#a194e6",
+        "ruins": "#d0a6e6",
+        "obsidian": "#6c5c8e"
+      },
+      "floors": [
+        "#2f4a2c",
+        "#264a40",
+        "#2f2a55",
+        "#4a2f4f",
+        "#2a2236",
+        "#33261f",
+        "#4a2a18"
+      ],
+      "hubFloor": [
+        "#c9d9a9",
+        "#b4c993"
+      ],
+      "hubWalls": [
+        "#3f5a2f",
+        "#a9c47f"
+      ]
     }
   ],
   "findPayout": {
@@ -1225,24 +1456,48 @@
     "enabled": false,
     "guided": 4,
     "maxDistance": 12,
-    "place": [6, 10]
+    "place": [
+      6,
+      10
+    ]
   },
   "chests": {
     "$comment": "Cash chests are buried per zone and pay immediately. Power is a fixed, seeded tractor offer per mine, unlocked on reaching offer.zone and revealed within revealDistance. Dig a path and step within triggerDistance to choose a rewarded video or Not yet. A completed video grants seconds of stronger digging and auto-cash, consuming the offer for that mine. Skip/failure allows retry after leaving and re-entering; no early or recurring automatic power chests.",
     "beaconRange": 16,
     "power": {
-      "model": "hub/kenney-car-kit-tractor-shovel/kenney-car-kit-tractor-shovel.glb",
-      "size": 1.1,
-      "tool": "megadrill",
+      "model": "hub/lawn-tractor/lawn-tractor.glb",
+      "size": 1.3,
+      "tool": "digger",
       "seconds": 30,
       "speedMultiplier": 1.25,
-      "offer": { "zone": "deep", "revealDistance": 16, "triggerDistance": 1.4 }
+      "offer": {
+        "zone": "deep",
+        "revealDistance": 16,
+        "triggerDistance": 2.2
+      },
+      "powerBonus": 2
     },
     "cash": {
       "model": "mine/chest.glb",
       "size": 0.75,
-      "perZone": [3, 4, 4, 4, 4],
-      "reward": [30, 120, 400, 1200, 3000],
+      "perZone": [
+        3,
+        5,
+        6,
+        6,
+        6,
+        6,
+        6
+      ],
+      "reward": [
+        25,
+        120,
+        500,
+        2000,
+        6000,
+        18000,
+        45000
+      ],
       "spread": 0.35
     }
   },
@@ -1253,5 +1508,135 @@
     "decorScale": 1.35,
     "decorCount": 4,
     "dropMultiplier": 2
+  },
+  "digging": {
+    "chewSec": 0.34,
+    "falloff": 0.55,
+    "shortSec": [
+      1.5
+    ]
+  },
+  "lava": {
+    "$comment": "Pools of lava in the far zones: driven (or walked) through slowly (speed x slow), smoking.",
+    "slow": 0.55
+  },
+  "upgrades": {
+    "$comment": "The pads' repeatable upgrades: blades = +1 digging power a level (prices listed); capacity = +perLevel of the tool's own bag a level.",
+    "blades": {
+      "prices": [
+        35,
+        220,
+        1300,
+        6000,
+        24000,
+        80000,
+        250000,
+        700000,
+        1800000,
+        4500000
+      ]
+    },
+    "capacity": {
+      "perLevel": 0.2,
+      "maxLevel": 24,
+      "basePrice": 20,
+      "growth": 1.9
+    }
+  },
+  "bladeLevels": [
+    {
+      "count": 1,
+      "size": 0.6
+    },
+    {
+      "count": 2,
+      "size": 0.95,
+      "layout": "grid",
+      "rows": 1,
+      "cols": 2
+    },
+    {
+      "count": 3,
+      "size": 1.5
+    },
+    {
+      "count": 3,
+      "size": 1,
+      "layout": "grid",
+      "rows": 1,
+      "cols": 3
+    },
+    {
+      "count": 4,
+      "size": 1.4
+    },
+    {
+      "count": 4,
+      "size": 1,
+      "layout": "grid",
+      "rows": 2,
+      "cols": 2
+    },
+    {
+      "count": 5,
+      "size": 1.3
+    },
+    {
+      "count": 6,
+      "size": 1,
+      "layout": "grid",
+      "rows": 2,
+      "cols": 3
+    },
+    {
+      "count": 6,
+      "size": 1.3
+    },
+    {
+      "count": 8,
+      "size": 1,
+      "layout": "grid",
+      "rows": 2,
+      "cols": 4
+    },
+    {
+      "count": 10,
+      "size": 1,
+      "layout": "grid",
+      "rows": 2,
+      "cols": 5
+    }
+  ],
+  "levels": {
+    "$comment": "The player's level (shared by every mine). next: XP from level 1, 2...; then x growth. xp: per block x its minPower, per upgrade, zone, find, hub piece, chest. cash: a level pays cash.base x level ^ cash.power. powerUps: POWER-UPS comes at this level. totem: a piece more every `every` levels (up to `pieces`), each +sell for good.",
+    "next": [
+      14,
+      45,
+      80,
+      130,
+      190,
+      270,
+      370,
+      500
+    ],
+    "growth": 1.28,
+    "xp": {
+      "block": 0.22,
+      "upgrade": 10,
+      "zone": 30,
+      "find": 18,
+      "build": 15,
+      "chest": 8
+    },
+    "cash": {
+      "base": 10,
+      "power": 2
+    },
+    "powerUps": 3,
+    "totem": {
+      "every": 2,
+      "pieces": 10,
+      "sell": 0.04
+    }
   }
 }

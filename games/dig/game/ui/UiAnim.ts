@@ -21,6 +21,9 @@ function killDisplayTweens(target: PIXI.Container): void {
     target.children.forEach((child) => killDisplayTweens(child as PIXI.Container));
 }
 
+/** Each target's punch (UiAnim.punch): the scale it springs back to, and whether it's over. */
+const punching = new WeakMap<PIXI.Container, { scale: number; done: boolean; tween: UiTween }>();
+
 export const UiAnim = {
     /** Kills every display tween on `target` and its descendants — call before destroying it. */
     kill(target: PIXI.Container): void {
@@ -90,10 +93,33 @@ export const UiAnim = {
         return [gsap.to(target.scale, { x: scale * (1 + amount), y: scale * (1 + amount), duration, ease: 'sine.inOut', yoyo: true, repeat: -1 })];
     },
 
-    /** Quick squash-and-spring used as tap feedback. */
+    /**
+     * Quick squash-and-spring used as tap feedback. A punch while one is still springing restarts from the scale the
+     * first one started at (taken mid-squash, back-to-back punches would compound: a pile of finds blew the trophy up).
+     */
     punch(target: PIXI.Container, amount = 0.18): UiTween[] {
-        const scale = target.scale.x || 1;
-        return [gsap.fromTo(target.scale, { x: scale * (1 + amount), y: scale * (1 - amount * 0.6) }, { x: scale, y: scale, duration: 0.5, ease: 'elastic.out(1.1, 0.35)' })];
+        const running = punching.get(target);
+        const springing = running !== undefined && !running.done;
+        const scale = springing ? running.scale : target.scale.x || 1;
+        if (springing) {
+            running.done = true;
+            running.tween.kill();
+        }
+        const entry: { scale: number; done: boolean; tween: UiTween } = { scale, done: false, tween: gsap.fromTo(target.scale, { x: scale * (1 + amount), y: scale * (1 - amount * 0.6) }, {
+            x: scale,
+            y: scale,
+            duration: 0.5,
+            ease: 'elastic.out(1.1, 0.35)',
+            // Finished, or stopped by anything else (UiAnim.kill): the next punch takes the scale as it is then.
+            onComplete: () => {
+                entry.done = true;
+            },
+            onInterrupt: () => {
+                entry.done = true;
+            },
+        }) };
+        punching.set(target, entry);
+        return [entry.tween];
     },
 
     /** Horizontal shake for errors or a dramatic "busted". */

@@ -23,8 +23,8 @@
     ]
   },
   "start": {
-    "x": -0.5,
-    "z": -1
+    "x": 0,
+    "z": 3.4
   },
   "waypoints": [],
   "walls": [
@@ -164,12 +164,6 @@
     {
       "kind": "atm",
       "x": -7,
-      "z": -7,
-      "rotationY": 0
-    },
-    {
-      "kind": "boost",
-      "x": 7,
       "z": -7,
       "rotationY": 0
     },
@@ -647,15 +641,6 @@
       "reveal": "start"
     },
     {
-      "id": "boost-corner",
-      "name": "Boosts",
-      "x": 7,
-      "z": -7.5,
-      "width": 2.8,
-      "depth": 2.8,
-      "reveal": "boosts"
-    },
-    {
       "id": "wardrobe",
       "name": "Wardrobe",
       "x": -7.6,
@@ -680,7 +665,7 @@
       "z": 4.5,
       "width": 9,
       "depth": 9,
-      "reveal": "upgradeAfter:wardrobe|powerChest|upgrade:3",
+      "reveal": "upgradeAfter:wardrobe|level:5",
       "bonus": {
         "stat": "sell",
         "amount": 0.05
@@ -693,7 +678,7 @@
       "z": -4.5,
       "width": 9,
       "depth": 9,
-      "reveal": "upgrade:3",
+      "reveal": "level:6",
       "bonus": {
         "stat": "dig",
         "amount": 0.05
@@ -706,7 +691,7 @@
       "z": 4.5,
       "width": 9,
       "depth": 9,
-      "reveal": "upgrade:4",
+      "reveal": "level:9",
       "bonus": {
         "stat": "move",
         "amount": 0.05
@@ -719,11 +704,38 @@
       "z": -4.5,
       "width": 9,
       "depth": 9,
-      "reveal": "upgrade:5",
+      "reveal": "level:12",
       "bonus": {
         "stat": "sell",
         "amount": 0.05
       }
     }
-  ]
+  ],
+  "pads": [
+    {
+      "kind": "tool",
+      "x": 0,
+      "z": -4.6,
+      "rotationY": 0
+    },
+    {
+      "kind": "blades",
+      "x": -3.7,
+      "z": -4.4,
+      "rotationY": 0,
+      "afterTool": 1
+    },
+    {
+      "kind": "capacity",
+      "x": 3.7,
+      "z": -4.4,
+      "rotationY": 0,
+      "afterTool": 1
+    }
+  ],
+  "totem": {
+    "x": 0,
+    "z": 0,
+    "height": 0.42
+  }
 }

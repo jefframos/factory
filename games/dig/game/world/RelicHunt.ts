@@ -131,7 +131,7 @@ export class RelicHunt {
     private diggable(ix: number, iz: number): boolean {
         const value = this.terrain.cellValue(ix, iz);
         const material = this.terrain.material(ix, iz);
-        return value !== AIR && value !== BEDROCK && !!material && material.minPower <= DigProgress.tool.power;
+        return value !== AIR && value !== BEDROCK && !!material && material.minPower <= DigProgress.power;
     }
 
     /** A diggable block holding nothing yet, with rock all round (so the relic starts hidden, like a buried one). */

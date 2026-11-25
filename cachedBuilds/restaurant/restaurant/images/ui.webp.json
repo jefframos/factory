@@ -40,72 +40,12 @@
         "h": 143
       }
     },
-    "Slider_Basic02_Fill_Yellow": {
+    "Slider_Basic03_Bg_Single": {
       "frame": {
         "x": 2,
         "y": 113,
-        "w": 8,
-        "h": 35
-      },
-      "rotated": true,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 8,
-        "h": 35
-      },
-      "sourceSize": {
-        "w": 8,
-        "h": 35
-      }
-    },
-    "Slider_Basic02_Fill_Green": {
-      "frame": {
-        "x": 2,
-        "y": 123,
-        "w": 8,
-        "h": 35
-      },
-      "rotated": true,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 8,
-        "h": 35
-      },
-      "sourceSize": {
-        "w": 8,
-        "h": 35
-      }
-    },
-    "Slider_Basic02_Fill_Blue": {
-      "frame": {
-        "x": 2,
-        "y": 133,
-        "w": 8,
-        "h": 35
-      },
-      "rotated": true,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 8,
-        "h": 35
-      },
-      "sourceSize": {
-        "w": 8,
-        "h": 35
-      }
-    },
-    "Slider_Basic02_Bg": {
-      "frame": {
-        "x": 39,
-        "y": 113,
         "w": 25,
-        "h": 43
+        "h": 48
       },
       "rotated": true,
       "trimmed": false,
@@ -113,11 +53,11 @@
         "x": 0,
         "y": 0,
         "w": 25,
-        "h": 43
+        "h": 48
       },
       "sourceSize": {
         "w": 25,
-        "h": 43
+        "h": 48
       }
     },
     "ResourceBar_Single_Icon_Coin": {
@@ -142,8 +82,8 @@
     },
     "ResourceBar_Single_Bg": {
       "frame": {
-        "x": 79,
-        "y": 147,
+        "x": 52,
+        "y": 113,
         "w": 26,
         "h": 26
       },
@@ -442,8 +382,8 @@
     },
     "Icon_Coin": {
       "frame": {
-        "x": 79,
-        "y": 175,
+        "x": 584,
+        "y": 648,
         "w": 38,
         "h": 42
       },
@@ -520,9 +460,49 @@
         "h": 361
       }
     },
-    "Emoji_Sample_3": {
+    "Emoji_Sample_7": {
       "frame": {
         "x": 584,
+        "y": 688,
+        "w": 121,
+        "h": 124
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 121,
+        "h": 124
+      },
+      "sourceSize": {
+        "w": 121,
+        "h": 124
+      }
+    },
+    "Emoji_Sample_6": {
+      "frame": {
+        "x": 584,
+        "y": 814,
+        "w": 121,
+        "h": 124
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 121,
+        "h": 124
+      },
+      "sourceSize": {
+        "w": 121,
+        "h": 124
+      }
+    },
+    "Emoji_Sample_3": {
+      "frame": {
+        "x": 707,
         "y": 660,
         "w": 121,
         "h": 124
@@ -542,7 +522,7 @@
     },
     "Emoji_Sample_2": {
       "frame": {
-        "x": 584,
+        "x": 707,
         "y": 786,
         "w": 121,
         "h": 124
@@ -562,8 +542,8 @@
     },
     "Emoji_Sample_1": {
       "frame": {
-        "x": 707,
-        "y": 660,
+        "x": 827,
+        "y": 365,
         "w": 121,
         "h": 124
       },
@@ -582,7 +562,7 @@
     },
     "Button_Round06_White": {
       "frame": {
-        "x": 584,
+        "x": 707,
         "y": 912,
         "w": 94,
         "h": 96
@@ -602,7 +582,7 @@
     },
     "Button_Round06_Red": {
       "frame": {
-        "x": 680,
+        "x": 803,
         "y": 912,
         "w": 94,
         "h": 96
@@ -622,12 +602,12 @@
     },
     "Button_Round03_Dark": {
       "frame": {
-        "x": 707,
-        "y": 786,
+        "x": 827,
+        "y": 491,
         "w": 130,
         "h": 122
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -642,8 +622,8 @@
     },
     "Button01_l_Yellow": {
       "frame": {
-        "x": 776,
-        "y": 910,
+        "x": 950,
+        "y": 365,
         "w": 80,
         "h": 142
       },
@@ -662,7 +642,7 @@
     },
     "Button01_l_Sky": {
       "frame": {
-        "x": 827,
+        "x": 1094,
         "y": 365,
         "w": 80,
         "h": 142
@@ -682,8 +662,8 @@
     },
     "Button01_l_Green": {
       "frame": {
-        "x": 827,
-        "y": 509,
+        "x": 951,
+        "y": 447,
         "w": 80,
         "h": 142
       },
@@ -702,8 +682,8 @@
     },
     "Button01_l_Gray": {
       "frame": {
-        "x": 830,
-        "y": 653,
+        "x": 1033,
+        "y": 509,
         "w": 80,
         "h": 142
       },
@@ -722,7 +702,7 @@
     },
     "BorderFrame_Round24": {
       "frame": {
-        "x": 123,
+        "x": 79,
         "y": 147,
         "w": 62,
         "h": 62
@@ -742,8 +722,8 @@
     },
     "BasicFrame_Round20": {
       "frame": {
-        "x": 830,
-        "y": 735,
+        "x": 793,
+        "y": 236,
         "w": 44,
         "h": 44
       },

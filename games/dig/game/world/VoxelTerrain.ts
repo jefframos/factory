@@ -12,31 +12,44 @@
 // per zone, ui/dig.json chests.cash; a power chest is put in a cell while playing: placeChest()), and ore
 // inside seeded rich-vein patches (`rich`, ui/dig.json richOre) grows bigger, more numerous nuggets and gems.
 //
-// Drawing: every 16x16 chunk is ONE merged mesh (all blocks share the Block Bits texture), plus one for
-// its decor. Blocks on a tunnel edge are drawn whole; buried blocks only add their top face — all the
-// camera ever sees of them — which keeps the big mine cheap. Removing a block rebuilds its chunk (and
-// the neighbour chunk when it sits on a border). Chunks outside the view are culled.
+// The far zones stand higher (zones `height`): everything bent is lifted over it (BendService.setGround), the game itself
+// stays flat. Some have pools of lava (`lava`): open ground (air) that glows and slows (LavaPools draws it).
 //
-// Collision goes through pizza's walkability hook (TileWalkability), which PlayerMovementController
-// already checks per axis, so the miner slides along rock faces. The footprint grows while the miner rides the
-// tractor (setBody()); mounted in a tunnel too narrow for it, the walking footprint still lets them drive out.
+// Drawing: every 8x8 chunk near the miner (terrain.viewRange) is ONE merged mesh (all blocks share the Block Bits
+// texture), plus one for its decor; the rest isn't drawn until they come near. Blocks on a tunnel edge are drawn whole;
+// buried blocks only add their top face — all the camera ever sees of them — which keeps the big mine cheap. Removing a
+// block rebuilds its chunk (and the neighbour chunk when it sits on a border).
+//
+// Collision goes through pizza's walkability hook (TileWalkability), which PlayerMovementController already checks per
+// axis, so the miner slides along rock faces: a circle on foot, two on the tractor (its middle and its nose, setBody()).
+// Nobody's ever stuck: whoever's in the rock already (mounted in a narrow tunnel, turned round in one) may make any move
+// that doesn't go deeper into it. And everything the tractor touches, it digs (MiningController).
 
 import * as THREE from 'three';
 import { DIG, ChestKind, FindDef, MaterialDef, MineTheme, ZoneDef, materialOf, materialValue } from '../data/DigConfig';
-import { hubRects } from '../data/HubData';
+import { HUB, hubRects } from '../data/HubData';
+import { BendService } from '../services/BendService';
+import { LavaPools } from './LavaPools';
 import { setWalkabilityQuery, clearWalkabilityQuery } from './TileWalkability';
 import { BlockModels, DecorModel, MeshData } from './BlockModels';
 
 export const AIR = 0;
 /** Grid value of the undiggable outer ring (not a DIG.materials entry). */
 export const BEDROCK = 255;
-const CHUNK = 16;
-/** Chunks redrawn a frame while a whole redraw is under way (update()). */
-const REBUILD_BUDGET = 12;
+const CHUNK = 8;
+/** Chunks drawn a frame while many are waiting (more of the mine in view, more models in: update()). */
+const REBUILD_BUDGET = 8;
+/** A chunk is let go this much further off than it's drawn; which are near is looked into this often (seconds). */
+const VIEW_SPARE = 14;
+const VIEW_SEC = 0.25;
+/** The ground's height map: texels each way. */
+const GROUND_SIZE = 256;
+/** A hub doorway's kept open to the tractor this far round it. */
+const DOORWAY = 2.6;
 /** The miner's footprint radius for collision against blocks. */
 const BODY_RADIUS = 0.32;
 /** Extra culling radius around a chunk: the world bend pulls far chunks down, so their real bounds drift. */
-const CULL_MARGIN = 8;
+const CULL_MARGIN = 9;
 /** Pickups (nuggets, gems) are about this big. */
 const PICKUP_SIZE = 0.42;
 const DECOR_SIZE = 0.55;
@@ -152,6 +165,13 @@ export class VoxelTerrain {
     public readonly chests: Uint8Array;
     /** 1 = an ore block in a rich vein (bigger decor, more drops). */
     public readonly rich: Uint8Array;
+    /** 1 = lava: open ground that slows. */
+    public readonly lava: Uint8Array;
+    /** 1 = the hub's inside, shut to the tractor (its doorways aren't). */
+    private readonly hubInside: Uint8Array;
+    private readonly ground = new Float32Array(GROUND_SIZE * GROUND_SIZE);
+    private readonly lavaPools: LavaPools;
+    private viewIn = 0;
     /** Bumped on every dug block (the debug map redraws when it changes). */
     public changed = 0;
     private readonly zoneNoise: (x: number, z: number) => number;
@@ -166,9 +186,10 @@ export class VoxelTerrain {
     /** loadModels() has started. */
     private modelsRequested = false;
     private readonly walkability = (x: number, z: number) => this.isWalkable(x, z);
-    /** The miner's footprint radius against the rock right now, and where they are (setBody()). */
-    private bodyRadius = BODY_RADIUS;
+    /** Where the miner is, and the circles the rock stops (x, z off them, radius): on foot, or the tractor's (setBody()). */
     private readonly bodyAt = new THREE.Vector3();
+    private circles: [number, number, number][] = [[0, 0, BODY_RADIUS]];
+    private riding = false;
     /** Per grid value: the material's `tint` over its block model (obsidian = the dark stone), or the mine theme's. */
     private readonly tints: (THREE.Color | undefined)[];
     /** The bedrock's tint (terrain.bedrockTint): the mine's end, blackish. */
@@ -184,7 +205,7 @@ export class VoxelTerrain {
         this.zoneNoise = valueNoise(seed + 31);
         this.tints = [undefined, ...DIG.materials.map((m) => {
             const tint = theme?.tints?.[m.id] ?? m.tint;
-            return tint ? new THREE.Color(tint) : undefined;
+            return tint ? new THREE.Color(tint).multiplyScalar(m.glow ?? 1) : undefined;
         })];
         this.radius = DIG.terrain.radius;
         this.blockHeight = DIG.terrain.blockHeight;
@@ -196,7 +217,11 @@ export class VoxelTerrain {
         this.finds = new Uint8Array(this.size * this.size);
         this.chests = new Uint8Array(this.size * this.size);
         this.rich = new Uint8Array(this.size * this.size);
+        this.lava = new Uint8Array(this.size * this.size);
+        this.hubInside = new Uint8Array(this.size * this.size);
+        this.lavaPools = new LavaPools(this.group);
         this.generate();
+        this.raiseGround();
         if (dugSave) {
             this.loadDug(dugSave);
         }
@@ -265,8 +290,8 @@ export class VoxelTerrain {
     /** Every chunk is redrawn (more models are in): over the next frames, nearest first (update()). */
     private redrawAll(): void {
         this.loaded = true;
-        const perSide = Math.ceil(this.size / CHUNK);
-        for (let chunk = 0; chunk < perSide * perSide; chunk++) this.dirty.add(chunk);
+        for (const chunk of this.chunks.keys()) this.dirty.add(chunk);
+        this.viewIn = 0;
     }
 
     /** Starts loading the power chest's model (the tractor), once: the scene calls it when play starts. */
@@ -368,8 +393,111 @@ export class VoxelTerrain {
                 if (materialOf(material)?.ore && richNoise(x * richOre.scale, z * richOre.scale) >= richOre.threshold) this.rich[index] = 1;
             }
         }
+        this.pourLava(seed);
+        this.closeHub();
+        this.spots = this.findSpots();
         this.buryFinds(seed);
         this.buryChests(seed);
+    }
+
+    /** The zones' pools of lava: the ground where their noise is highest, as much of it as they say; the rock there's gone. */
+    private pourLava(seed: number): void {
+        DIG.zones.forEach((zone, zoneIndex) => {
+            if (!zone.lava) return;
+            const { share, scale } = zone.lava;
+            const big = valueNoise(seed + 1721 + zoneIndex * 37);
+            const small = valueNoise(seed + 2203 + zoneIndex * 37);
+            const there: { index: number; level: number }[] = [];
+            for (let index = 0; index < this.cells.length; index++) {
+                if (this.zones[index] !== zoneIndex || this.cells[index] === AIR || this.cells[index] === BEDROCK) continue;
+                const ix = index % this.size;
+                const iz = Math.floor(index / this.size);
+                there.push({ index, level: big(ix * scale, iz * scale) + small(ix * scale * 3.1, iz * scale * 3.1) * 0.28 });
+            }
+            there.sort((a, b) => b.level - a.level);
+            for (const { index } of there.slice(0, Math.floor(there.length * share))) {
+                this.cells[index] = AIR;
+                this.rich[index] = 0;
+                this.lava[index] = 1;
+            }
+        });
+    }
+
+    /** The hub's inside, but for round its doorways out: shut to the tractor, so it doesn't reach through the walls. */
+    private closeHub(): void {
+        const rects = hubRects();
+        const within = (x: number, z: number, spare: number) => rects.filter((r) => Math.abs(x - r.x) < r.width / 2 + spare && Math.abs(z - r.z) < r.depth / 2 + spare).length;
+        const doors = HUB.walls.flatMap((wall) => wall.openings).filter((o) => o.kind === 'gap' && within((o.minX + o.maxX) / 2, (o.minZ + o.maxZ) / 2, 0.5) === 1);
+        for (let index = 0; index < this.cells.length; index++) {
+            const x = (index % this.size) - this.radius + 0.5;
+            const z = Math.floor(index / this.size) - this.radius + 0.5;
+            if (!within(x, z, 0)) continue;
+            const door = doors.some((o) => x > o.minX - DOORWAY && x < o.maxX + DOORWAY && z > o.minZ - DOORWAY && z < o.maxZ + DOORWAY);
+            this.hubInside[index] = door ? 0 : 1;
+        }
+    }
+
+    /** Where things can be buried, zone by zone: rock with rock of the same zone all round. */
+    private spots: number[][] = [];
+
+    private findSpots(): number[][] {
+        const spots: number[][] = DIG.zones.map(() => []);
+        const { size, cells, zones } = this;
+        const solid = (index: number, zone: number) => cells[index] !== AIR && cells[index] !== BEDROCK && zones[index] === zone;
+        for (let iz = 1; iz < size - 1; iz++) {
+            for (let ix = 1; ix < size - 1; ix++) {
+                const index = ix + iz * size;
+                const zone = zones[index];
+                if (solid(index, zone) && solid(index - 1, zone) && solid(index + 1, zone) && solid(index - size, zone) && solid(index + size, zone)) spots[zone].push(index);
+            }
+        }
+        return spots;
+    }
+
+    /** The ground's height over the map (zones `height`, ramped at their borders), for the shaders and for ground(). */
+    private raiseGround(): void {
+        const max = Math.max(...DIG.zones.map((zone) => zone.height ?? 0));
+        if (max <= 0) {
+            BendService.setGround(null);
+            return;
+        }
+        const pixels = new Uint8Array(GROUND_SIZE * GROUND_SIZE);
+        const ramp = DIG.terrain.zoneRamp;
+        for (let i = 0; i < pixels.length; i++) {
+            const x = (((i % GROUND_SIZE) + 0.5) / GROUND_SIZE - 0.5) * this.size;
+            const z = ((Math.floor(i / GROUND_SIZE) + 0.5) / GROUND_SIZE - 0.5) * this.size;
+            const distance = this.zoneDistance(x, z);
+            let height = 0;
+            DIG.zones.forEach((zone, k) => {
+                const step = (zone.height ?? 0) - (DIG.zones[k - 1]?.height ?? 0);
+                if (k > 0 && step) height += step * THREE.MathUtils.smoothstep(distance, zone.from - ramp / 2, zone.from + ramp / 2);
+            });
+            pixels[i] = Math.round((height / max) * 255);
+            this.ground[i] = (pixels[i] / 255) * max;
+        }
+        const texture = new THREE.DataTexture(pixels, GROUND_SIZE, GROUND_SIZE, THREE.RedFormat, THREE.UnsignedByteType);
+        texture.magFilter = texture.minFilter = THREE.LinearFilter;
+        texture.unpackAlignment = 1;
+        texture.needsUpdate = true;
+        BendService.setGround(texture, this.size / 2, max, (x, z) => this.groundAt(x, z));
+        this.groundTexture = texture;
+    }
+
+    private groundTexture?: THREE.DataTexture;
+
+    /** The ground's height at a point, as the shaders have it. */
+    public groundAt(x: number, z: number): number {
+        const clamp = (v: number) => Math.max(0, Math.min(GROUND_SIZE - 1, v));
+        const u = clamp((x / this.size + 0.5) * GROUND_SIZE - 0.5);
+        const v = clamp((z / this.size + 0.5) * GROUND_SIZE - 0.5);
+        const x0 = Math.floor(u);
+        const z0 = Math.floor(v);
+        const x1 = Math.min(GROUND_SIZE - 1, x0 + 1);
+        const z1 = Math.min(GROUND_SIZE - 1, z0 + 1);
+        const at = (ix: number, iz: number) => this.ground[ix + iz * GROUND_SIZE];
+        const near = at(x0, z0) + (at(x1, z0) - at(x0, z0)) * (u - x0);
+        const far = at(x0, z1) + (at(x1, z1) - at(x0, z1)) * (u - x0);
+        return near + (far - near) * (v - z0);
     }
 
     /**
@@ -386,7 +514,6 @@ export class VoxelTerrain {
      */
     private burySpread(kind: ChestKind, perZone: number[], seed: number): number[] {
         const roll = valueNoise(seed);
-        const solid = (index: number) => this.cells[index] !== AIR && this.cells[index] !== BEDROCK;
         const placed: number[] = [];
         this.finds.forEach((find, index) => {
             if (find) placed.push(index);
@@ -398,15 +525,7 @@ export class VoxelTerrain {
         let dice = 0;
         const buried: number[] = [];
         DIG.zones.forEach((_, zone) => {
-            const spots: number[] = [];
-            for (let iz = 1; iz < this.size - 1; iz++) {
-                for (let ix = 1; ix < this.size - 1; ix++) {
-                    const index = ix + iz * this.size;
-                    if (this.zones[index] !== zone || !solid(index) || this.finds[index]) continue;
-                    const inside = [index - 1, index + 1, index - this.size, index + this.size].every((n) => solid(n) && this.zones[n] === zone);
-                    if (inside) spots.push(index);
-                }
-            }
+            const spots = this.spots[zone].filter((index) => !this.finds[index]);
             const pick = () => spots[Math.floor(roll(dice++, 0) * spots.length)];
             for (let n = 0; spots.length && n < (perZone[zone] ?? 0); n++) {
                 let spot = pick();
@@ -429,19 +548,9 @@ export class VoxelTerrain {
     private buryFinds(seed: number): void {
         // Value noise at whole coordinates is a plain per-cell hash: one dice roll per find.
         const roll = valueNoise(seed + 977);
-        const solid = (index: number) => this.cells[index] !== AIR && this.cells[index] !== BEDROCK;
         const placed: number[] = [];
         DIG.finds.forEach((find, findIndex) => {
-            const spots: number[] = [];
-            for (let iz = 1; iz < this.size - 1; iz++) {
-                for (let ix = 1; ix < this.size - 1; ix++) {
-                    const index = ix + iz * this.size;
-                    if (this.zones[index] !== find.zone || !solid(index) || this.finds[index]) continue;
-                    const inside = [index - 1, index + 1, index - this.size, index + this.size]
-                        .every((n) => solid(n) && this.zones[n] === find.zone);
-                    if (inside) spots.push(index);
-                }
-            }
+            const spots = this.spots[find.zone].filter((index) => !this.finds[index]);
             if (!spots.length) return;
             let spot = spots[Math.floor(roll(findIndex, 0) * spots.length)];
             for (let attempt = 1; attempt < 32 && placed.some((p) => this.cellDistance(p, spot) < FIND_SPACING); attempt++) {
@@ -456,10 +565,20 @@ export class VoxelTerrain {
         return Math.hypot((a % this.size) - (b % this.size), Math.floor(a / this.size) - Math.floor(b / this.size));
     }
 
+    /** A point's distance from the hub as the zones see it: wobbling with noise. */
+    private zoneDistance(x: number, z: number): number {
+        return Math.hypot(x, z) + (this.zoneNoise(x * 0.08, z * 0.08) - 0.5) * 2 * DIG.terrain.zoneWobble;
+    }
+
+    /** There's lava on the ground there. */
+    public isLava(x: number, z: number): boolean {
+        const [ix, iz] = this.cellOf(x, z);
+        return ix >= 0 && iz >= 0 && ix < this.size && iz < this.size && this.lava[this.index(ix, iz)] === 1;
+    }
+
     /** Zone index at a world point: by distance from the hub, the edges wobbling with noise. */
     public zoneIndexAt(x: number, z: number): number {
-        const wobble = (this.zoneNoise(x * 0.08, z * 0.08) - 0.5) * 2 * DIG.terrain.zoneWobble;
-        const distance = Math.hypot(x, z) + wobble;
+        const distance = this.zoneDistance(x, z);
         let zone = 0;
         DIG.zones.forEach((def, i) => {
             if (distance >= def.from) zone = i;
@@ -561,26 +680,47 @@ export class VoxelTerrain {
         return ix >= 0 && iz >= 0 && ix < this.size && iz < this.size && this.rich[this.index(ix, iz)] === 1;
     }
 
-    /** Where the miner is and how wide they are against the rock (wider on the tractor); call before movement each step. */
-    /** The miner's footprint radius against the rock right now (wider in the tractor: setBody()). */
+    /** The miner's footprint radius against the rock on foot. */
     public get footprint(): number {
-        return this.bodyRadius;
+        return BODY_RADIUS;
     }
 
-    public setBody(x: number, z: number, radius = BODY_RADIUS): void {
+    /**
+     * Where the miner is, and (on the tractor) its circles against the rock: x, z off them and radius. Call before movement
+     * each step.
+     */
+    public setBody(x: number, z: number, circles?: [number, number, number][]): void {
         this.bodyAt.set(x, 0, z);
-        this.bodyRadius = radius;
+        this.riding = !!circles;
+        this.circles = circles ?? [[0, 0, BODY_RADIUS]];
     }
 
-    private fits(x: number, z: number, r: number): boolean {
-        return !this.isSolid(x - r, z - r) && !this.isSolid(x + r, z - r) && !this.isSolid(x - r, z + r) && !this.isSolid(x + r, z + r);
+    /** How deep in the rock the miner would be at (x, z): 0 clear of it. */
+    private depthAt(x: number, z: number): number {
+        let deepest = 0;
+        for (const [dx, dz, radius] of this.circles) {
+            const cx = x + dx;
+            const cz = z + dz;
+            const [fromX, fromZ] = this.cellOf(cx - radius, cz - radius);
+            const [toX, toZ] = this.cellOf(cx + radius, cz + radius);
+            for (let iz = fromZ; iz <= toZ; iz++) {
+                for (let ix = fromX; ix <= toX; ix++) {
+                    if (this.cellValue(ix, iz) === AIR && !(this.riding && this.hubInside[this.index(ix, iz)])) continue;
+                    // The nearest point of the cell to the circle's middle.
+                    const left = ix - this.radius;
+                    const top = iz - this.radius;
+                    const nearX = Math.max(left, Math.min(left + 1, cx));
+                    const nearZ = Math.max(top, Math.min(top + 1, cz));
+                    deepest = Math.max(deepest, radius - Math.hypot(cx - nearX, cz - nearZ));
+                }
+            }
+        }
+        return deepest;
     }
 
     private isWalkable(x: number, z: number): boolean {
-        if (this.fits(x, z, this.bodyRadius)) return true;
-        // Wider than walking (the tractor) and already squeezed where it stands (mounted in a narrow tunnel): the
-        // walking footprint, so it can drive (and dig) its way out instead of being stuck.
-        return this.bodyRadius > BODY_RADIUS && !this.fits(this.bodyAt.x, this.bodyAt.z, this.bodyRadius) && this.fits(x, z, BODY_RADIUS);
+        const depth = this.depthAt(x, z);
+        return depth <= 0 || depth <= this.depthAt(this.bodyAt.x, this.bodyAt.z) + 1e-3;
     }
 
     // ---------------------------------------------------------------- editing
@@ -616,14 +756,16 @@ export class VoxelTerrain {
             const breath = Math.sin(this.glowTime * ORE_GLOW_SPEED) * 0.5 + 0.5;
             for (const glow of this.oreGlow) glow.emissiveIntensity = ORE_GLOW_MIN + (ORE_GLOW_MAX - ORE_GLOW_MIN) * breath;
         }
-        if (!this.loaded || !this.dirty.size) return;
-        let chunks = [...this.dirty];
-        if (chunks.length > REBUILD_BUDGET) {
-            const perSide = Math.ceil(this.size / CHUNK);
-            const [bx, bz] = this.cellOf(this.bodyAt.x, this.bodyAt.z);
-            const away = (chunk: number) => Math.hypot((chunk % perSide + 0.5) * CHUNK - bx, (Math.floor(chunk / perSide) + 0.5) * CHUNK - bz);
-            chunks = chunks.sort((a, b) => away(a) - away(b)).slice(0, REBUILD_BUDGET);
+        this.lavaPools.update(delta);
+        if (!this.loaded) return;
+        this.viewIn -= delta;
+        if (this.viewIn <= 0) {
+            this.viewIn = VIEW_SEC;
+            this.lookAround();
         }
+        if (!this.dirty.size) return;
+        let chunks = [...this.dirty];
+        if (chunks.length > REBUILD_BUDGET) chunks = chunks.sort((a, b) => this.chunkAway(a) - this.chunkAway(b)).slice(0, REBUILD_BUDGET);
         for (const chunk of chunks) {
             this.rebuildChunk(chunk);
             this.dirty.delete(chunk);
@@ -631,6 +773,43 @@ export class VoxelTerrain {
     }
 
     // ---------------------------------------------------------------- drawing
+
+    /** A chunk's middle from the miner. */
+    private chunkAway(chunk: number): number {
+        const perSide = Math.ceil(this.size / CHUNK);
+        const [bx, bz] = this.cellOf(this.bodyAt.x, this.bodyAt.z);
+        return Math.hypot(((chunk % perSide) + 0.5) * CHUNK - bx, (Math.floor(chunk / perSide) + 0.5) * CHUNK - bz);
+    }
+
+    /** The chunks come near are drawn, those left far behind let go. */
+    private lookAround(): void {
+        const range = DIG.terrain.viewRange;
+        for (const chunk of [...this.chunks.keys()]) {
+            if (this.chunkAway(chunk) <= range + VIEW_SPARE) continue;
+            this.dropChunk(chunk);
+        }
+        for (const chunk of [...this.dirty]) if (!this.chunks.has(chunk) && this.chunkAway(chunk) > range) this.dirty.delete(chunk);
+        const perSide = Math.ceil(this.size / CHUNK);
+        const [bx, bz] = this.cellOf(this.bodyAt.x, this.bodyAt.z);
+        const clamp = (v: number) => Math.max(0, Math.min(perSide - 1, Math.floor(v / CHUNK)));
+        for (let cz = clamp(bz - range); cz <= clamp(bz + range); cz++) {
+            for (let cx = clamp(bx - range); cx <= clamp(bx + range); cx++) {
+                const chunk = cx + cz * perSide;
+                if (!this.chunks.has(chunk) && this.chunkAway(chunk) <= range) this.dirty.add(chunk);
+            }
+        }
+    }
+
+    private dropChunk(chunk: number): void {
+        const meshes = this.chunks.get(chunk);
+        for (const mesh of [meshes?.blocks, ...(meshes?.decor ?? [])]) {
+            mesh?.geometry.dispose();
+            mesh?.removeFromParent();
+        }
+        this.lavaPools.drop(chunk);
+        this.chunks.delete(chunk);
+        this.dirty.delete(chunk);
+    }
 
     /** A buried block has rock (or the map edge) on all four sides. */
     private isBuried(ix: number, iz: number): boolean {
@@ -655,10 +834,12 @@ export class VoxelTerrain {
         const tilt = new THREE.Matrix4();
         const grow = new THREE.Matrix4();
         const richOre = DIG.richOre;
+        const pool: [number, number][] = [];
         for (let iz = cz * CHUNK; iz < Math.min(this.size, (cz + 1) * CHUNK); iz++) {
             for (let ix = cx * CHUNK; ix < Math.min(this.size, (cx + 1) * CHUNK); ix++) {
                 const index = this.index(ix, iz);
                 const value = this.cells[index];
+                if (this.lava[index]) pool.push([ix - this.radius, iz - this.radius]);
                 if (value === AIR) continue;
                 const material = materialOf(value);
                 const model = this.models.blocks.get(value === BEDROCK ? DIG.terrain.bedrockBlock : material!.block);
@@ -716,6 +897,7 @@ export class VoxelTerrain {
             this.group.add(mesh);
             return mesh;
         };
+        if (!existing) this.lavaPools.add(chunkIndex, pool);
         for (const mesh of existing?.decor ?? []) {
             swap(mesh, new MeshBuilder(), undefined);
         }
@@ -774,6 +956,8 @@ export class VoxelTerrain {
             meshes.blocks?.geometry.dispose();
             meshes.decor.forEach((mesh) => mesh.geometry.dispose());
         }
+        this.lavaPools.destroy();
+        this.groundTexture?.dispose();
         this.group.removeFromParent();
     }
 }

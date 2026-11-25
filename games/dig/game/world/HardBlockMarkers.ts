@@ -9,6 +9,8 @@ import * as THREE from 'three';
 import { VoxelTerrain, AIR } from './VoxelTerrain';
 import { PowerSurge } from '../mining/PowerSurge';
 import { CanvasArt } from '../ui/CanvasArt';
+import { DIG } from '../data/DigConfig';
+import { BendService } from '../services/BendService';
 
 /** Blocks this far (in cells) around the miner get their lock. */
 const RANGE = 9;
@@ -69,9 +71,11 @@ export class HardBlockMarkers {
         this.time += delta;
         this.bumpAge += delta;
         this.rescan -= delta;
-        if (this.rescan <= 0 || this.power !== PowerSurge.digTool.power) {
+        // (What's a little too hard is chewed through all the same, slowly, by a tractor.)
+        const power = PowerSurge.power + (PowerSurge.digTool.vehicle ? DIG.digging.shortSec.length : 0);
+        if (this.rescan <= 0 || this.power !== power) {
             this.rescan = RESCAN_SEC;
-            this.power = PowerSurge.digTool.power;
+            this.power = power;
             this.scan(player);
         }
         const top = this.terrain.blockHeight + LIFT;
@@ -82,6 +86,7 @@ export class HardBlockMarkers {
             // A gentle bob, out of step from block to block; the bumped one hops and swells.
             let y = top + Math.sin(this.time * 2.4 + cell * 0.7) * 0.06;
             let scale = SIZE;
+            y += BendService.ground(sprite.position.x, sprite.position.z);
             if (cell === this.bumped && this.bumpAge < BUMP_SEC) {
                 const k = Math.sin((this.bumpAge / BUMP_SEC) * Math.PI);
                 y += k * 0.5;

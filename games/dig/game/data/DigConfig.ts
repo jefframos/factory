@@ -29,6 +29,8 @@ export interface MaterialDef {
     decor?: string;
     /** Optional colour multiplied over the decor and the pickup (the amethyst's purple gems on the crystal's model). */
     decorTint?: string;
+    /** Its tint this much brighter (magma rock). */
+    glow?: number;
     /** Size of the decor on the block (1 = normal): the better ores show bigger nuggets and gems. */
     decorScale?: number;
 }
@@ -51,6 +53,10 @@ export interface ZoneDef {
     floor?: string;
     /** Fog colour while the miner is in this zone: the far view fades into it (DigScene.updateFog). */
     fog?: string;
+    /** How high its ground stands (it ramps up over terrain.zoneRamp at its border). */
+    height?: number;
+    /** Pools of lava in it: the share of its ground, and the pools' size (noise frequency). */
+    lava?: { share: number; scale: number };
     patches: ZoneMix[];
     ores: ZoneMix[];
 }
@@ -105,10 +111,17 @@ export interface ToolDef {
     area: number;
     /** Rows dug at once, straight ahead (unset: 2 for a wide tool, else 1). */
     depth?: number;
+    /** World units across a tractor digs (its blades). */
+    width: number;
+    /** The bag it comes with (items; the capacity upgrade and boost add to it). */
+    capacity: number;
+    /** A tractor's size (1 = the base height), and how much faster than the first it chews. */
+    rideScale?: number;
+    rate?: number;
     price: number;
     /** UI atlas icon: ToolIcon_<icon> (a vehicle shows its model instead). */
     icon: string;
-    /** Ridden in the mine (TractorRide, ui/dig.json `tractor`): the Digger and the Tractor, the last two tools. */
+    /** Ridden in the mine (TractorRide, ui/dig.json `tractor`): every tool after the pickaxe. */
     vehicle?: boolean;
     /** A vehicle drawn in grey (the tractor's model and icon desaturated): the Digger, the weaker one. */
     greyscale?: boolean;
@@ -124,14 +137,18 @@ export interface ToolDef {
 export interface TractorDef {
     /** Under public/dig/models/. */
     model: string;
-    /** Tractor height, world units. */
+    /** Tractor height at its base size, world units (everything below is in that frame, x the tool's rideScale). */
     height: number;
-    /** Half-width of its footprint against the rock while riding (walking is 0.32), so the cab doesn't sink into blocks. */
-    bodyRadius: number;
+    /** Its body: half across, behind and ahead of its middle. All of it digs. */
+    body: { side: number; back: number; front: number };
+    /** What the rock stops: a circle round its middle, and one round its nose (that far ahead). Always inside what digs. */
+    collide: { radius: number; nose: number; noseRadius: number };
     /** Turns the model so its front faces +Z (the miner's forward). */
     rotationY: number;
-    /** Where the miner sits. */
-    seat: { x: number; y: number; z: number };
+    /** Where the miner sits: the seat's top, and (unscaled) how far their feet are from it. */
+    seat: { x: number; y: number; z: number; lift: number };
+    /** Its blades: how high, and how far past its front (a share of a blade's radius). */
+    blades: { lift: number; ahead: number };
     /** Walking speed multiplier while riding. */
     speedMultiplier: number;
     /** The puff when the tractor appears / disappears. */
@@ -162,12 +179,13 @@ export interface AchievementDef {
 }
 
 /** What a boost track changes (DigProgress applies it). */
-export type BoostId = 'digSpeed' | 'sellPrice' | 'oreLuck' | 'moveSpeed';
+export type BoostId = 'digSpeed' | 'sellPrice' | 'oreLuck' | 'moveSpeed' | 'bagSize' | 'width';
 
 /**
- * A repeatable upgrade track bought at the ATM (BOOSTS tab), level 0..maxLevel, each level `perLevel` more:
+ * A repeatable upgrade track (the HUD's POWER-UPS), level 0..maxLevel, each level `perLevel` more:
  * digSpeed = hits that much quicker (compounding), sellPrice = +that share of the sell value, oreLuck = that chance
- * more of an extra item from an ore block, moveSpeed = +that share of walking speed. Level n costs
+ * more of an extra item from an ore block, moveSpeed = +that share of walking speed, bagSize = +that share of the bag,
+ * width = +that share of what the tractor digs across. Level n costs
  * basePrice x growth^n.
  */
 export interface BoostDef {
@@ -217,14 +235,44 @@ export interface MineTheme {
     hubWalls?: [string, string];
 }
 
-export interface BackpackLevel {
-    capacity: number;
-    price: number;
+/** A pad's upgrade: the next tractor, sharper blades (digging power) or a bigger bag. */
+export type PadKind = 'tool' | 'blades' | 'capacity';
+
+/** The blades drawn at a Blades level (MowerBlades). */
+export interface BladeLevelDef {
+    count: number;
+    /** Each one's length, as a share of its part of the width. */
+    size: number;
+    layout?: 'grid';
+    rows?: number;
+    cols?: number;
+    color?: string;
+}
+
+/** How many blades a level has. */
+export const bladeCount = (look: BladeLevelDef): number => (look.layout === 'grid' ? Math.max(1, (look.rows ?? 1) * (look.cols ?? 1)) : Math.max(1, look.count));
+
+/** The player's level (shared by every mine). */
+export interface LevelsDef {
+    /** XP from level 1, 2...; past the end the last x growth each. */
+    next: number[];
+    growth: number;
+    xp: { block: number; upgrade: number; zone: number; find: number; build: number; chest: number };
+    /** A level pays base x level ^ power. */
+    cash: { base: number; power: number };
+    /** POWER-UPS comes at this level. */
+    powerUps: number;
+    /** The hub's totem: a piece more every `every` levels, up to `pieces`, each +sell for good. */
+    totem: { every: number; pieces: number; sell: number };
 }
 
 export interface DigDesign {
     terrain: {
         radius: number; blockHeight: number; seed: number; bedrockBlock: string; zoneWobble: number;
+        /** Zones' heights ramp up over this many blocks at their borders. */
+        zoneRamp: number;
+        /** Rock this near the miner is drawn. */
+        viewRange: number;
         /** Colour multiplied over the bedrock block: near black, so the mine's end reads as "no further", not as rock. */
         bedrockTint?: string;
         /**
@@ -241,12 +289,15 @@ export interface DigDesign {
     collectionReward: { money: number; hat: string };
     wardrobe: WardrobeCatalog;
     tools: ToolDef[];
-    backpack: BackpackLevel[];
+    /** The tractor's digging: seconds a block takes at just enough power, x falloff a power over; a power short (locked past the list). */
+    digging: { chewSec: number; falloff: number; shortSec: number[] };
+    upgrades: { blades: { prices: number[] }; capacity: { perLevel: number; maxLevel: number; basePrice: number; growth: number } };
+    bladeLevels: BladeLevelDef[];
+    lava: { slow: number };
+    levels: LevelsDef;
     tractor: TractorDef;
     achievements: AchievementDef[];
     boosts: BoostDef[];
-    /** Boosts unlock with this many tool upgrades (or the first hat, or after the first new mine). */
-    boostsUnlockToolLevel: number;
     prestige: PrestigeDef;
     hubIncome: HubIncomeDef;
     mineThemes: MineTheme[];
@@ -292,6 +343,8 @@ export interface ChestsDef {
         /** Minimum tool power lent; one tier above the owned tool if higher. */
         tool: string;
         seconds: number;
+        /** Digging power it adds. */
+        powerBonus: number;
         /** Hits come this much faster than the tool's own. */
         speedMultiplier: number;
         offer: { zone: string; revealDistance: number; triggerDistance: number };
@@ -313,7 +366,7 @@ export interface RichOreDef {
 
 export type ChestKind = 'power' | 'cash';
 
-export const DIG: DigDesign = data as DigDesign;
+export const DIG: DigDesign = data as unknown as DigDesign;
 
 /** The level of the tool that opens the next mine (DIG.prestige.tool; the last tool if it's missing). */
 const prestigeTool = DIG.tools.findIndex((t) => t.id === DIG.prestige.tool);

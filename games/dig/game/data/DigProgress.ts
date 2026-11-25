@@ -7,7 +7,8 @@
 
 import { Signal } from 'signals';
 import { HUB, hubBonus, type HubStat } from './HubData';
-import { AchievementDef, AchievementStat, BoostDef, BoostId, DIG, PRESTIGE_TOOL_LEVEL, FindDef, MineTheme, ToolDef, WardrobeItem } from './DigConfig';
+import { AchievementDef, AchievementStat, BoostDef, BoostId, DIG, MaterialDef, PadKind, PRESTIGE_TOOL_LEVEL, FindDef, MineTheme, ToolDef, WardrobeItem } from './DigConfig';
+import { TRACTOR_ITEMS, TRACTOR_KINDS, TractorItem, TractorKind, TractorLook } from './TractorSkins';
 
 export type LookKind = 'colors' | 'faces' | 'hats';
 
@@ -35,6 +36,9 @@ export interface MineSnapshot {
     money: number;
     toolLevel: number;
     backpackLevel: number;
+    /** The blades' level, and what's been paid into each pad toward its next upgrade. */
+    bladesLevel?: number;
+    padPaid?: Partial<Record<PadKind, number>>;
     backpack: Record<string, number>;
     boosts: Partial<Record<BoostId, number>>;
     dug: string;
@@ -54,8 +58,11 @@ const SAVE_KEY = 'dig.save';
  * The save format's version: a save written by any other version (or none — every save before versioning) is
  * dropped and the player starts a new game (load()). Bump it when a change can't carry old saves over.
  */
-const SAVE_VERSION = 3;
+const SAVE_VERSION = 4;
 const SAVE_DELAY_MS = 800;
+/** Saved at least this often while things keep changing (a tractor never stops digging). */
+const SAVE_AT_MOST_MS = 5000;
+const NO_TRACTOR_LOOK: TractorLook = { paints: '', parts: '' };
 /** The phone's first sales are free (the first with the hand on it); after these it asks for a rewarded video. */
 const PHONE_FREE_SELLS = 2;
 
@@ -65,6 +72,14 @@ interface SaveData {
     money: number;
     toolLevel: number;
     backpackLevel: number;
+    bladesLevel: number;
+    padPaid: Partial<Record<PadKind, number>>;
+    /** The player's experience (their level follows: levelFor), shared by every mine. */
+    xp: number;
+    /** The tractor's skins: owned (`paints:bee`), worn, and the money when its panel was last opened. */
+    tractorOwned: string[];
+    tractorLook: TractorLook;
+    tractorBudget?: number;
     backpack: Record<string, number>;
     /** Finds collected, by id. */
     found: Record<string, number>;
@@ -88,7 +103,7 @@ interface SaveData {
     built: string[];
     /** Counters the achievements read (finds come from `found`). */
     stats: { blocks: number; ores: number; earned: number; sells: number };
-    /** Total upgrades (tools + backpacks) bought when each hub area appeared — for 'upgradeAfter:<area>' reveals. */
+    /** Total upgrades (tools + backpacks + blades) bought when each hub area appeared — for 'upgradeAfter:<area>' reveals. */
     revealedAt: Record<string, number>;
     /** Achievement tiers claimed, by achievement id. */
     achievements: Record<string, number>;
@@ -124,6 +139,9 @@ function tidyPrice(price: number): number {
 /** The tier (1-based) that unlocks an achievement's hub decoration. */
 const decorTier = (achievement: AchievementDef): number => achievement.decorAt ?? achievement.tiers.length;
 
+export const PAD_KINDS: PadKind[] = ['tool', 'capacity', 'blades'];
+const materials = new Map<string, MaterialDef>(DIG.materials.map((material) => [material.id, material]));
+
 /** A boost's definition (ui/dig.json boosts). */
 const boostDef = (id: BoostId): BoostDef => DIG.boosts.find((b) => b.id === id)!;
 
@@ -132,13 +150,14 @@ const starterLook = (): Look => ({ color: DIG.wardrobe.colors[0].id, face: DIG.w
 
 const fresh = (): SaveData => ({
     version: SAVE_VERSION,
-    money: 0, toolLevel: 0, backpackLevel: 0, backpack: {}, found: {}, seen: [], collectionDone: false, deepestZone: 0,
+    money: 0, toolLevel: 0, backpackLevel: 0, bladesLevel: 0, padPaid: {}, xp: 0, tractorOwned: [], tractorLook: { ...NO_TRACTOR_LOOK },
+    backpack: {}, found: {}, seen: [], collectionDone: false, deepestZone: 0,
     owned: { colors: [], faces: [], hats: [] }, look: starterLook(), wardrobeBudget: 0, wardrobeVisited: false, freeLooksOffered: false, freeSells: 0, dug: '', built: [],
     stats: { blocks: 0, ores: 0, earned: 0, sells: 0 }, achievements: {}, revealedAt: {}, sent: [],
     boosts: {}, prestige: 0, currentMine: 0, mines: [], crownEarned: false, unclaimed: {}, playSeconds: 0, hubCash: 0,
 });
 
-const freshMine = (): MineSnapshot => ({ money: 0, toolLevel: 0, backpackLevel: 0, backpack: {}, boosts: {}, dug: '', found: {}, seen: [], collectionDone: false, unclaimed: {} });
+const freshMine = (): MineSnapshot => ({ money: 0, toolLevel: 0, backpackLevel: 0, bladesLevel: 0, padPaid: {}, backpack: {}, boosts: {}, dug: '', found: {}, seen: [], collectionDone: false, unclaimed: {} });
 
 /**
  * The saved game, or a new one when there's none, it's broken, or it was written by another SAVE_VERSION (the
@@ -164,6 +183,7 @@ function load(): SaveData {
 
 const state = load();
 let saveTimer: number | undefined;
+let lastSave = 0;
 /** Set once the data is wiped: nothing may be saved again before the page reloads. */
 let wiped = false;
 let dugProvider: (() => string) | undefined;
@@ -188,10 +208,31 @@ export const DigProgress = {
         return state.backpackLevel;
     },
     get capacity(): number {
-        return DIG.backpack[Math.min(state.backpackLevel, DIG.backpack.length - 1)].capacity;
+        return this.capacityAt(state.toolLevel, state.backpackLevel);
     },
-    get nextBackpack(): { capacity: number; price: number } | undefined {
-        return DIG.backpack[state.backpackLevel + 1];
+    /** The bag with a tool and a Bigger Bag level (the Bag Size boost counted). */
+    capacityAt(toolLevel: number, bagLevel: number): number {
+        const tool = DIG.tools[Math.min(toolLevel, DIG.tools.length - 1)];
+        return Math.round(tool.capacity * (1 + DIG.upgrades.capacity.perLevel * bagLevel) * (1 + this.boostEffect(boostDef('bagSize'))));
+    },
+    /** What the next Bigger Bag level adds to the bag. */
+    get capacityStep(): number {
+        return this.capacityAt(state.toolLevel, state.backpackLevel + 1) - this.capacity;
+    },
+    /** The blades' level (under the tractor), and the digging power: the tool's own plus the blades'. */
+    get bladesLevel(): number {
+        return state.bladesLevel;
+    },
+    get power(): number {
+        return this.tool.power + (this.tool.vehicle ? state.bladesLevel : 0);
+    },
+    /** World units across the tractor digs (the boost counted). */
+    get width(): number {
+        return this.tool.width * (1 + this.boostEffect(boostDef('width')));
+    },
+    /** What a swing's speed is worth to the tractor's blades: the boost, the new mines and the hub. */
+    get digRate(): number {
+        return (this.tool.rate ?? 1) / (1 - this.boostEffect(boostDef('digSpeed'))) * (1 + DIG.prestige.digBonus * state.prestige) * (1 + this.hubBonus('dig'));
     },
     get backpackCount(): number {
         return Object.values(state.backpack).reduce((sum, count) => sum + count, 0);
@@ -226,9 +267,203 @@ export const DigProgress = {
 
     /** True when the next tool or backpack is affordable (the ATM shows "!"). */
     get canAffordUpgrade(): boolean {
-        const tool = this.nextTool;
-        const bag = this.nextBackpack;
-        return (!!tool && state.money >= this.priceOf(tool)) || (!!bag && state.money >= this.priceOf(bag));
+        return PAD_KINDS.some((kind) => this.padThere(kind) && this.padLeft(kind) <= state.money);
+    },
+
+    // ---------------------------------------------------------------- the pads
+
+    /** A pad is there: the tractors' always, the others from the first tractor on. */
+    padThere(kind: PadKind): boolean {
+        return state.toolLevel >= (HUB.pads.find((pad) => pad.kind === kind)?.afterTool ?? 0);
+    },
+
+    /** What a pad's next upgrade costs (undefined at the top). */
+    padCost(kind: PadKind): number | undefined {
+        if (kind === 'tool') return this.nextTool ? this.priceOf(this.nextTool) : undefined;
+        if (kind === 'blades') {
+            const price = DIG.upgrades.blades.prices[state.bladesLevel];
+            return price === undefined ? undefined : this.priceOf({ price });
+        }
+        const { maxLevel, basePrice, growth } = DIG.upgrades.capacity;
+        if (state.backpackLevel >= maxLevel) return undefined;
+        return tidyPrice(basePrice * Math.pow(growth, state.backpackLevel) * this.priceFactor);
+    },
+
+    /** Money already in a pad toward its next upgrade; what's still needed (Infinity at the top). */
+    padPaid(kind: PadKind): number {
+        return state.padPaid[kind] ?? 0;
+    },
+    padLeft(kind: PadKind): number {
+        const cost = this.padCost(kind);
+        return cost === undefined ? Infinity : cost - this.padPaid(kind);
+    },
+
+    /** The bag's worth as sold now; everything that can be poured into a pad: the bag and the money. */
+    get bagValue(): number {
+        return Math.floor(Object.entries(state.backpack).reduce((sum, [id, count]) => sum + (materials.get(id)?.value ?? 0) * count, 0) * this.sellMultiplier);
+    },
+    get pourable(): number {
+        return this.bagValue + state.money;
+    },
+
+    /**
+     * Pours up to `amount` (money) into a pad: the bag first, item by item at its value (change goes to the money), then the
+     * money. How much went in, and whether that paid the upgrade in full (it's applied then).
+     */
+    deposit(kind: PadKind, amount: number): { used: number; upgraded: boolean } {
+        const cost = this.padCost(kind);
+        if (cost === undefined) return { used: 0, upgraded: false };
+        const wanted = Math.max(0, Math.min(Math.ceil(amount), cost - this.padPaid(kind)));
+        this.cashItems(wanted);
+        const used = Math.min(wanted, Math.floor(state.money));
+        state.money -= used;
+        state.padPaid[kind] = this.padPaid(kind) + used;
+        const upgraded = state.padPaid[kind]! >= cost;
+        if (upgraded) this.applyPad(kind);
+        if (used > 0 || upgraded) this.changed();
+        return { used, upgraded };
+    },
+
+    /** Items out of the bag worth `amount` at least (cheapest first), turned to money. */
+    cashItems(amount: number): void {
+        let worth = 0;
+        const held = Object.keys(state.backpack).filter((id) => state.backpack[id] > 0).sort((a, b) => (materials.get(a)?.value ?? 0) - (materials.get(b)?.value ?? 0));
+        for (const id of held) {
+            if (worth >= amount) break;
+            const each = (materials.get(id)?.value ?? 0) * this.sellMultiplier;
+            const count = Math.min(state.backpack[id], each > 0 ? Math.ceil((amount - worth) / each) : state.backpack[id]);
+            worth += each * count;
+            state.backpack[id] -= count;
+            if (state.backpack[id] <= 0) delete state.backpack[id];
+        }
+        const earned = Math.round(worth);
+        state.money += earned;
+        state.stats.earned += earned;
+    },
+
+    applyPad(kind: PadKind): void {
+        state.padPaid[kind] = 0;
+        if (kind === 'tool') state.toolLevel++;
+        else if (kind === 'blades') state.bladesLevel++;
+        else state.backpackLevel++;
+    },
+
+    /** Debug: a pad's next upgrade for nothing. */
+    grant(kind: PadKind): boolean {
+        if (this.padCost(kind) === undefined) return false;
+        this.applyPad(kind);
+        this.changed();
+        return true;
+    },
+
+    /** A visit to a pad that took something counts as a sale. */
+    countPadVisit(): void {
+        state.stats.sells++;
+        this.changed();
+    },
+
+    // ---------------------------------------------------------------- the player's level
+
+    /** Called with the new level and what it paid. */
+    levelUpListeners: [] as ((level: number, cash: number) => void)[],
+
+    /** The level `xp` reaches (1 from the start), the XP into it and the XP it takes. */
+    levelFor(xp: number): { level: number; into: number; need: number } {
+        const { next, growth } = DIG.levels;
+        let left = xp;
+        for (let level = 1; ; level++) {
+            const need = level <= next.length ? next[level - 1] : Math.round(next[next.length - 1] * Math.pow(growth, level - next.length));
+            if (left < need) return { level, into: left, need };
+            left -= need;
+        }
+    },
+    get levelNow(): { level: number; into: number; need: number } {
+        return this.levelFor(state.xp);
+    },
+    get level(): number {
+        return this.levelNow.level;
+    },
+
+    /** Adds experience; each level reached pays its cash (levels.cash). */
+    addXp(amount: number): void {
+        if (amount <= 0) return;
+        const before = this.level;
+        state.xp += amount;
+        const after = this.level;
+        for (let level = before + 1; level <= after; level++) {
+            const cash = tidyPrice(DIG.levels.cash.base * Math.pow(level, DIG.levels.cash.power));
+            state.money += cash;
+            state.stats.earned += cash;
+            this.levelUpListeners.forEach((listener) => listener(level, cash));
+        }
+        if (after > before) this.changed();
+        else this.scheduleSave();
+    },
+
+    /** The totem's pieces so far, and what they add to everything sold. */
+    get totemPieces(): number {
+        const { every, pieces } = DIG.levels.totem;
+        return Math.min(pieces, Math.floor(this.level / every));
+    },
+
+    // ---------------------------------------------------------------- the tractor's skins
+
+    get tractorLook(): Readonly<TractorLook> {
+        return state.tractorLook;
+    },
+    ownsTractor(kind: TractorKind, item: TractorItem): boolean {
+        return !item.id || state.tractorOwned.includes(`${kind}:${item.id}`);
+    },
+    /** Puts a skin on, bought first if it has to be; false when the money isn't there (or a video's needed). */
+    wearTractor(kind: TractorKind, item: TractorItem): boolean {
+        if (!this.ownsTractor(kind, item)) {
+            if (item.video) return false;
+            if (!item.free) {
+                if (state.money < item.price) return false;
+                state.money -= item.price;
+            }
+            this.ownTractor(kind, item);
+        }
+        state.tractorLook = { ...state.tractorLook, [kind]: item.id };
+        this.changed();
+        return true;
+    },
+    unlockTractor(kind: TractorKind, item: TractorItem): void {
+        this.ownTractor(kind, item);
+        this.wearTractor(kind, item);
+    },
+    ownTractor(kind: TractorKind, item: TractorItem): void {
+        if (!this.ownsTractor(kind, item)) state.tractorOwned.push(`${kind}:${item.id}`);
+    },
+    /** A free skin not claimed yet. */
+    tractorGift(): { kind: TractorKind; item: TractorItem } | undefined {
+        for (const kind of TRACTOR_KINDS) {
+            const item = TRACTOR_ITEMS[kind].find((entry) => entry.free && !this.ownsTractor(kind, entry));
+            if (item) return { kind, item };
+        }
+        return undefined;
+    },
+    /** One of a kind not owned, for an offer. */
+    tractorToOffer(kind: TractorKind): TractorItem | undefined {
+        const locked = TRACTOR_ITEMS[kind].filter((item) => !item.free && !this.ownsTractor(kind, item));
+        return locked[Math.floor(Math.random() * locked.length)];
+    },
+    /** Something for it became affordable since its panel was last opened (or it never was). */
+    get tractorHasNews(): boolean {
+        const budget = state.tractorBudget;
+        if (budget === undefined) return true;
+        return TRACTOR_KINDS.some((kind) => TRACTOR_ITEMS[kind].some((item) => !this.ownsTractor(kind, item)
+            && (item.free || (!item.video && item.price <= state.money && item.price > budget))));
+    },
+    markTractorSeen(): void {
+        state.tractorBudget = state.money;
+        this.scheduleSave();
+    },
+
+    /** Debug: experience enough for the next level. */
+    levelUp(): void {
+        const { into, need } = this.levelNow;
+        this.addXp(need - into);
     },
     /** The current tool is a vehicle (the Digger or the Tractor): ridden outside the hub. */
     get hasTractor(): boolean {
@@ -259,9 +494,7 @@ export const DigProgress = {
      */
     sellAll(multiplier = 1): number {
         let earned = 0;
-        for (const [id, count] of Object.entries(state.backpack)) {
-            earned += (DIG.materials.find((m) => m.id === id)?.value ?? 0) * count;
-        }
+        for (const [id, count] of Object.entries(state.backpack)) earned += (materials.get(id)?.value ?? 0) * count;
         earned = Math.round(earned * multiplier * this.sellMultiplier);
         state.backpack = {};
         state.money += earned;
@@ -280,7 +513,7 @@ export const DigProgress = {
         const raw = rules.rarity[find.rarity] * (1 + rules.perZone * zone);
         let amount = Math.max(rules.roundTo, Math.round(raw / rules.roundTo) * rules.roundTo);
         if (this.collectedCount === 0) {
-            const next = Math.min(this.nextTool ? this.priceOf(this.nextTool) : Infinity, this.nextBackpack ? this.priceOf(this.nextBackpack) : Infinity);
+            const next = Math.min(...PAD_KINDS.map((kind) => this.padCost(kind) ?? Infinity));
             if (Number.isFinite(next)) amount = Math.max(amount, next);
         }
         return amount;
@@ -428,7 +661,7 @@ export const DigProgress = {
         let total = 0;
         for (let i = 0; i <= state.prestige; i++) {
             const mine = this.mine(i);
-            total += mine.toolLevel + mine.backpackLevel;
+            total += mine.toolLevel + mine.backpackLevel + (mine.bladesLevel ?? 0);
         }
         return total;
     },
@@ -440,12 +673,9 @@ export const DigProgress = {
         return state.prestige;
     },
 
-    /**
-     * Boosts are on sale (the boost machine appears in the hub, reveal rule 'boosts'): once the first hat is bought
-     * (right after the wardrobe), with enough tool upgrades, or any new mine opened.
-     */
+    /** POWER-UPS is there (the HUD's button): from a player level on. */
     get boostsUnlocked(): boolean {
-        return this.boughtFirstHat || state.toolLevel >= DIG.boostsUnlockToolLevel || state.prestige > 0;
+        return this.level >= DIG.levels.powerUps;
     },
 
     boostLevel(id: BoostId): number {
@@ -481,7 +711,7 @@ export const DigProgress = {
 
     /** Multiplier on everything sold: the Sell Price boost, every new mine opened and the hub. */
     get sellMultiplier(): number {
-        return (1 + this.boostEffect(boostDef('sellPrice'))) * (1 + DIG.prestige.sellBonus * state.prestige) * (1 + this.hubBonus('sell'));
+        return (1 + this.boostEffect(boostDef('sellPrice'))) * (1 + DIG.prestige.sellBonus * state.prestige) * (1 + this.hubBonus('sell')) * (1 + DIG.levels.totem.sell * this.totemPieces);
     },
 
     /** Seconds between hits with the current tool: the Dig Speed boost, every new mine opened and the hub make it shorter. */
@@ -550,6 +780,7 @@ export const DigProgress = {
     liveRun(dug: string): MineSnapshot {
         return {
             money: state.money, toolLevel: state.toolLevel, backpackLevel: state.backpackLevel,
+            bladesLevel: state.bladesLevel, padPaid: { ...state.padPaid },
             backpack: { ...state.backpack }, boosts: { ...state.boosts }, dug,
             found: { ...state.found }, seen: [...state.seen], collectionDone: state.collectionDone,
             unclaimed: { ...state.unclaimed },
@@ -564,6 +795,8 @@ export const DigProgress = {
         state.money = mine.money;
         state.toolLevel = mine.toolLevel;
         state.backpackLevel = mine.backpackLevel;
+        state.bladesLevel = mine.bladesLevel ?? 0;
+        state.padPaid = { ...mine.padPaid };
         state.backpack = { ...mine.backpack };
         state.boosts = { ...mine.boosts };
         state.dug = mine.dug;
@@ -727,24 +960,6 @@ export const DigProgress = {
         return 1 + DIG.prestige.priceStep * state.currentMine;
     },
 
-    buyTool(): boolean {
-        const next = this.nextTool;
-        if (!next || state.money < this.priceOf(next)) return false;
-        state.money -= this.priceOf(next);
-        state.toolLevel++;
-        this.changed();
-        return true;
-    },
-
-    buyBackpack(): boolean {
-        const next = this.nextBackpack;
-        if (!next || state.money < this.priceOf(next)) return false;
-        state.money -= this.priceOf(next);
-        state.backpackLevel++;
-        this.changed();
-        return true;
-    },
-
     addMoney(amount: number): void {
         state.money += amount;
         this.changed();
@@ -816,11 +1031,16 @@ export const DigProgress = {
 
     scheduleSave(): void {
         window.clearTimeout(saveTimer);
+        if (performance.now() - lastSave > SAVE_AT_MOST_MS) {
+            this.saveNow();
+            return;
+        }
         saveTimer = window.setTimeout(() => this.saveNow(), SAVE_DELAY_MS);
     },
 
     saveNow(): void {
         if (wiped) return;
+        lastSave = performance.now();
         if (dugProvider) {
             state.dug = dugProvider();
         }

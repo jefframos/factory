@@ -6,6 +6,7 @@
 // level editor's 3D Hub tab (`npm run level`).
 
 import data from '../../levels/hub.json';
+import type { PadKind } from './DigConfig';
 
 export interface HubPoint {
     x: number;
@@ -42,10 +43,10 @@ export interface HubProp {
 }
 
 /**
- * atm = sells the backpack and opens the upgrades (GEAR); boost = the boost machine (the ATM recoloured): sells the
- * backpack too and opens the BOOSTS; collection = the artifact totem; wardrobe = looks.
+ * atm = sells the backpack (and pays out the hub's income); collection = the artifact totem; wardrobe = looks. Upgrades are
+ * the pads' (HubPad), boosts the HUD's POWER-UPS.
  */
-export type StationKind = 'atm' | 'boost' | 'collection' | 'wardrobe';
+export type StationKind = 'atm' | 'collection' | 'wardrobe';
 
 export interface HubStation extends HubPoint {
     kind: StationKind;
@@ -61,8 +62,7 @@ export interface HubStation extends HubPoint {
  * upgrades); 'sells:<n>' (sold n times); 'firstFind' (an artifact found); 'firstBuild' (any buildable bought);
  * 'built:<areaId>' / 'half:<areaId>' (all / half of that area's buildables bought); 'upgradeAfter:<areaId>' (an
  * upgrade bought after that area appeared); 'mines:<n>' (n mines opened, the first counting); 'powerChest' (the first
- * power chest dug: the first room of pieces to build); 'boosts' (boosts unlocked: the first hat, see
- * DigProgress.boostsUnlocked). Several joined with '|' = any of them. Things outside every area are always there. The first area containing a point owns it.
+ * power chest dug: the first room of pieces to build); 'level:<n>' (the player's level). Several joined with '|' = any of them. Things outside every area are always there. The first area containing a point owns it.
  *
  * An area's buildables are a set: buying them all adds its `bonus` on top of each piece's own perk.
  */
@@ -116,12 +116,23 @@ export interface HubBuildable extends HubProp {
     income?: number;
 }
 
+/** An upgrade station: a square to stand on (UpgradePads), its stand behind it (-Z when rotationY is 0). */
+export interface HubPad extends HubPoint {
+    kind: PadKind;
+    rotationY?: number;
+    /** It's there from this tool level on. */
+    afterTool?: number;
+}
+
 export interface HubDesign {
     floor: { width: number; depth: number; rects?: { x: number; z: number; width: number; depth: number }[] };
     start: HubPoint;
     walls: HubWall[];
     props: HubProp[];
     stations: HubStation[];
+    pads: HubPad[];
+    /** The level totem: where it stands, and how tall each of its pieces is. */
+    totem?: HubPoint & { height: number };
     buildables?: HubBuildable[];
     trophyTables?: HubTrophyTable[];
     achievementDecor?: HubAchievementDecor[];

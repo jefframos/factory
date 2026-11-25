@@ -1,7 +1,7 @@
 // Guide.ts
 //
 // First-time guidance: works out the next step from the progress alone (nothing extra is saved) — dig the rock,
-// sell at the ATM, buy the first tool, dig up the first find (claimed on its banner), then whatever opens
+// pour it into the first tractor's pad, then the bigger bag's, dig up the first find (claimed on its banner), then whatever opens
 // the next hidden part of the hub (HubRoom.nextUnlock) — and points at it with no text: a trail of small triangles on
 // the floor along the walking route (GuidePath: around walls, stations and rock, through the dug tunnels), flowing
 // towards the target and drawn over the rock so a tunnel wall never hides them, and a
@@ -22,6 +22,7 @@ import { findPath } from './GuidePath';
 import type { RelicHunt } from './RelicHunt';
 import { PowerSurge } from '../mining/PowerSurge';
 import { t, names } from '../i18n/Localization';
+import { UpgradePads } from './UpgradePads';
 
 /** Gold with a dark silhouette, so direction is readable on light and dark surfaces. */
 const COLOR = 0xffd23f;
@@ -81,7 +82,7 @@ export interface GuideStep {
     target?: THREE.Vector3;
     /** false = only the floor arrow (the target has its own tag in the way). */
     marker?: boolean;
-    /** An upgrade is affordable: the HUD's hand points at its buy button in the ATM panel. */
+    /** An upgrade is affordable: its pad is where the arrows lead. */
     buy?: boolean;
     /** Followed out in the rock too (a full backpack, the first upgrade); every other step only leads from the hub. */
     anywhere?: boolean;
@@ -102,7 +103,7 @@ export class Guide {
 
     /** `say` shows (or with null clears) the step's text on the HUD. */
     public constructor(threeScene: THREE.Scene, private readonly hub: HubRoom, private readonly solid: (x: number, z: number) => boolean,
-        private readonly hunt: RelicHunt, private readonly say: (text: string | null, buy: boolean) => void) {
+        private readonly hunt: RelicHunt, private readonly pads: UpgradePads, private readonly say: (text: string | null, buy: boolean) => void) {
         const material = new THREE.MeshStandardMaterial({ color: COLOR, emissive: COLOR, emissiveIntensity: 0.5 });
         BendService.applyBend(material);
         // Marker: a downward cone over the target and a ring on the floor under it.
@@ -156,7 +157,7 @@ export class Guide {
         const step = this.pick(player, inHub, atmAt);
         if (!step || inHub || step.anywhere || !step.target) return step;
         const tutorial = !(HUB.buildables ?? []).some((b) => DigProgress.isBuilt(b.id));
-        if (tutorial && DigProgress.backpackCount >= DigProgress.capacity) return { text: t('guideBackpackFull'), target: atmAt, anywhere: true };
+        if (tutorial && DigProgress.backpackCount >= DigProgress.capacity) return { text: t('guideBackpackFull'), target: this.pads.payable(player) ?? atmAt, anywhere: true };
         return { ...step, target: undefined };
     }
 
@@ -166,7 +167,7 @@ export class Guide {
         // Stuck with a full backpack (even after the tutorial): the arrows lead back to sell it. The power chest is never
         // guided to: it pops up right ahead with its own beam, and pulling players off the tutorial to chase it cost
         // tutorial completion.
-        if (this.returnToSell && DigProgress.backpackCount >= DigProgress.capacity) return { text: t('guideBackpackFull'), target: atmAt, anywhere: true };
+        if (this.returnToSell && DigProgress.backpackCount >= DigProgress.capacity) return { text: t('guideBackpackFull'), target: this.pads.payable(player) ?? atmAt, anywhere: true };
         const door = this.nearestDoor(player);
         // Buying the first cosmetic is where the tutorial ends: from there on the player knows the loop, and the relic
         // hunt gives them something to dig towards.
@@ -179,11 +180,16 @@ export class Guide {
         if (wardrobe && !DigProgress.wardrobeVisited && this.hub.isStationOpen('wardrobe')) {
             return { text: t('guideWardrobe'), target: new THREE.Vector3(wardrobe.x, 0, wardrobe.z) };
         }
-        // Until both first upgrades are bought (the pickaxe, then the bag): dig, sell, buy — full bag -> the ATM.
+        // Until both first upgrades are bought (the small tractor, then the bag): dig, and pour it into their pads.
         if (DigProgress.toolLevel === 0 || DigProgress.backpackLevel === 0) {
             if (DigProgress.achievementStat('blocks') === 0) return { text: t('guideDig'), target: inHub ? door : undefined };
-            if (tool && DigProgress.money >= DigProgress.priceOf(tool)) return { text: t('guideBuyTool', { tool: names.tool(tool) }), target: atmAt, buy: true, anywhere: true };
-            return this.digSellLoop(inHub, door, atmAt);
+            if (DigProgress.toolLevel === 0 && tool && DigProgress.pourable >= DigProgress.padLeft('tool')) {
+                return { text: t('guideBuyTool', { tool: names.tool(tool) }), target: UpgradePads.at('tool'), buy: true, anywhere: true };
+            }
+            if (DigProgress.toolLevel > 0 && DigProgress.pourable >= DigProgress.padLeft('capacity')) {
+                return { text: t('guideBuyUpgrade'), target: UpgradePads.at('capacity'), buy: true, anywhere: DigProgress.backpackCount >= DigProgress.capacity };
+            }
+            return this.digSellLoop(player, inHub, door, atmAt);
         }
         // The first piece of the hub: the nearest one in sight the money covers, else the cheapest (walk into it to buy it).
         // The first artifact turns up soon after the first upgrade (MiningController.forcedFirstFind).
@@ -209,7 +215,7 @@ export class Guide {
             // Building: straight to the next piece. Upgrades / selling (at the ATM): only when there's cash for an
             // upgrade or a full bag to sell — otherwise back out to dig.
             if (unlock.building) return { text: unlock.text, target: unlock.target, marker: false };
-            return this.digSellLoop(inHub, door, atmAt, unlock.text);
+            return this.digSellLoop(player, inHub, door, atmAt, unlock.text);
         }
         return null;
     }
@@ -227,14 +233,11 @@ export class Guide {
     }
 
     /**
-     * The core loop, for whatever needs money or sales: an affordable upgrade -> the ATM (and the hand on its buy
-     * button); a full bag -> the ATM to sell; otherwise -> out through the nearest doorway to dig (no trail once out).
+     * The core loop, for whatever needs money or sales: an affordable upgrade -> its pad; a full bag -> the ATM to sell; otherwise -> out through the nearest doorway to dig (no trail once out).
      */
-    private digSellLoop(inHub: boolean, door: THREE.Vector3 | undefined, atmAt: THREE.Vector3 | undefined, goal?: string): GuideStep {
-        const tool = DigProgress.nextTool;
-        const bag = DigProgress.nextBackpack;
-        const cheapest = Math.min(tool ? DigProgress.priceOf(tool) : Infinity, bag ? DigProgress.priceOf(bag) : Infinity);
-        if (DigProgress.money >= cheapest) return { text: goal ?? t('guideBuyUpgrade'), target: atmAt, buy: true };
+    private digSellLoop(player: THREE.Vector3, inHub: boolean, door: THREE.Vector3 | undefined, atmAt: THREE.Vector3 | undefined, goal?: string): GuideStep {
+        const pad = this.pads.payable(player);
+        if (pad) return { text: goal ?? t('guideBuyUpgrade'), target: pad, buy: true, anywhere: DigProgress.backpackCount >= DigProgress.capacity };
         if (DigProgress.backpackCount >= DigProgress.capacity) return { text: t('guideBackpackFull'), target: atmAt, anywhere: true };
         return { text: goal ?? t('guideKeepDigging'), target: inHub ? door : undefined };
     }

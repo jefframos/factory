@@ -1,8 +1,9 @@
 // MiningController.ts
 //
-// Automatic directional mining (GDD §5): while the miner pushes into a block, they swing their tool at it
-// and every hit takes `power` off the block's durability. The shovel and pickaxe dig the block in front;
-// the drill digs a front 3 wide and 2 deep, so the upgrade visibly changes how fast tunnels open.
+// Automatic mining: on foot, while the miner pushes into a block, they swing the pickaxe at it and every hit takes `power`
+// off the block's durability. On the tractor, everything its body and its blades touch is chewed at once (carve(): TractorRide
+// says where), each block on its own, the faster the sharper the blades are for it (ui/dig.json digging); what's a power too
+// hard is chewed slowly, what's harder than that is locked. Nothing it can dig ever holds it.
 // Blocks too hard for the current tool say so instead of breaking (and the scene points at them: onTooHard);
 // bedrock never breaks. Broken blocks
 // drop resources that fly into the backpack; a block hiding a find pops it out too (it pays cash
@@ -17,6 +18,7 @@ import { DigProgress } from '../data/DigProgress';
 import { VoxelTerrain, BEDROCK, AIR } from '../world/VoxelTerrain';
 import { DigEffects } from '../vfx/DigEffects';
 import type DigPlayer from '../player/DigPlayer';
+import type { TractorRide } from '../player/TractorRide';
 import { t, names } from '../i18n/Localization';
 import { DigAudio, type Cue } from '../audio/DigAudio';
 
@@ -33,8 +35,16 @@ const PUSH_THRESHOLD = 0.3;
 /** How long the tool stays out after the last hit. */
 const TOOL_LINGER_SEC = 0.6;
 const MESSAGE_COOLDOWN_SEC = 2.5;
+/** A block counts as touched when its middle's this near what the tractor digs. */
+const CELL_REACH = 0.36;
+/** A block the tractor breaks throws this many chips; grinding on one sounds this often; chewed blocks remembered. */
+const CARVE_CHIPS = 7;
+const GRIND_SEC = 0.22;
+const CHEWED_MOST = 400;
+/** Rocks (ores) already flying to the miner: more than this and the next ones go straight in. */
+const FLYING = { rock: 16, ore: 40 };
 /** Gem ores: they ring when hit and chime when collected. */
-const GEMS = new Set(['crystal', 'amethyst']);
+const GEMS = new Set(['crystal', 'amethyst', 'ruby', 'diamond']);
 /** Materials that crunch (hitDirt) rather than tick like rock. */
 const SOFT_GROUND = new Set(['dirt', 'gravel']);
 
@@ -44,6 +54,12 @@ export class MiningController {
     /** Pushing into rock with a full backpack this tick (a new push is counted once: onFullPush). */
     private pushingFull = false;
     private readonly damage = new Map<number, number>();
+    /** How far the tractor's through each block it's on (0 to 1). */
+    private readonly chewed = new Map<number, number>();
+    private grindIn = 0;
+    /** XP of blocks dug, not given yet. */
+    private dug = 0;
+    private readonly ahead = new THREE.Vector3();
     private hitTimer = 0;
     private idleTimer = TOOL_LINGER_SEC;
     private swinging = false;
@@ -56,6 +72,7 @@ export class MiningController {
         private readonly terrain: VoxelTerrain,
         private readonly effects: DigEffects,
         private readonly player: DigPlayer,
+        private readonly tractor: TractorRide,
         /** Short player-facing hints ("Backpack full!"). */
         private readonly say: (text: string) => void,
         /** A find reached the miner; `zone` is where it was dug up (its payout grows with depth). */
@@ -78,6 +95,11 @@ export class MiningController {
         this.messageCooldown = Math.max(0, this.messageCooldown - delta);
         const wasPushingFull = this.pushingFull;
         this.pushingFull = false;
+        if (this.tractor.isRiding) {
+            this.effects.setCrack(null, 0);
+            this.carve(delta, wasPushingFull);
+            return;
+        }
         const target = this.findTarget();
         if (!target) {
             this.effects.setCrack(null, 0);
@@ -107,9 +129,7 @@ export class MiningController {
         }
         if (material.minPower > tool.power) {
             this.effects.setCrack(null, 0);
-            const needed = DIG.tools.find((t) => t.power >= material.minPower);
-            const toolName = needed ? names.tool(needed) : t('strongerTool');
-            if (this.hint(t('needsTool', { material: names.material(material), tool: toolName }))) this.onTooHard(ix, iz, toolName);
+            this.tooHard(ix, iz, material);
             this.idle(delta);
             return;
         }
@@ -128,6 +148,89 @@ export class MiningController {
             }
             if (broke > 0) this.onBroke(broke, this.center);
         }
+    }
+
+    /** A block too hard for what's digging: said, and its lock jumps. */
+    private tooHard(ix: number, iz: number, material: MaterialDef): void {
+        const needs = DigProgress.hasTractor ? t('needsBlades', { level: material.minPower - DigProgress.tool.power }) : names.tool(DIG.tools[1]);
+        if (this.hint(t('needsTool', { material: names.material(material), tool: needs }))) this.onTooHard(ix, iz, needs);
+    }
+
+    /** Seconds the tractor takes on a block (Infinity: it can't). */
+    private chewSeconds(material: MaterialDef): number {
+        const { chewSec, falloff, shortSec } = DIG.digging;
+        const over = PowerSurge.power - material.minPower;
+        const seconds = over >= 0 ? chewSec * Math.pow(falloff, over) : shortSec[-over - 1] ?? Infinity;
+        return seconds / PowerSurge.digRate;
+    }
+
+    /** Everything under the tractor and its blades, a little further each step, while it's being driven. */
+    private carve(delta: number, wasFull: boolean): void {
+        const controller = this.player.movementController;
+        if (!controller?.enabled || controller.input.length() < PUSH_THRESHOLD) return;
+        const { side, back, front } = this.tractor.digs;
+        const ahead = this.tractor.forward(this.ahead);
+        const at = this.player.transform.position;
+        const reach = Math.hypot(side, Math.max(back, front)) + 1;
+        const [fromX, fromZ] = this.terrain.cellOf(at.x - reach, at.z - reach);
+        const [toX, toZ] = this.terrain.cellOf(at.x + reach, at.z + reach);
+        const full = !PowerSurge.active && DigProgress.backpackCount >= DigProgress.capacity;
+        let broke = 0;
+        let hard: [number, number, MaterialDef] | undefined;
+        for (let iz = fromZ; iz <= toZ; iz++) {
+            for (let ix = fromX; ix <= toX; ix++) {
+                const value = this.terrain.cellValue(ix, iz);
+                if (value === AIR) continue;
+                const cell = this.terrain.cellCenter(ix, iz, this.center);
+                const dx = cell.x - at.x;
+                const dz = cell.z - at.z;
+                // The cell's middle in the tractor's frame: in what it digs if its nearest part is.
+                const along = dx * ahead.x + dz * ahead.z;
+                const across = Math.abs(dx * ahead.z - dz * ahead.x);
+                if (across > side + CELL_REACH || along > front + CELL_REACH || along < -back - CELL_REACH) continue;
+                const material = this.terrain.material(ix, iz);
+                if (value === BEDROCK || !material) {
+                    if (along > 0 && across < side) this.hint(t('bedrock'));
+                    continue;
+                }
+                if (full) {
+                    this.pushingFull = true;
+                    continue;
+                }
+                const seconds = this.chewSeconds(material);
+                if (!Number.isFinite(seconds)) {
+                    if (along > 0 && across < side && !hard) hard = [ix, iz, material];
+                    continue;
+                }
+                const index = this.terrain.index(ix, iz);
+                const done = (this.chewed.get(index) ?? 0) + delta / seconds;
+                if (done < 1) {
+                    this.chewed.set(index, done);
+                    continue;
+                }
+                this.chewed.delete(index);
+                this.breakCell(ix, iz, material, CARVE_CHIPS);
+                broke++;
+            }
+        }
+        if (broke > 0) {
+            this.onBroke(broke, at.clone().addScaledVector(ahead, front * 0.8));
+        } else {
+            this.grindIn -= delta;
+        }
+        if (full && this.pushingFull) {
+            if (!wasFull) this.onFullPush();
+            if (this.hint(t('backpackFull'))) this.onBagFull();
+            return;
+        }
+        if (hard) this.tooHard(...hard);
+        // Grinding on something that doesn't give way yet.
+        if (this.chewed.size > 0 && broke === 0 && this.grindIn <= 0) {
+            this.grindIn = GRIND_SEC;
+            this.effects.hit(at.clone().addScaledVector(ahead, front * 0.8), this.color.set('#b9ada0'));
+            DigAudio.play('hitStone');
+        }
+        if (this.chewed.size > CHEWED_MOST) this.chewed.clear();
     }
 
     /**
@@ -193,13 +296,26 @@ export class MiningController {
             return false;
         }
         this.damage.delete(index);
+        this.breakCell(ix, iz, material);
+        return true;
+    }
+
+    /** A block breaks: what was in it comes out. */
+    private breakCell(ix: number, iz: number, material: MaterialDef, chips?: number): void {
+        this.terrain.cellCenter(ix, iz, this.center);
+        this.color.set(material.color);
         const find = this.terrain.findAt(ix, iz) ?? this.forcedFirstFind();
         const chest = this.terrain.chestAt(ix, iz);
         const rich = this.terrain.isRich(ix, iz);
         this.terrain.remove(ix, iz);
         DigProgress.recordBlock(material.ore);
+        this.dug += material.minPower * DIG.levels.xp.block;
+        if (this.dug >= 1) {
+            DigProgress.addXp(Math.floor(this.dug));
+            this.dug -= Math.floor(this.dug);
+        }
         DigProgress.terrainChanged();
-        this.effects.shatter(this.center, this.color);
+        this.effects.shatter(this.center, this.color, chips);
         DigAudio.play(MiningController.hitCue(material));
         DigAudio.play(material.id === 'obsidian' ? 'breakObsidian' : 'break');
         this.drop(material, this.center, rich);
@@ -211,7 +327,6 @@ export class MiningController {
             const zone = this.terrain.zoneIndexAt(this.center.x, this.center.z);
             this.effects.reveal(this.center.clone().setY(1), () => this.onChest(chest, zone), this.terrain.chestModel(chest));
         }
-        return true;
     }
 
     /**
@@ -236,7 +351,7 @@ export class MiningController {
         if (material.id === 'obsidian') return 'hitObsidian';
         if (material.ore) return 'hitMetal';
         if (SOFT_GROUND.has(material.id)) return 'hitDirt';
-        return PowerSurge.digTool.model === 'shovel' ? 'hitStone' : 'hitPick';
+        return 'hitPick';
     }
 
     /** What a block drops flies to the miner: into the backpack, or (a power surge) straight to cash. */
@@ -245,7 +360,7 @@ export class MiningController {
         const drops = (material.drops + (material.ore && Math.random() < DigProgress.oreLuck ? 1 : 0)) * (rich ? DIG.richOre.dropMultiplier : 1);
         for (let i = 0; i < drops; i++) {
             const from = at.clone().setY(0.8);
-            this.effects.pickup(from, this.color.clone(), () => {
+            const arrive = () => {
                 if (PowerSurge.active) {
                     const amount = Math.max(1, Math.round(material.value * DigProgress.sellMultiplier));
                     DigProgress.addEarned(amount);
@@ -257,7 +372,10 @@ export class MiningController {
                 } else {
                     DigAudio.play(GEMS.has(material.id) ? 'collectGem' : material.ore ? 'collectMetal' : 'collectStone');
                 }
-            }, this.terrain.pickupModel(material));
+            };
+            // (Plenty in the air already: straight in. The good ones are always seen.)
+            if (this.effects.flying >= (material.ore ? FLYING.ore : FLYING.rock)) arrive();
+            else this.effects.pickup(from, this.color.clone(), arrive, this.terrain.pickupModel(material));
         }
     }
 

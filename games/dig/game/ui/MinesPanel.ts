@@ -73,7 +73,7 @@ export class MinesPanel extends PIXI.Container {
         const mine = DigProgress.mine(index);
         const here = index === DigProgress.currentMine;
         const tool = DIG.tools[Math.min(mine.toolLevel, DIG.tools.length - 1)];
-        const capacity = DIG.backpack[Math.min(mine.backpackLevel, DIG.backpack.length - 1)].capacity;
+        const capacity = DigProgress.capacityAt(mine.toolLevel, mine.backpackLevel);
         const row = this.rowBase(y, `#${index + 1}`);
         this.texts(row, t('mineName', { mine: index + 1 }) + (mine.toolLevel >= PRESTIGE_TOOL_LEVEL ? `  ${t('mineMaxed')}` : ''),
             t('mineInfo', { tool: names.tool(tool), capacity, money: mine.money.toLocaleString('en-US') }));

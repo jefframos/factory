@@ -192,7 +192,9 @@ export class DigEffects {
      * A puff of smoke: `count` soft billows of `size` drifting up and out from `at`, growing and fading
      * (the tractor appearing/vanishing; one small puff = exhaust). `spread` scales how far they scatter.
      */
-    public smoke(at: THREE.Vector3, count: number, size: number, color: THREE.Color, spread = 1): void {
+    public smoke(point: THREE.Vector3, count: number, size: number, color: THREE.Color, spread = 1): void {
+        // (Sprites aren't bent: lifted to the ground here.)
+        const at = point.clone().setY(point.y + BendService.ground(point.x, point.z));
         for (let n = 0; n < count; n++) {
             const material = new THREE.SpriteMaterial({ map: this.puffTexture, color, transparent: true, depthWrite: false, opacity: 0 });
             const sprite = new THREE.Sprite(material);
@@ -210,7 +212,8 @@ export class DigEffects {
     }
 
     /** One twinkling star drifting up from `at` (spread a little), glowing in `color`, then fading. */
-    public sparkle(at: THREE.Vector3, color: THREE.Color, size = 0.35): void {
+    public sparkle(point: THREE.Vector3, color: THREE.Color, size = 0.35): void {
+        const at = point.clone().setY(point.y + BendService.ground(point.x, point.z));
         const material = new THREE.SpriteMaterial({ map: this.starTexture, color, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 });
         const sprite = new THREE.Sprite(material);
         sprite.position.copy(at);
@@ -230,8 +233,8 @@ export class DigEffects {
     }
 
     /** A block broke: a big burst of chips. */
-    public shatter(center: THREE.Vector3, color: THREE.Color): void {
-        this.burst(center, color, 22, 5.5);
+    public shatter(center: THREE.Vector3, color: THREE.Color, chips = 22): void {
+        this.burst(center, color, chips, 5.5);
     }
 
     /** One shared pulse per wide swing, not one effect per block. */
@@ -271,6 +274,11 @@ export class DigEffects {
         this.fly(from, this.pickupTarget, color, onArrive, model, { delay: Math.random() * 0.12, flight: PICKUP_FLIGHT_SEC, hop: 1.2, shrink: 0.5 });
     }
 
+    /** Things flying to the miner (or a pad) now. */
+    public get flying(): number {
+        return this.pickups.length;
+    }
+
     /**
      * Tosses an item (sold from the backpack) from `from` in a high arc onto `to` after `delay`;
      * `onArrive` when it lands.
@@ -300,6 +308,7 @@ export class DigEffects {
         const sprite = new THREE.Sprite(material.clone());
         sprite.scale.set(2.4, 0.9, 1);
         sprite.position.copy(at);
+        sprite.position.y += BendService.ground(at.x, at.z);
         sprite.renderOrder = 10;
         this.threeScene.add(sprite);
         this.floating.push({ sprite, age: 0 });

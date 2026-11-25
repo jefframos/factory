@@ -1736,6 +1736,25 @@ const HubKenneyHolidayKitBench = {
 }
 } as const;
 
+const HubLawnTractor = {
+  id: 'lawn-tractor',
+  path: 'hub/lawn-tractor/lawn-tractor',
+  fullPath: 'dig/models/hub/lawn-tractor/lawn-tractor.glb',
+  format: 'glb',
+  nodes: {
+  "SketchfabModel": "Sketchfab_model",
+  "Root": "root",
+  "GLTFSceneRootNode": "GLTF_SceneRootNode",
+  "Truck0020": "Truck.002_0",
+  "Object4": "Object_4",
+  "Object5": "Object_5",
+  "Truck0061": "Truck.006_1",
+  "Object7": "Object_7",
+  "Object8": "Object_8",
+  "Object9": "Object_9"
+}
+} as const;
+
 const HubResourceGemsPileLarge = {
   id: 'resource-gems-pile-large',
   path: 'hub/resource-gems-pile-large/resource-gems-pile-large',
@@ -2749,6 +2768,7 @@ export const MODELS = {
     HolidayCarpetRoundLarge: HubHolidayCarpetRoundLarge,
     KenneyCarKitTractorShovel: HubKenneyCarKitTractorShovel,
     KenneyHolidayKitBench: HubKenneyHolidayKitBench,
+    LawnTractor: HubLawnTractor,
     ResourceGemsPileLarge: HubResourceGemsPileLarge,
     RestaurantWallDecorated: HubRestaurantWallDecorated,
     RpgToolsTorch: HubRpgToolsTorch,

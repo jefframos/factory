@@ -1820,6 +1820,46 @@
         "h": 180
       }
     },
+    "CardFrame03_n_InnerBg": {
+      "frame": {
+        "x": 614,
+        "y": 676,
+        "w": 40,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 40,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 40,
+        "h": 40
+      }
+    },
+    "CardFrame03_n_Bg": {
+      "frame": {
+        "x": 651,
+        "y": 1060,
+        "w": 64,
+        "h": 67
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 67
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 67
+      }
+    },
     "CardFrame01_Bg_n": {
       "frame": {
         "x": 237,
@@ -2120,10 +2160,30 @@
         "h": 46
       }
     },
+    "BorderFrame_Circle60": {
+      "frame": {
+        "x": 1223,
+        "y": 895,
+        "w": 58,
+        "h": 60
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 58,
+        "h": 60
+      },
+      "sourceSize": {
+        "w": 58,
+        "h": 60
+      }
+    },
     "arrow-right": {
       "frame": {
         "x": 614,
-        "y": 676,
+        "y": 718,
         "w": 40,
         "h": 74
       },
