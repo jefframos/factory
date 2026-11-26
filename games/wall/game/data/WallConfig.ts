@@ -97,9 +97,13 @@ export const WEAK = data.weak;
 export const MEDAL = data.medal;
 export const SHOWS = data.shows;
 
-export type PowerId = 'hands' | 'auto';
+export type PowerId = 'hands' | 'auto' | 'crew';
 export interface PowerDef {
     id: PowerId;
+    /** Its card's picture (Wall_power_<id> if none). */
+    icon?: string;
+    /** crew: how many times as fast the crew hits while it's on. */
+    speed?: number;
     name: string;
     /** On its card. */
     short: string;
@@ -110,6 +114,8 @@ export interface PowerDef {
     perSecond?: number;
 }
 export const POWERS = data.powers as PowerDef[];
+/** Hold to punch: from a wall on, a finger held down punches on its own (slower than AUTO, than tapping). */
+export const HOLD = data.hold;
 
 /** Wall `n`'s room: its colour, and its lights'. */
 export function roomAt(n: number): { room: string; accent: string } {
@@ -291,14 +297,15 @@ export const BOOSTS: BoostDef[] = [
 
 /** How many-eth tool it is at a PUNCH HARDER level (from 0; -1: the fists): the first ones are kept for some levels, then one a level. */
 function toolPlace(level: number): number {
-    const { from, levels } = data.tools;
+    const { from, levels, levelsAfter } = data.tools;
     let left = level - from;
     if (left < 0) return -1;
     for (let i = 0; i < levels.length; i++) {
         if (left < levels[i]) return i;
         left -= levels[i];
     }
-    return levels.length + left;
+    // (Past the list, each kept `levelsAfter` levels: up the grades, green to gold, before the next comes.)
+    return levels.length + Math.floor(left / Math.max(1, levelsAfter));
 }
 
 /** The `n`th tool (from 0): the types in turn, in the next colour every so often. */
@@ -323,6 +330,81 @@ function toolNumber(n: number): ToolDef {
 
 /** The tool at a PUNCH HARDER level. */
 export const toolAt = (level: number): ToolDef => toolNumber(toolPlace(level));
+
+/** How many times the tool at a level has been made better since it came (0: as it came; levels that kept the same tool). */
+export function toolGrade(level: number): number {
+    const place = toolPlace(level);
+    let grade = 0;
+    while (place >= 0 && level - grade - 1 >= data.tools.from && toolPlace(level - grade - 1) === place) grade++;
+    return grade;
+}
+
+/** The colour of a tool's grade (none as it came, then each step up the list, the last for all after). */
+export const gradeColor = (grade: number): string | undefined => (grade <= 0 ? undefined : data.tools.grades[Math.min(grade, data.tools.grades.length) - 1]);
+
+// ---------------------------------------------------------------- rarity
+
+export interface RarityDef {
+    id: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic' | 'prismatic';
+    name: string;
+    color: string;
+    /** Its card frame: ItemFrame02_Single_<frame>. */
+    frame: 'Gray' | 'Green' | 'Blue' | 'Purple' | 'Yellow' | 'Red' | 'Hologram1';
+    /** Its stars (1 to 7), rainbow ones if `premium`. */
+    stars: number;
+    premium?: boolean;
+}
+
+/** Common to prismatic: the looks' rarities, and the tools' grades (as it came, then each grade up, to mythic). */
+export const RARITY = data.rarity as RarityDef[];
+
+/** A rarity by its id (common if there's none or it's unknown). */
+export const rarityOf = (id?: string): RarityDef => RARITY.find((r) => r.id === id) ?? RARITY[0];
+
+/** The tool at a level's rarity: its grade (as it came: common), up to legendary. */
+export const toolRarity = (level: number): RarityDef => RARITY[Math.min(level > 0 ? toolGrade(level) : 0, RARITY.length - 1)];
+
+// ---------------------------------------------------------------- relics
+
+export type RelicId = 'power' | 'herd' | 'stampede' | 'grip' | 'gold' | 'charge' | 'start';
+
+export interface RelicDef {
+    id: RelicId;
+    name: string;
+    what: string;
+    icon: string;
+    /** times: x`each` a level; plus: +`each`; less: x`each` (shorter); start: a rewind starts `each` walls further a level. */
+    kind: 'times' | 'plus' | 'less' | 'start';
+    each: number;
+    unit?: string;
+    cost: number;
+    growth: number;
+    max?: number;
+}
+
+/** Bought with medals, for good (WallProgress.buyRelic). */
+export const RELICS = data.relics.list as RelicDef[];
+
+/** The medals the next level costs. */
+export const relicCost = (def: RelicDef, level: number): number => Math.ceil(def.cost * def.growth ** level);
+
+/** What it does at a level: a multiplier (times, less), or what it adds (plus, start). */
+export function relicValue(def: RelicDef, level: number): number {
+    if (def.kind === 'times' || def.kind === 'less') return def.each ** level;
+    return def.each * level;
+}
+
+/** What it does at a level, as the shop says it. */
+export function relicText(def: RelicDef, level: number): string {
+    const value = relicValue(def, level);
+    if (def.kind === 'times') return `x${short(value)}`;
+    if (def.kind === 'less') return `-${Math.round((1 - value) * 100)}%`;
+    if (def.kind === 'start') return `WALL ${1 + value}`;
+    return `+${short(value)}${def.unit ?? ''}`;
+}
+
+/** Its name with its grade: Hammer, Hammer +, Hammer ++. */
+export const gradedName = (level: number): string => `${toolAt(level).name}${toolGrade(level) ? ` ${'+'.repeat(toolGrade(level))}` : ''}`;
 
 /** The tools to come after a level's, the soonest first. */
 export const toolsAfter = (level: number, count: number): ToolDef[] => Array.from({ length: count }, (_, i) => toolNumber(toolPlace(level) + 1 + i));

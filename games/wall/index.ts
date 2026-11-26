@@ -2,7 +2,7 @@
 
 import { Game } from 'core/Game';
 import HtmlLoader from 'core/loader/HtmlLoader';
-import PlatformHandler from 'core/platforms/PlatformHandler';
+import PlatformHandler, { type AdMobConfig } from 'core/platforms/PlatformHandler';
 import { SaveStorage } from 'core/platforms/SaveStorage';
 import { getPlatformInstance } from 'core/platforms/PlatformFactory';
 import { SceneManager } from 'core/scene/SceneManager';
@@ -19,7 +19,7 @@ import { WallAudio } from './game/audio/WallAudio';
 import { WallProgress } from './game/data/WallProgress';
 import WallScene from './game/scenes/WallScene';
 
-type PlatformConfigEntry = { gameId?: string; enableAds?: boolean; folderPath?: string };
+type PlatformConfigEntry = { gameId?: string; enableAds?: boolean; folderPath?: string; admob?: AdMobConfig };
 
 const FONTS = ['Baloo2-ExtraBold'];
 /** The longest the loading screen waits for the hands (the wall's there without them). */
@@ -46,6 +46,7 @@ export default class WallGame extends Game {
             this.setCanvasZIndex(8);
             PlatformHandler.GAME_ID = config?.gameId || '';
             PlatformHandler.ENABLE_VIDEO_ADS = config?.enableAds ?? true;
+            PlatformHandler.ADMOB = config?.admob;
             await PlatformHandler.instance.initialize(await getPlatformInstance(platformName));
             await SaveStorage.load([...WallProgress.saveKeys, ...WallAudio.saveKeys]);
             WallProgress.begin();

@@ -1,0 +1,11 @@
+{
+    "appId": "com.hyperchip.wallbreak",
+    "appName": "WALLBREAK",
+    "webDir": "../../dist/_builds_wall/android",
+    "plugins": {
+        "SystemBars": {
+            "hidden": true,
+            "initialViewportFitValueHint": "cover"
+        }
+    }
+}

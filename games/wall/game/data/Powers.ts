@@ -36,7 +36,7 @@ export const Powers = {
     /** How much of its time's left (on), or how charged it is. */
     share({ def, phase, left }: Power): number {
         if (phase === 'ready') return 1;
-        return phase === 'active' ? left / def.seconds : 1 - left / def.charge;
+        return phase === 'active' ? left / def.seconds : 1 - left / (def.charge * WallProgress.chargeMult);
     },
 
     /** Only while there's something to hit. */
@@ -46,7 +46,8 @@ export const Powers = {
             power.left -= delta;
             if (power.left > 0) continue;
             power.phase = power.phase === 'active' ? 'charging' : 'ready';
-            power.left = power.phase === 'charging' ? power.def.charge : 0;
+            // (QUICK CHARGE: shorter.)
+            power.left = power.phase === 'charging' ? power.def.charge * WallProgress.chargeMult : 0;
         }
     },
 };

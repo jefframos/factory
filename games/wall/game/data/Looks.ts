@@ -31,6 +31,8 @@ export interface LookItem {
     boxing?: string;
     band?: string;
     kind?: string;
+    /** common, uncommon, rare, epic, legendary (WallConfig.RARITY): its card's frame. */
+    rarity?: string;
 }
 
 export interface LookTab {

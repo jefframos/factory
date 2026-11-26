@@ -1,0 +1,15 @@
+{
+    "name": "wallbreak-android",
+    "private": true,
+    "description": "WALLBREAK's phone app (Capacitor). The packages are installed at the repo root; this list only tells Capacitor which plugins the app has. Do not npm install here. See ../README.md.",
+    "dependencies": {
+        "@capacitor/android": "8.6.3",
+        "@capacitor/app": "8.1.2",
+        "@capacitor/core": "8.6.3",
+        "@capacitor/preferences": "8.0.1",
+        "@capacitor-community/admob": "8.4.2"
+    },
+    "devDependencies": {
+        "@capacitor/cli": "8.6.3"
+    }
+}

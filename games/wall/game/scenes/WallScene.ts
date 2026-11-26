@@ -15,22 +15,23 @@ import gsap from 'gsap';
 import { Game } from 'core/Game';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import { createGLTFLoader } from 'core/three/GLTFLoaders';
-import PlatformHandler from 'core/platforms/PlatformHandler';
 import SetupThree from 'core/scene/SetupThree';
 import { ThreeScene } from 'core/scene/ThreeScene';
 import { DebugOverlay } from 'core/debug/DebugOverlay';
+import PlatformHandler from 'core/platforms/PlatformHandler';
 import { WallAudio } from '../audio/WallAudio';
 import { Gameplay } from '../ads/Gameplay';
 import { WallAnalytics } from '../analytics/WallAnalytics';
 import { buildEffectsPanel, fx } from '../config/Effects';
 import { Crew } from '../crew/Crew';
-import { AUTO, BoostDef, CAMERA, CASH, FLOATING, CREW, CREW_ROWS, CrewDef, TOOL_TYPES, POWERS, WALL, WEAK, ENEMIES, bossAt, bossKind, bossNumber, bossWall, enemiesOn, enemyModels, fightAt, fightModels, hitNumber, isBossWall, short, switchEnemies, toolAt, toolsAfter, toolsUpTo, medalsOf, punchMult, REWIND, roomAt, wallAt } from '../data/WallConfig';
+import { AUTO, HOLD, BoostDef, CAMERA, CASH, FLOATING, CREW, CREW_ROWS, CrewDef, TOOL_TYPES, POWERS, WALL, WEAK, ENEMIES, bossAt, bossKind, bossNumber, bossWall, enemiesOn, enemyModels, fightAt, fightModels, hitNumber, isBossWall, short, switchEnemies, toolAt, toolGrade, gradeColor, gradedName, toolsAfter, toolsUpTo, medalsOf, punchMult, REWIND, roomAt, wallAt } from '../data/WallConfig';
 import { wornLook } from '../data/Looks';
 import { ModelQueue, ModelWant } from '../data/ModelQueue';
 import { WallProgress } from '../data/WallProgress';
 import { Hands, ToolLook } from '../player/Hands';
 import { TRAY_TOP } from '../ui/Tray';
 import { Powers } from '../data/Powers';
+import { flashRim, setRim, updateRim } from '../player/Rim';
 import { TapMarks } from '../enemies/TapMarks';
 import { FloaterKind } from '../ui/Floater';
 import { BAR_FOOT, WallHud } from '../ui/WallHud';
@@ -84,6 +85,12 @@ const MARK = { front: 0.16, least: 0.45, plain: 0xffffff, big: 0xffe14a, weak: 0
 /** What flies off an enemy. */
 const ENEMY_DUST = new THREE.Color(0xe8dcc0);
 const MAX_FRAME_SEC = 0.1;
+/** The first walls: the circle to tap comes up after this long with no tap. */
+const REMIND = { walls: 4, after: 3.5 };
+/** The light round the weapon's edges (player/Rim): at its first grade, and its third and on. */
+const RIM = { least: 0.7, most: 1 };
+/** What a stronger hit (and not another tool) shows. */
+const POWER_ICON = 'ItemIcon_Damage';
 /** The frame rate's taken between these seconds of play. */
 const FPS = { from: 10, to: 40 };
 /** With two hands: the second's hit comes this long after the first's, this far to its own side (on the screen). */
@@ -130,6 +137,15 @@ export default class WallScene extends ThreeScene {
     });
     private readonly marks = new TapMarks();
     private flauntFor = 0;
+    /** The weak spot's being pointed at. */
+    private teaching = false;
+    /** The finger held down (hold to punch): which, where (-1..1), how long, the next punch in. */
+    private held: { id: number; x: number; y: number; for: number; next: number } | null = null;
+    /** The hold button's next punch in (seconds). */
+    private holdButtonIn = 0;
+    /** Seconds since the last tap (the first walls), and whether the circle's up for it. */
+    private idleFor = 0;
+    private reminding = false;
     private flauntOwn = false;
     /** The boxing gloves they have on now (the tool's id). */
     private boxedAs = '';
@@ -201,6 +217,11 @@ export default class WallScene extends ThreeScene {
         this.game.uiLayer.addChild(this.tapZone);
         this.tapZone.eventMode = 'static';
         this.tapZone.on('pointerdown', this.onTap, this);
+        // (Hold to punch: where the finger goes while it's down, and when it's up.)
+        this.tapZone.on('globalpointermove', this.onHoldMove, this);
+        window.addEventListener('pointerup', this.onRelease, true);
+        window.addEventListener('pointercancel', this.onRelease, true);
+        window.addEventListener('blur', this.onRelease);
         this.hud = new WallHud({
             punch: () => this.punchHarder(),
             hire: (def) => this.hire(def),
@@ -224,6 +245,14 @@ export default class WallScene extends ThreeScene {
         this.wearLook();
         this.applyTool(true);
         window.addEventListener('keydown', this.onKey);
+        // (The phone's back button: what's open over the wall closes; nothing is, and the app goes to the background.)
+        PlatformHandler.backButton = () => {
+            if (this.hud.relicPanel.isOpen) this.hud.relicPanel.setOpen(false);
+            else if (this.hud.rewindPopup.isOpen) this.hud.rewindPopup.setOpen(false);
+            else if (this.hud.wardrobe.isOpen) this.hud.wardrobe.setOpen(false);
+            else return false;
+            return true;
+        };
         window.addEventListener('pointerdown', this.onFirst, true);
         window.addEventListener('keydown', this.onFirst, true);
         // (Not while one's falling and the next coming up: that one's whole.)
@@ -328,13 +357,13 @@ export default class WallScene extends ThreeScene {
         this.fight.start(number, WallProgress.farming);
         this.frameFight();
         if (!WallProgress.farming) WallAnalytics.fight(kind, number, 'start');
-        if (kind === 'minions') this.hud.announce('ENEMIES!', 'PUNCH THEM', 0.8);
+        if (kind === 'minions') this.hud.announce('ENEMIES!', '', 0.8);
         this.showFight();
     }
 
     private bossComes(name: string): void {
         WallAudio.play('boom', 1, 0.8);
-        this.hud.announce(`${name}!`, `BEAT IT IN ${ENEMIES.boss.seconds} SECONDS`, 1.5);
+        this.hud.announce(`${name}!`, '', 1.3);
     }
 
     /** Its time's up: it's gone, its minions come till it's called back. */
@@ -343,9 +372,9 @@ export default class WallScene extends ThreeScene {
         this.weak.reset();
         this.puffs(0xd8b0ff, 6);
         WallAudio.play('error');
-        this.hud.announce('IT GOT AWAY!', 'GET STRONGER AND TRY AGAIN', 1.6);
+        this.hud.announce('IT GOT AWAY!', '', 1.3);
         // (And that's one way to.)
-        this.offerRewind(LOST_SEEN_SEC);
+        this.offerRewind(LOST_SEEN_SEC, true);
     }
 
     private retryBoss(): void {
@@ -380,6 +409,8 @@ export default class WallScene extends ThreeScene {
             WallAudio.play('collapse');
             WallAudio.play('win');
             gsap.delayedCall(0.35, () => WallAudio.play('applause'));
+            // (The platform's told it's a moment of joy: CrazyGames may celebrate it. Only for bosses, so it stays rare.)
+            void PlatformHandler.instance.platform?.happyTime?.();
             this.shake = 0.8;
             this.vibrate(60);
         } else {
@@ -509,15 +540,21 @@ export default class WallScene extends ThreeScene {
         const number = WallProgress.wall;
         const gate = isBossWall(number);
         if (gate) gsap.delayedCall(wait, () => {
-            if (!this.destroyed_ && this.phase === 'playing' && WallProgress.wall === number) this.hud.announce('BOSS GATE!', `${bossKind(number, WallProgress.rewinds).name} IS BEHIND IT`, 1.3);
+            if (!this.destroyed_ && this.phase === 'playing' && WallProgress.wall === number) this.hud.announce('BOSS GATE!', '', 1.3);
         });
         // (At a boss's gate, once that's been said.)
         this.offerRewind(wait + (gate ? GATE_SEEN_SEC : 0));
+        // (Hold to punch, the first time: once what's given has been seen.)
+        if (WallProgress.best >= HOLD.wall) gsap.delayedCall(wait + 0.5, () => !this.destroyed_ && this.teachHold());
     }
 
-    /** Rewinding, the first time ever it's there to do: what it is, in a while. (From then on it's the player's to choose.) */
-    private offerRewind(wait: number): void {
-        if (!WallProgress.canRewind || WallProgress.wall < REWIND.popup || WallProgress.rewinds > 0 || !WallProgress.markStep('rewind-offer-0')) return;
+    /**
+     * Rewinding, the first time ever it's there to do: what it is, in a while. (From then on it's the player's to choose.) From
+     * wall REWIND.popup, the one after the first boss, so it never comes with the boss's gate in sight; or sooner, `lost`, when
+     * that boss gets away.
+     */
+    private offerRewind(wait: number, lost = false): void {
+        if (!WallProgress.canRewind || (!lost && WallProgress.wall < REWIND.popup) || WallProgress.rewinds > 0 || !WallProgress.markStep('rewind-offer-0')) return;
         gsap.delayedCall(wait, () => {
             if (!this.destroyed_ && WallProgress.canRewind && !this.hud.busy) this.hud.rewindPopup.setOpen(true);
         });
@@ -526,7 +563,69 @@ export default class WallScene extends ThreeScene {
     // ---------------------------------------------------------------- hitting
 
     private onTap(event: PIXI.FederatedPointerEvent): void {
-        this.punchAt((event.global.x / window.innerWidth) * 2 - 1, 1 - (event.global.y / window.innerHeight) * 2);
+        const x = (event.global.x / window.innerWidth) * 2 - 1;
+        const y = 1 - (event.global.y / window.innerHeight) * 2;
+        this.punchAt(x, y);
+        // (The first finger down may be held: it punches on its own after a moment.)
+        if (this.held === null) {
+            this.held = { id: event.pointerId, x, y, for: 0, next: 0 };
+        }
+    }
+
+    /** The held finger, moved: it punches where it is now. */
+    private onHoldMove(event: PIXI.FederatedPointerEvent): void {
+        if (this.held?.id !== event.pointerId) return;
+        this.held.x = (event.global.x / window.innerWidth) * 2 - 1;
+        this.held.y = 1 - (event.global.y / window.innerHeight) * 2;
+    }
+
+    private readonly onRelease = (event?: Event): void => {
+        if (!this.held) return;
+        if (event instanceof PointerEvent && event.pointerId !== this.held.id) return;
+        this.held = null;
+    };
+
+    /**
+     * Hold to punch (from wall HOLD.wall): a finger kept down punches where it is, HOLD.perSecond, after HOLD.after seconds
+     * (slower than AUTO and than tapping: for resting, not for winning). With two hands on, each one's two.
+     */
+    private updateHold(delta: number): void {
+        if (!HOLD.on || WallProgress.best < HOLD.wall) return;
+        if ((this.phase !== 'playing' && this.phase !== 'fighting') || this.hud.busy) return;
+        const rate = WallProgress.holdRate;
+        // The button, low on the right: where AUTO would hit.
+        if (this.hud.holdButton.pressed) {
+            this.holdButtonIn -= delta;
+            if (this.holdButtonIn > 0) return;
+            this.holdButtonIn = 1 / rate;
+            const at = this.autoTarget(new THREE.Vector3());
+            if (!at) return;
+            WallAnalytics.step('first-hold');
+            this.threeCamera.updateMatrixWorld();
+            at.project(this.threeCamera);
+            this.started = true;
+            this.punchAt(at.x, at.y, true);
+            this.idleFor = 0;
+            return;
+        }
+        this.holdButtonIn = 0;
+        // A finger kept down on the wall: where it is.
+        const held = this.held;
+        if (!held) return;
+        held.for += delta;
+        if (held.for < HOLD.after) return;
+        held.next -= delta;
+        if (held.next > 0) return;
+        held.next = 1 / rate;
+        WallAnalytics.step('first-hold');
+        this.punchAt(held.x, held.y);
+    }
+
+    /** Hold to punch, the first time it's there: said once. */
+    private teachHold(): void {
+        if (!HOLD.on || WallProgress.best < HOLD.wall || !WallProgress.markStep('hold-shown')) return;
+        this.hud.announce('HOLD TO PUNCH!', '', 1.4);
+        this.hud.holdButton.bump();
     }
 
     private readonly onKey = (event: KeyboardEvent): void => {
@@ -563,6 +662,7 @@ export default class WallScene extends ThreeScene {
             this.started = true;
             this.hud.setTapHint(false);
         }
+        if (!auto) this.idleFor = 0;
         WallAnalytics.step('first-hit');
         WallAudio.play('swing');
         // On the weak spot, or within the wall.
@@ -588,6 +688,8 @@ export default class WallScene extends ThreeScene {
     private updatePowers(delta: number): void {
         const on = (this.phase === 'playing' || this.phase === 'fighting') && !this.hud.busy;
         this.hands.setTwo(Powers.active('hands'));
+        // (CREW RUSH: the crew faster while it's on.)
+        WallProgress.setCrewRush(Powers.active('crew') ? (POWERS.find(({ id }) => id === 'crew')?.speed ?? 2) : 1);
         if (on && this.started) Powers.update(delta);
         const due = this.seconds.filter((hit) => (hit.inSec -= delta) <= 0);
         this.seconds = on ? this.seconds.filter((hit) => hit.inSec > 0) : [];
@@ -786,7 +888,7 @@ export default class WallScene extends ThreeScene {
         const amount = this.floaterCash(kind);
         WallProgress.addCash(amount);
         this.hud.gotCash(amount, at);
-        if (kind !== 'cash') this.hud.announce(`+$${short(amount)}!`, kind === 'double' ? 'DOUBLED' : 'JACKPOT', 1);
+        if (kind !== 'cash') this.hud.announce(`+$${short(amount)}!`, '', 1);
     }
 
     /** Back: what the crew earned is theirs already; the same again floats by, for a video. */
@@ -810,7 +912,7 @@ export default class WallScene extends ThreeScene {
             WallAnalytics.tool(WallProgress.punchLevel, tool.id);
             this.applyTool(quietly);
             if (quietly) return true;
-            this.hud.showGift(`Wall_${tool.base}`, `${tool.name.toUpperCase()}!`, 'HITS TWICE AS HARD', () => this.hud.tray.punchAt, tool.tint);
+            this.hud.showGift(`Wall_${tool.base}`, `${tool.name.toUpperCase()}!`, '', () => this.hud.tray.punchAt, tool.tint);
             this.flaunt();
             return true;
         }
@@ -824,8 +926,10 @@ export default class WallScene extends ThreeScene {
             const another = tool.id !== had.id;
             if (another) WallAnalytics.tool(level, tool.id);
             this.applyTool(quietly);
+            if (!another && !quietly) flashRim();
             const words = another ? `${tool.name.toUpperCase()}!` : `x${punchMult(level - 1)} DAMAGE!`;
-            if (!quietly) this.hud.showGift(`Wall_${tool.base}`, words, another ? 'A GIFT: HITS HARDER' : 'A GIFT', () => this.hud.tray.punchAt, tool.tint);
+            // (Only stronger: the power's own mark, not a tool's, which may not be the one held.)
+            if (!quietly) this.hud.showGift(another ? `Wall_${tool.base}` : POWER_ICON, words, '', () => this.hud.tray.punchAt, another ? tool.tint : undefined);
         }
         if (!quietly) this.autoBuy();
         const boost = quietly ? undefined : WallProgress.autoBoost();
@@ -834,7 +938,7 @@ export default class WallScene extends ThreeScene {
         if (helper) {
             WallAnalytics.hire(helper.id, 1, true);
             this.crew.refresh(quietly);
-            if (!quietly && !tooled) this.hud.showGift(`Wall_${helper.id}`, `A ${helper.name.toUpperCase()}!`, 'IT HITS ON ITS OWN', () => this.hud.tray.crewAt(CREW.indexOf(helper)));
+            if (!quietly && !tooled) this.hud.showGift(`Wall_${helper.id}`, `A ${helper.name.toUpperCase()}!`, '', () => this.hud.tray.crewAt(CREW.indexOf(helper)));
         }
         return tooled || !!helper;
     }
@@ -850,7 +954,7 @@ export default class WallScene extends ThreeScene {
             if (tool.id !== before.id) {
                 WallAnalytics.tool(WallProgress.punchLevel, tool.id);
                 this.applyTool(false);
-            }
+            } else this.showGrade(false);
         }
         if (!hired.length) return;
         hired.forEach((def) => WallAnalytics.hire(def.id, WallProgress.owned(def.id), true));
@@ -868,10 +972,16 @@ export default class WallScene extends ThreeScene {
         WallAnalytics.punch(WallProgress.punchLevel);
         WallAudio.play('claim');
         const tool = toolAt(WallProgress.punchLevel);
-        if (tool.id === before.id) return true;
+        if (tool.id === before.id) {
+            // The same one made better: its glow goes up a grade, with a flash, and it's named so.
+            this.showGrade(true);
+            this.hud.announce(`${gradedName(WallProgress.punchLevel).toUpperCase()}!`, '', 0.8);
+            this.flaunt();
+            return true;
+        }
         WallAnalytics.tool(WallProgress.punchLevel, tool.id);
         WallAudio.play('tool');
-        this.hud.announce(`${tool.name.toUpperCase()}!`, 'NEW TOOL', 0.9);
+        this.hud.announce(`${tool.name.toUpperCase()}!`, '', 0.9);
         this.applyTool(false);
         return true;
     }
@@ -887,7 +997,7 @@ export default class WallScene extends ThreeScene {
         WallAudio.play('claim', 0.8, 1.1);
         this.crew.refresh();
         this.crew.cheer(def.id);
-        if (owned === 1) this.hud.announce(`${def.name.toUpperCase()}!`, 'IT HITS ON ITS OWN', 1);
+        if (owned === 1) this.hud.announce(`${def.name.toUpperCase()}!`, '', 1);
         return true;
     }
 
@@ -940,8 +1050,18 @@ export default class WallScene extends ThreeScene {
         this.showWall();
     }
 
+    /** The tool's edges lit in its grade's colour: none as it came, green, blue, purple as it's made better (`flash`: it just was). */
+    private showGrade(flash: boolean): void {
+        const { base, id } = WallProgress.tool;
+        const grade = id === toolAt(WallProgress.punchLevel).id ? toolGrade(WallProgress.punchLevel) : 0;
+        const color = gradeColor(grade);
+        setRim(base === 'fists' || !color ? 0 : RIM.least + (RIM.most - RIM.least) * Math.min(1, (grade - 1) / 2), color ?? '#ffffff');
+        if (flash && color) flashRim();
+    }
+
     private applyTool(atOnce: boolean): void {
         const { id, base, tint = '#ffffff', glow = 0, hold, swing } = WallProgress.tool;
+        this.showGrade(false);
         this.hands.setTool(hold && swing ? { id, base, tint, glow, hold, swing } satisfies ToolLook : undefined, atOnce);
     }
 
@@ -1046,8 +1166,10 @@ export default class WallScene extends ThreeScene {
     private frameWall(aspect: number): { tall: number; floorAt: number } {
         if (aspect >= CAMERA.wide.aspect) return CAMERA.wide;
         const height = Game.overlayScreenData?.height ?? Game.DESIGN_HEIGHT;
-        const floorAt = (TRAY_TOP + CAMERA.clear + CAMERA.feet) / height;
-        const room = 1 - floorAt - (BAR_FOOT + CAMERA.clear) / height;
+        // (The cards and the bar sit inside the phone's safe area: its insets push them in.)
+        const { top, bottom } = Game.safeInsets;
+        const floorAt = (TRAY_TOP + bottom + CAMERA.clear + CAMERA.feet) / height;
+        const room = 1 - floorAt - (BAR_FOOT + top + CAMERA.clear) / height;
         return { tall: Math.min(CAMERA.tall, room), floorAt };
     }
 
@@ -1055,7 +1177,7 @@ export default class WallScene extends ThreeScene {
     private handsFloor(): number | undefined {
         if (this.threeCamera.aspect >= CAMERA.wide.aspect) return undefined;
         const height = Game.overlayScreenData?.height ?? Game.DESIGN_HEIGHT;
-        const floor = Math.max(HANDS_LOWEST, (this.hud.tray.topNow + CAMERA.clear) / height);
+        const floor = Math.max(HANDS_LOWEST, (this.hud.tray.topNow + Game.safeInsets.bottom + CAMERA.clear) / height);
         // (Out of the way of what's on the floor.)
         return this.phase === 'fighting' ? Math.max(HANDS_LOWEST, floor - HANDS_FIGHT) : floor;
     }
@@ -1108,6 +1230,7 @@ export default class WallScene extends ThreeScene {
         this.time += step;
         // (Those landing this frame, in order; a landing can bring the wall down.)
         this.updatePowers(step);
+        this.updateHold(step);
         const landing = this.landings.filter((entry) => (entry.inSec -= step) <= 0);
         this.landings = this.landings.filter((entry) => entry.inSec > 0);
         landing.forEach((entry) => this.land(entry));
@@ -1117,6 +1240,7 @@ export default class WallScene extends ThreeScene {
             void this.models.check();
         }
         this.hands.setFloor(this.handsFloor());
+        updateRim(this.time);
         this.hands.update(delta);
         this.debris.update(step);
         this.mark.update(delta);
@@ -1141,6 +1265,8 @@ export default class WallScene extends ThreeScene {
         const fighting = this.phase === 'fighting' && this.fight.bossThere;
         const weakOn = (this.phase === 'playing' || fighting) && WallProgress.best >= WEAK.wall;
         this.weak.setOpen(fighting);
+        this.teachWeakSpot();
+        this.remindToTap(delta);
         this.weak.update(delta, weakOn, () => fighting ? this.fight.weakAt(new THREE.Vector3()) : this.wall.spotNear((Math.random() - 0.5) * WALL_WIDTH * 0.7, WALL_HEIGHT * (0.25 + Math.random() * 0.6), 3, new THREE.Vector3()));
         this.showCombo();
         if (Gameplay.active) WallAnalytics.played(delta);
@@ -1226,6 +1352,40 @@ export default class WallScene extends ThreeScene {
     private placeTapHint(): void {
         const at = this.toHud(0, 0.22);
         if (WallProgress.wall === 1 && !this.started && this.wall.share >= 1) this.hud.setTapHint(true, at.x, at.y);
+    }
+
+    /**
+     * The first time through walls 1 to 4: if nothing's been tapped for a few seconds, the circle that says TAP comes up on the
+     * wall, till the next tap.
+     */
+    private remindToTap(delta: number): void {
+        const first = WallProgress.rewinds === 0 && WallProgress.wall <= REMIND.walls && WallProgress.wall === WallProgress.best;
+        const waiting = first && this.started && this.phase === 'playing' && !this.hud.busy && !this.teaching;
+        this.idleFor = waiting ? this.idleFor + delta : 0;
+        const on = waiting && this.idleFor > REMIND.after;
+        if (on === this.reminding) return;
+        this.reminding = on;
+        if (!on) {
+            this.hud.setTapHint(false);
+            return;
+        }
+        const spot = this.toHud(0, 0.22);
+        this.hud.setTapHint(true, spot.x, spot.y);
+    }
+
+    /** The weak spot, until it's first been hit: the ring that says TAP on it. */
+    private teachWeakSpot(): void {
+        if (WallProgress.wall === 1 && !this.started) return;
+        const on = !WallProgress.stepDone('weak-spot') && this.weak.visible && this.phase === 'playing' && !this.hud.busy;
+        if (!on) {
+            if (this.teaching) this.hud.setTapHint(false);
+            this.teaching = false;
+            return;
+        }
+        this.teaching = true;
+        const at = this.weak.position.clone().project(this.threeCamera);
+        const spot = this.toHud(at.x, at.y);
+        this.hud.setTapHint(true, spot.x, spot.y);
     }
 
     public resize(): void {
@@ -1379,6 +1539,10 @@ export default class WallScene extends ThreeScene {
         WallProgress.saveNow();
         WallProgress.setWallState(undefined);
         window.removeEventListener('keydown', this.onKey);
+        window.removeEventListener('pointerup', this.onRelease, true);
+        window.removeEventListener('pointercancel', this.onRelease, true);
+        window.removeEventListener('blur', this.onRelease);
+        PlatformHandler.backButton = null;
         this.stopFirst();
         this.tapZone.destroy();
         this.hud.destroy();

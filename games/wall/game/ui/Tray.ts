@@ -11,14 +11,14 @@
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { Game } from 'core/Game';
-import { BoostDef, CREW, CrewDef, NUDGE, SHOWS, punchCost, punchMult, short, toolAt } from '../data/WallConfig';
+import { BoostDef, CREW, CrewDef, NUDGE, SHOWS, punchCost, punchMult, short, toolAt, toolRarity } from '../data/WallConfig';
 import { WallAnalytics } from '../analytics/WallAnalytics';
 import { WallProgress } from '../data/WallProgress';
 import { HIT_PILL } from './HitPill';
-import { flag, frame, sprite, text, write } from './parts';
+import { flag, frame, plainText, sprite, text, write } from './parts';
 
 /** (As many as fit, and the next one peeking in.) */
-const CARD = { size: 124, height: 164, gap: 11, side: 14, margin: 32, icon: 80 };
+const CARD = { size: 134, height: 164, gap: 11, side: 14, margin: 32, icon: 80 };
 const BADGE = { width: 222, height: 104, gap: 11, shown: 3, upright: 2, icon: 62 };
 /** What a hit does (HitPill): this far over PUNCH HARDER's card. */
 const HIT_GAP = 26;
@@ -47,7 +47,7 @@ const HOLD = { after: 0.35, every: 0.11 };
 const DRAG = 14;
 /** The mark on what can be bought: its size, how far in from its card's corner, how high it hops. */
 const ALERT = { size: 30, in: 14, down: 12, hop: 6 };
-type Frame = 'Blue' | 'Green' | 'Purple' | 'Yellow' | 'Navy' | 'Gray';
+type Frame = 'Blue' | 'Green' | 'Purple' | 'Yellow' | 'Navy' | 'Gray' | 'Red' | 'Hologram1';
 
 export interface TrayActions {
     punch(): boolean;
@@ -73,7 +73,7 @@ interface Look {
     share: number;
     /** A flag on its top edge. */
     tail?: string;
-    /** An exclamation mark on its corner. */
+    /** An exclamation mark on its corner: it can be bought. */
     alert?: boolean;
 }
 
@@ -105,7 +105,7 @@ class Card extends PIXI.Container {
     private readonly metal = new PIXI.Sprite();
     private readonly corner = frame('BasicFrame_Round12', [12, 12, 12, 12], 56, 32, 0.8);
     private readonly count = text('', 23, 0xffffff);
-    private readonly effect = text('', 25, 0xffec82, 0x100e18, 6);
+    private readonly effect = plainText('', 19, 0xffec82);
     private readonly strip = frame('BasicFrame_Round12', [12, 12, 12, 12], STRIP.width, STRIP.height);
     private readonly fill = frame('BasicFrame_Round12', [12, 12, 12, 12], STRIP.width, STRIP.height);
     private readonly price = text('', 29, 0xffffff, 0x100e18, 7);
@@ -155,7 +155,7 @@ class Card extends PIXI.Container {
         }
         this.corner.visible = this.count.visible = !!look.count;
         write(this.count, look.count, 48);
-        write(this.effect, look.effect, CARD.size - 20);
+        write(this.effect, look.effect, CARD.size - 16);
         // (Full, it's the button.)
         this.fill.visible = look.share > 0.01;
         this.fill.width = Math.max(26, STRIP.width * look.share);
@@ -574,7 +574,8 @@ export class Tray extends PIXI.Container {
             const can = WallProgress.canPunchHarder;
             const newTool = next.id !== tool.id;
             this.punch.set({
-                frame: can ? (newTool ? 'Purple' : 'Green') : 'Blue',
+                // (The frame: the rarity of what's in hand, as far as it's been made better; buying shows on the focus line.)
+                frame: toolRarity(level).frame,
                 icon: `Wall_${newTool ? next.base : tool.base}`,
                 tint: newTool ? next.tint : tool.tint,
                 count: level > 0 ? `LV${level}` : '',
@@ -583,6 +584,7 @@ export class Tray extends PIXI.Container {
                 can,
                 share: gift ? 1 : WallProgress.cash / punchCost(level),
                 tail: gift ? 'FREE!' : newTool ? 'NEW!' : 'PUNCH',
+                alert: can,
             });
         }
         this.refreshCrew();
@@ -642,7 +644,7 @@ export class Tray extends PIXI.Container {
         CREW.forEach((def, i) => {
             const card = this.crew[i];
             const open = WallProgress.best >= def.wall;
-            // (The one to come: NextHelper.)
+            // (Only those there: none teased before their wall.)
             card.visible = open;
             if (!open) return;
             const owned = WallProgress.owned(def.id);
@@ -652,7 +654,8 @@ export class Tray extends PIXI.Container {
                 frame: can ? 'Green' : 'Blue',
                 icon: `Wall_${def.id}`,
                 count: owned ? `LV${owned}` : '',
-                effect: `+${short(WallProgress.dpsEach(def))}/s`,
+                // (What they all do now, and what one more adds.)
+                effect: owned ? `${short(WallProgress.dpsEach(def) * owned)}/s (+${short(WallProgress.dpsEach(def))})` : `+${short(WallProgress.dpsEach(def))}/s`,
                 price: `$${short(cost)}`,
                 can,
                 share: WallProgress.cash / cost,
@@ -718,9 +721,9 @@ export class Tray extends PIXI.Container {
         this.thumb.x = (BAR.height - BAR.thumb) / 2 + (inside - size) * (this.scroll / this.scrollMax);
     }
 
-    /** Upright: the cards in the middle if they all fit; if not, from the left side off the screen's right one. */
+    /** Upright: from the left side (the weapon always there), off the screen's right one if they don't all fit. */
     private placeRow(): void {
-        const screen = Game.overlayScreenData;
+        const screen = Game.safeScreenData ?? Game.overlayScreenData;
         if (this.wide || !screen) return;
         const { topLeft, width, height, center } = screen;
         const bottom = topLeft.y + height - CARD.margin;
@@ -729,9 +732,8 @@ export class Tray extends PIXI.Container {
         const cards = this.order.length * step - CARD.gap;
         const room = width - CARD.side * 2;
         const fits = own + cards <= room;
-        // (From the left once there are boosts: they're beside what a hit does, over the cards.)
-        const boosts = WallProgress.best >= SHOWS.boosts;
-        const start = fits && !boosts ? center.x - (own + cards) / 2 : topLeft.x + CARD.side;
+        // (Always from the left: the weapon's card never moves as the others come.)
+        const start = topLeft.x + CARD.side;
         this.punchBox.position.set(start + (CARD.size * PUNCH.scale) / 2, bottom + PUNCH.down - (CARD.height * PUNCH.scale) / 2);
         this.left = start + own;
         this.listWidth = (fits ? own + cards : room) - own;
@@ -787,7 +789,7 @@ export class Tray extends PIXI.Container {
     }
 
     public reposition(): void {
-        const screen = Game.overlayScreenData;
+        const screen = Game.safeScreenData ?? Game.overlayScreenData;
         if (!screen) return;
         const { topLeft, width, height, center } = screen;
         const right = topLeft.x + width;

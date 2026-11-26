@@ -41,7 +41,7 @@
 //   playtime   min-<nn>                 reached            minutes of play this session (only while gameplay's on)
 //   combo      <nn>                     reached            a longer one than any this session (3 and up)
 //   load       <under-3|3-5|5-8|8-15|over-15>-<touch|desktop>   reached   how long to the first screen (seconds)
-//   fps        <under-30|30-45|45-55|55-plus>-<touch|desktop>   complete  the frame rate between 10 and 40 s of play
+//   fps        <under30|30to45|45to55|55plus>-<touch|desktop>   complete  the frame rate between 10 and 40 s of play
 //   fps-min    <nn>-<speed>-<touch|desktop>   reached      with each playtime mark: how fast that device draws
 //   resolution <percent>-<touch|desktop>     complete      the 3D's, if it was lowered (with fps)
 //
@@ -60,7 +60,7 @@ const STEPS = [
     'wall-08', 'wall-10', 'wall-12', 'rewind',
 ] as const;
 /** Added since: numbered on from those, started as they're done (they've no place in the order). */
-const EXTRA = ['bought-punch', 'bought-helper', 'first-power', 'first-fight', 'first-boss'] as const;
+const EXTRA = ['bought-punch', 'bought-helper', 'first-power', 'first-fight', 'first-boss', 'first-hold'] as const;
 export type Step = (typeof STEPS)[number] | (typeof EXTRA)[number];
 
 /** How a look was got, or what was done with it. */
@@ -211,6 +211,11 @@ export const WallAnalytics = {
         if (once(`crew-${id}-${count}`)) send('crew', `${place}-${id}-${two(count)}`, given ? 'gift' : 'bought');
     },
 
+    /** A relic's level bought with medals. */
+    relic(id: string, level: number): void {
+        send('relic', id, `level-${level}`);
+    },
+
     boost(id: string): void {
         this.step('first-boost');
         send('boost', id, 'bought');
@@ -253,7 +258,7 @@ export const WallAnalytics = {
 
     /** How it runs (once a session), and the 3D's resolution if it was lowered. */
     performance(fps: number, resolution: number): void {
-        deviceSpeed = `${fps < 30 ? 'under-30' : fps < 45 ? '30-45' : fps < 55 ? '45-55' : '55-plus'}-${touch()}`;
+        deviceSpeed = `${fps < 30 ? 'under30' : fps < 45 ? '30to45' : fps < 55 ? '45to55' : '55plus'}-${touch()}`;
         send('fps', deviceSpeed, 'complete');
         if (resolution < 1) send('resolution', `${Math.round(resolution * 100)}-${touch()}`, 'complete');
     },
@@ -263,11 +268,11 @@ export const WallAnalytics = {
     },
 
     /** A button's there. */
-    buttonShown(what: 'wardrobe' | 'rewind'): void {
+    buttonShown(what: 'wardrobe' | 'rewind' | 'relics' | 'hold'): void {
         shownOnce('button', what);
     },
 
-    buttonTapped(what: 'wardrobe' | 'rewind'): void {
+    buttonTapped(what: 'wardrobe' | 'rewind' | 'relics'): void {
         sendOnce('button', what, 'interact');
     },
 

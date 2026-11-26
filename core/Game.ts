@@ -66,6 +66,24 @@ export class Game {
         bottomRight: PIXI.Point
     };
 
+    /**
+     * overlayScreenData without what the phone covers: rounded corners, the camera's cutout, the gesture bar (the CSS
+     * safe-area insets; Capacitor's --safe-area-inset-* in the Android app). Put what's pinned to an edge (bars, buttons,
+     * cards) in this; what covers the screen (dims, flashes) stays on overlayScreenData. The same as it on a desktop.
+     * `?safe=top,right,bottom,left` (CSS px) fakes insets, to try a layout in a desktop browser.
+     */
+    static safeScreenData: {
+        width: number,
+        height: number,
+        center: PIXI.Point,
+        topLeft: PIXI.Point,
+        topRight: PIXI.Point,
+        bottomLeft: PIXI.Point,
+        bottomRight: PIXI.Point
+    };
+    /** The insets themselves, in overlay units. */
+    static safeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
+
     static deltaTime: number;
     /** Game seconds since start — the sum of every frame's scaled delta, so it follows timeScale and stops while it's 0 (paused). */
     static elapsedSec = 0;
@@ -119,6 +137,7 @@ export class Game {
         this.view.style.left = '0';
 
         document.body.appendChild(this.app.view as HTMLCanvasElement);
+        Game.noLongPress();
 
         this.stageContainer = new PIXI.Container();
         this.overlayContainer = new PIXI.Container();
@@ -156,6 +175,11 @@ export class Game {
         window.addEventListener('resize', this.onResize.bind(this));
         window.addEventListener('orientationchange', () => this.handleResizeDebounced());
         this.onResize();
+        // (The insets can come late, without a resize: Capacitor sets its CSS variables once the page is up.)
+        window.setInterval(() => {
+            const now = Game.readInsets();
+            if (Object.keys(now).some((side) => now[side as keyof typeof now] !== Game.lastInsets[side as keyof typeof now])) window.dispatchEvent(new Event('resize'));
+        }, 1000);
 
         // Skipped when the active platform opts out (e.g. YouTube Playables,
         // which requires pause/resume to come exclusively from
@@ -192,6 +216,53 @@ export class Game {
             this.app.ticker.stop();
         }
     }
+    /**
+     * A finger held down is a game's hold, never the browser's long press: on phones that selects the page's text (Chrome
+     * then offers Touch to Search over it) or opens a menu, and the hold's lost. So nothing on the page can be selected or
+     * pressed for a menu, but what can be typed in (an input, a text area).
+     */
+    private static insetProbe: HTMLDivElement | null = null;
+    private static lastInsets = { top: 0, right: 0, bottom: 0, left: 0 };
+
+    /** The safe-area insets in CSS px: env() (iOS, Android with viewport-fit=cover) or Capacitor's CSS variables, the larger; or ?safe= */
+    private static readInsets(): { top: number; right: number; bottom: number; left: number } {
+        const fake = new URLSearchParams(window.location.search).get('safe');
+        if (fake) {
+            const [top = 0, right = 0, bottom = 0, left = 0] = fake.split(',').map((v) => Math.max(0, Number(v) || 0));
+            return { top, right, bottom, left };
+        }
+        if (!Game.insetProbe) {
+            const probe = document.createElement('div');
+            // (--safe-area-min: a floor the platform may set, e.g. for a phone's rounded corners, which no inset reports.)
+            const side = (name: string) => `max(env(safe-area-inset-${name}, 0px), var(--safe-area-inset-${name}, 0px), var(--safe-area-min, 0px))`;
+            probe.style.cssText = `position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;pointer-events:none;padding:${side('top')} ${side('right')} ${side('bottom')} ${side('left')}`;
+            document.body.appendChild(probe);
+            Game.insetProbe = probe;
+        }
+        const style = getComputedStyle(Game.insetProbe);
+        const px = (value: string) => Math.max(0, parseFloat(value) || 0);
+        return { top: px(style.paddingTop), right: px(style.paddingRight), bottom: px(style.paddingBottom), left: px(style.paddingLeft) };
+    }
+
+    private static noLongPress(): void {
+        if (document.getElementById('game-no-long-press')) return;
+        const style = document.createElement('style');
+        style.id = 'game-no-long-press';
+        style.textContent = `html, body, canvas {
+            -webkit-user-select: none; user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        input, textarea, [contenteditable] { -webkit-user-select: text; user-select: text; }`;
+        document.head.appendChild(style);
+        const typing = (target: EventTarget | null) => target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA)$/.test(target.tagName));
+        const stop = (event: Event) => {
+            if (!typing(event.target)) event.preventDefault();
+        };
+        document.addEventListener('contextmenu', stop);
+        document.addEventListener('selectstart', stop);
+    }
+
     public setCanvasZIndex(value: number) {
         this.view.style.zIndex = value.toString();
     }
@@ -306,6 +377,23 @@ export class Game {
             center: this.overlayContainer.toLocal(new PIXI.Point(screenWidth / 2, screenHeight / 2), this.app.stage),
             width: overlayBottomRight.x - overlayTopLeft.x,
             height: overlayBottomRight.y - overlayTopLeft.y,
+        };
+
+        const insets = Game.readInsets();
+        Game.lastInsets = insets;
+        Game.safeInsets = { top: insets.top / scale, right: insets.right / scale, bottom: insets.bottom / scale, left: insets.left / scale };
+        const left = overlayTopLeft.x + Game.safeInsets.left;
+        const top = overlayTopLeft.y + Game.safeInsets.top;
+        const right = overlayBottomRight.x - Game.safeInsets.right;
+        const bottom = overlayBottomRight.y - Game.safeInsets.bottom;
+        Game.safeScreenData = {
+            topLeft: new PIXI.Point(left, top),
+            topRight: new PIXI.Point(right, top),
+            bottomLeft: new PIXI.Point(left, bottom),
+            bottomRight: new PIXI.Point(right, bottom),
+            center: new PIXI.Point((left + right) / 2, (top + bottom) / 2),
+            width: right - left,
+            height: bottom - top,
         };
     }
 }

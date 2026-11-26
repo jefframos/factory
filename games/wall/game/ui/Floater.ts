@@ -14,7 +14,7 @@ import { WallAudio } from '../audio/WallAudio';
 import { fx } from '../config/Effects';
 import { FLOATING } from '../data/WallConfig';
 import { WallProgress } from '../data/WallProgress';
-import { sprite, text, write } from './parts';
+import { ringSprite, sprite, text, write } from './parts';
 
 export type FloaterKind = 'cash' | 'chest' | 'frenzy' | 'double';
 
@@ -195,8 +195,7 @@ export class Floater extends PIXI.Container {
     /** A ring and a flash of light where it was. */
     private pop(at: PIXI.Point, color: number): void {
         if (!this.parent) return;
-        const ring = new PIXI.Graphics().lineStyle(14, 0xffffff).drawCircle(0, 0, 56);
-        ring.tint = color;
+        const ring = ringSprite(56, 14, color);
         const light = sprite('Glow_Circle01', 220);
         light.tint = color;
         const size = light.scale.x;

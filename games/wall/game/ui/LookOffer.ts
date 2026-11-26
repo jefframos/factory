@@ -10,14 +10,17 @@ import { WallAnalytics } from '../analytics/WallAnalytics';
 import { WallAudio } from '../audio/WallAudio';
 import { LookItem, OFFERS, SlotId, gainLook, lookPrice, lookToOffer, ownsLook, wornLook } from '../data/Looks';
 import { WallProgress } from '../data/WallProgress';
+import { rarityOf } from '../data/WallConfig';
+import { HudBar } from './HudBar';
 import { WardrobeActions, costStrip } from './Wardrobe';
+import { rarityBand } from './Rarity';
 import { flag, frame, sprite, text, write } from './parts';
 
 const CARD = { width: 164, height: 218, art: 122 };
 const PICTURE = 192;
 const FRAMES = { gift: 'Green', buy: 'Blue', video: 'Purple' } as const;
 const FLAGS = { gift: 'GIFT!', buy: 'SALE!', video: 'NEW!' } as const;
-const TIMER = { width: CARD.width - 24, height: 10 };
+const TIMER = { width: CARD.width - 16, height: 24 };
 
 type Kind = keyof typeof FRAMES;
 
@@ -28,8 +31,10 @@ export class LookOffer extends PIXI.Container {
     private readonly rays = sprite('Image_Effect_Rotate', 210);
     private readonly art = new PIXI.Sprite();
     private readonly nameText = text('', 22, 0xffffff, 0x100e18, 6);
+    private stars?: PIXI.Container;
     private readonly flagText = text('', 24, 0xffffff);
-    private readonly left = frame('BasicFrame_Round12', [12, 12, 12, 12], TIMER.width, TIMER.height, 0.4);
+    /** What's left of its time: the HUD's own bar (crisp at any size). */
+    private readonly left = new HudBar(TIMER.width, TIMER.height, 0xffe14a);
     private cost?: PIXI.Container;
     private shown?: { slot: SlotId; item: LookItem; kind: Kind; price: number };
     private last?: LookItem;
@@ -47,15 +52,13 @@ export class LookOffer extends PIXI.Container {
         this.rays.mask = inside;
         this.art.anchor.set(0.5);
         this.art.y = -30;
-        this.nameText.y = 42;
+        this.nameText.y = 36;
         const tail = flag(this.flagText, 100);
         tail.y = -CARD.height / 2;
-        const track = frame('BasicFrame_Round12', [12, 12, 12, 12], TIMER.width + 6, TIMER.height + 6, 0.4);
-        track.tint = 0x100e18;
         const timer = new PIXI.Container();
-        timer.y = CARD.height / 2 + 14;
-        this.left.tint = 0xffe14a;
-        timer.addChild(track, this.left);
+        timer.y = CARD.height / 2 + 18;
+        this.left.x = -TIMER.width / 2;
+        timer.addChild(this.left);
         this.body.addChild(this.focus, this.back, inside, this.rays, this.art, this.nameText, tail, timer);
         this.addChild(this.body);
         this.eventMode = 'static';
@@ -78,7 +81,7 @@ export class LookOffer extends PIXI.Container {
             this.art.y = -30 + Math.sin(this.clock * 3) * 4;
             this.body.rotation = Math.sin(this.clock * 2.2) * 0.025;
             this.timer -= delta;
-            this.left.width = Math.max(14, TIMER.width * Math.max(0, this.timer / OFFERS.stays)) / 0.4;
+            this.left.setShare(this.timer / OFFERS.stays);
             // (Got some other way meanwhile, or let go.)
             if (this.timer <= 0 || ownsLook(this.shown.slot, this.shown.item)) this.hide(OFFERS.wait);
             return;
@@ -113,7 +116,13 @@ export class LookOffer extends PIXI.Container {
         this.last = found.item;
         WallProgress.countOffer();
         WallAnalytics.offer(kind, found.slot, found.item.id, 'visible');
-        this.back.texture = PIXI.Texture.from(`ItemFrame02_Single_${FRAMES[kind]}`);
+        // (Its frame: its rarity's; what kind of offer, on its flag.)
+        const rarity = rarityOf(found.item.rarity);
+        this.back.texture = PIXI.Texture.from(`ItemFrame02_Single_${rarity.frame}`);
+        this.stars?.destroy({ children: true });
+        this.stars = rarityBand(rarity, CARD.width - 30, 20);
+        this.stars.y = 62;
+        this.body.addChild(this.stars);
         write(this.flagText, FLAGS[kind], 84);
         write(this.nameText, found.item.name, CARD.width - 24);
         const canvas = document.createElement('canvas');

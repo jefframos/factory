@@ -126,6 +126,10 @@ export default class SoundManager {
 	public get isMuted(): boolean {
 		return this._isMuted || this._platformMuted;
 	}
+	/** Whether the platform (YouTube's mute button, CrazyGames' muteAudio setting) has the sound off — for a game keeping its own mute beside SoundManager's, which must let this win. */
+	public get platformMuted(): boolean {
+		return this._platformMuted;
+	}
 
 	/**
 	 * Toggles the PLAYER'S OWN mute preference and triggers the signal.

@@ -10,14 +10,14 @@ import { Game } from 'core/Game';
 import { Gameplay } from '../ads/Gameplay';
 import { WallAnalytics } from '../analytics/WallAnalytics';
 import { WallAudio } from '../audio/WallAudio';
-import { REWIND, MEDAL, short } from '../data/WallConfig';
+import { REWIND, MEDAL, short, toolAt } from '../data/WallConfig';
 import { WallProgress } from '../data/WallProgress';
 import { Clock } from './Clock';
 import { HudBar } from './HudBar';
-import { fit, flag, frame, sprite, text, write } from './parts';
+import { fit, flag, frame, ringSprite, sprite, text, write } from './parts';
 import { toolArt } from './Wardrobe';
 
-const BUTTON = { size: 118, icon: 92, pill: 32, below: 20 };
+const BUTTON = { size: 118, icon: 92, pill: 32, below: 24, won: 80 };
 const PANEL = { width: 640, height: 910 };
 const COLORS = { panel: 0x5b2bd0, inner: 0x7a48f0, keep: 0x2fbf5b, lose: 0xe0405a };
 const ITEM = { size: 92, gap: 16 };
@@ -80,7 +80,7 @@ export class RewindButton extends PIXI.Container {
         this.mult.x = 18;
         this.mult.y = -2;
         this.won.addChild(strip, trophy, this.mult);
-        this.won.y = BUTTON.size / 2 + 64;
+        this.won.y = BUTTON.size / 2 + BUTTON.won;
         this.addChild(this.focus, back, glow, this.medal, this.count, corner, turn, this.pill, this.ready, this.won);
         this.eventMode = 'static';
         this.cursor = 'pointer';
@@ -159,7 +159,7 @@ export class MedalFly extends PIXI.Container {
         big.visible = false;
         gsap.to([rays, glow], { alpha: 0, duration: 0.3 });
         gsap.to(label, { alpha: 0, y: label.y - 50, duration: 0.45, delay: 0.25 });
-        const ring = new PIXI.Graphics().lineStyle(16, 0xfff3b0).drawCircle(0, 0, 100);
+        const ring = ringSprite(100, 16, 0xfff3b0);
         ring.position.copyFrom(from);
         this.addChild(ring);
         gsap.fromTo(ring.scale, { x: 0.4, y: 0.4 }, { x: 2.2, y: 2.2, duration: 0.4, ease: 'power2.out' });
@@ -329,8 +329,10 @@ export class RewindPopup extends PIXI.Container {
             });
         };
         const picto = sprite('PictoIcon_Clothes', 62);
-        row('YOU KEEP', COLORS.keep, top + 568, [[sprite('ItemIcon_Badge_Gold', 66), 'MEDALS'], [sprite('ItemIcon_Star_Gold', 66), 'BOOSTS'], [picto, 'LOOKS']]);
-        row('YOU RESET', 0xff8a9a, top + 734, [[toolArt(WallProgress.tool.base === 'fists' ? { base: 'fists' } : WallProgress.tool, 68), 'PUNCH'], [sprite('ItemIcon_Money_Bill', 66), 'CASH'], [sprite('Wall_brick', 66), 'BRICKS'], [sprite('Wall_chick', 66), 'CREW']]);
+        // (The weapon a rewind leaves them with: half the level's.)
+        const kept = toolAt(Math.max(1, Math.floor(WallProgress.punchLevel * REWIND.keep)));
+        row('YOU KEEP', COLORS.keep, top + 568, [[toolArt(kept, 68), 'WEAPON'], [sprite('ItemIcon_Badge_Gold', 66), 'MEDALS'], [sprite('ItemIcon_Star_Gold', 66), 'BOOSTS'], [picto, 'LOOKS']]);
+        row('YOU RESET', 0xff8a9a, top + 734, [[sprite('ItemIcon_Money_Bill', 66), 'CASH'], [sprite('Wall_brick', 66), 'BRICKS'], [sprite('Wall_chick', 66), 'CREW']]);
         // The button, or how far off it is.
         this.bar = undefined;
         if (can) {
@@ -368,7 +370,7 @@ export class RewindPopup extends PIXI.Container {
     }
 
     public reposition(): void {
-        const screen = Game.overlayScreenData;
+        const screen = Game.safeScreenData ?? Game.overlayScreenData;
         if (!screen || !this.isOpen) return;
         const { topLeft, width, height, center } = screen;
         this.dim.clear().beginFill(0x0c0618, 0.78).drawRect(topLeft.x - 400, topLeft.y - 400, width + 800, height + 800).endFill();

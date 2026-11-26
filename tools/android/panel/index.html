@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Android Build</title>
+<style>
+/* A two-column workbench: what's set up on the left, devices, buttons and the live log on the right. */
+:root {
+  --bg: #f3f5f2; --panel: #ffffff; --fg: #1a211c; --muted: #5d6b62; --line: #dbe1dc;
+  --accent: #2f7d4f; --accent-fg: #ffffff; --accent-soft: #e1f0e6;
+  --bad: #b3361f; --bad-soft: #fbe6e1; --warn: #8a5d00; --warn-soft: #fbefd2;
+  --log-bg: #141a16; --log-fg: #d5e0d8; --log-err: #ff9b85; --log-ok: #7fdc9f; --log-cmd: #9cc4ff;
+  --ui: "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "Cascadia Mono", Consolas, ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111613; --panel: #19201b; --fg: #e3ebe5; --muted: #93a399; --line: #2a332d;
+    --accent: #4fbf7d; --accent-fg: #0d1a12; --accent-soft: #1b3324;
+    --bad: #ff8a73; --bad-soft: #3a1f19; --warn: #f0c15a; --warn-soft: #3a2f14;
+    --log-bg: #0b0f0c;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 var(--ui); }
+header { display: flex; align-items: center; gap: 14px; padding: 16px 24px; border-bottom: 1px solid var(--line); background: var(--panel); }
+header img { width: 48px; height: 48px; border-radius: 11px; }
+header h1 { font-size: 19px; margin: 0; }
+header p { margin: 0; color: var(--muted); font-size: 13px; }
+header .grow { flex: 1; min-width: 0; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 20px; padding: 20px 24px 40px; max-width: 1400px; margin: 0 auto; }
+.col { display: grid; gap: 20px; align-content: start; min-width: 0; }
+section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; min-width: 0; }
+h2 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+h2 .spacer { flex: 1; }
+.pill { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 99px; letter-spacing: 0; text-transform: none; }
+.pill.ok { background: var(--accent-soft); color: var(--accent); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.checks { display: grid; gap: 2px; }
+.check { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+.check:last-child { border-bottom: 0; }
+.check .mark { font-weight: 700; font-size: 15px; line-height: 1.4; }
+.check.ok .mark { color: var(--accent); }
+.check.bad .mark { color: var(--bad); }
+.check b { font-weight: 600; }
+.check .detail { color: var(--muted); font-size: 12px; font-family: var(--mono); overflow-wrap: anywhere; }
+.check .fix { font-size: 13px; color: var(--bad); }
+.check .fix a { color: inherit; }
+form { display: grid; gap: 10px; }
+.row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+input[type=text], input[type=number] { font: 13px var(--mono); padding: 7px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); width: 100%; min-width: 0; }
+input:focus-visible, button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.toggle { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--fg); }
+.hint { font-size: 12px; color: var(--muted); margin: 0; }
+.hint code, .mono { font-family: var(--mono); font-size: 12px; }
+button { font: 600 13px var(--ui); padding: 8px 14px; border-radius: 7px; border: 1px solid var(--line); background: var(--panel); color: var(--fg); cursor: pointer; }
+button:hover:not(:disabled) { border-color: var(--accent); }
+button.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button.small { padding: 4px 10px; font-size: 12px; font-weight: 500; }
+.buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.kind { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+.kind:last-of-type { border-bottom: 0; }
+.kind > span:first-child { font-weight: 600; }
+.devices { display: grid; gap: 6px; margin-bottom: 12px; }
+.device { display: flex; align-items: center; gap: 10px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+.device.selected { border-color: var(--accent); background: var(--accent-soft); }
+.device.off { cursor: default; opacity: .7; }
+.device .name { font-weight: 600; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.device .serial { font: 12px var(--mono); color: var(--muted); }
+.empty { color: var(--muted); font-size: 13px; padding: 10px 0; }
+.empty ol { margin: 6px 0 0; padding-left: 20px; }
+.apk { font-size: 12px; color: var(--muted); margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.log { background: var(--log-bg); color: var(--log-fg); font: 12px/1.45 var(--mono); border-radius: 8px; padding: 10px 12px; height: 420px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+.log .err { color: var(--log-err); }
+.log .ok { color: var(--log-ok); font-weight: 600; }
+.log .cmd { color: var(--log-cmd); font-weight: 600; }
+.status { font-size: 13px; color: var(--muted); }
+.status.running { color: var(--warn); font-weight: 600; }
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 9px 16px; border-radius: 8px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .2s; max-width: 90vw; }
+.toast.show { opacity: 1; }
+.toast.bad { background: var(--bad); color: #fff; }
+@media (max-width: 900px) { main { grid-template-columns: minmax(0, 1fr); padding: 16px; } .row { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+</style>
+</head>
+<body>
+<header>
+  <img id="icon" src="/icon.png" alt="" onerror="this.hidden = true">
+  <div class="grow">
+    <h1 id="title">Android build</h1>
+    <p id="subtitle">Loading…</p>
+  </div>
+  <span id="overall" class="pill"></span>
+</header>
+
+<main>
+  <div class="col">
+    <section>
+      <h2>This computer <span class="spacer"></span><button class="small" id="recheck">Check again</button></h2>
+      <div class="checks" id="checks"></div>
+    </section>
+
+    <section>
+      <h2>Package</h2>
+      <form id="package">
+        <div class="row">
+          <label for="appName">App name (under the icon)<input type="text" id="appName" maxlength="50"></label>
+          <label for="appId">App id (can't change after the first store upload)<input type="text" id="appId"></label>
+        </div>
+        <div class="row">
+          <label for="versionName">Version name (players see it)<input type="text" id="versionName"></label>
+          <label for="versionCode">Version code (+1 for every store upload)<input type="number" id="versionCode" min="1" step="1"></label>
+        </div>
+        <p class="hint" id="packageInfo"></p>
+        <div class="buttons"><button type="submit">Save package</button></div>
+      </form>
+    </section>
+
+    <section>
+      <h2>Ads, purchases, analytics</h2>
+      <form id="ads">
+        <div class="kind"><span>Ads</span><span id="adsStatus"></span></div>
+        <label class="toggle" for="enableAds"><input type="checkbox" id="enableAds"> Ads on (off: rewards are free, no breaks)</label>
+        <label for="admobApp">AdMob app id<input type="text" id="admobApp" placeholder="ca-app-pub-0000000000000000~0000000000"></label>
+        <div class="row">
+          <label for="admobInterstitial">Interstitial ad unit<input type="text" id="admobInterstitial" placeholder="empty: mocked"></label>
+          <label for="admobRewarded">Rewarded ad unit<input type="text" id="admobRewarded" placeholder="empty: mocked"></label>
+        </div>
+        <label class="toggle" for="admobTest"><input type="checkbox" id="admobTest"> Test ads (keep on until the store: tapping your own live ads closes the account)</label>
+        <div class="buttons"><button type="submit">Save ads</button></div>
+        <div class="kind"><span>Purchases</span><span id="iapStatus"></span></div>
+        <div class="kind"><span>Analytics</span><span id="analyticsStatus"></span></div>
+      </form>
+    </section>
+  </div>
+
+  <div class="col">
+    <section>
+      <h2>Devices <span class="spacer"></span><button class="small" id="refreshDevices">Refresh</button></h2>
+      <div class="devices" id="devices"></div>
+      <div class="buttons">
+        <button class="primary" id="run">Run on device</button>
+        <button id="apk">Build APK</button>
+        <button id="install">Install APK on device</button>
+        <button id="open">Open in Android Studio</button>
+        <button id="sync">Build only</button>
+      </div>
+      <div class="apk" id="apkInfo"></div>
+    </section>
+
+    <section>
+      <h2>Log <span class="spacer"></span><span class="status" id="status">Idle</span><button class="small" id="stop" hidden>Stop</button><button class="small" id="clear">Clear</button></h2>
+      <div class="log" id="log" role="log" aria-live="polite"></div>
+    </section>
+  </div>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let state = null;
+let selected = (() => { try { return localStorage.getItem('android.device') || ''; } catch { return ''; } })();
+let running = false;
+
+function toast(text, bad = false) {
+  const el = $('toast');
+  el.textContent = text;
+  el.className = `toast show${bad ? ' bad' : ''}`;
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => { el.className = 'toast'; }, bad ? 5000 : 2500);
+}
+
+async function api(path, data) {
+  const res = await fetch(path, data ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) } : undefined);
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return json;
+}
+
+const ok = (id) => state?.checks.find((c) => c.id === id)?.ok;
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+async function load() {
+  try {
+    state = await api('/api/state');
+  } catch (error) {
+    $('subtitle').textContent = `The panel's server isn't answering (${error.message}). Run npm run android again.`;
+    return;
+  }
+  render();
+}
+
+function render() {
+  const { game, checks, app, money } = state;
+  $('title').textContent = `${app.appName || game} · Android`;
+  $('subtitle').textContent = `GAME=${game} (from .env) · ${app.dir} · API ${app.compileSdk ?? '?'}`;
+  const bad = checks.filter((c) => !c.ok).length;
+  $('overall').textContent = bad ? `${bad} to set up` : 'Ready to build';
+  $('overall').className = `pill ${bad ? 'bad' : 'ok'}`;
+
+  $('checks').innerHTML = checks.map((c) => `
+    <div class="check ${c.ok ? 'ok' : 'bad'}">
+      <span class="mark" aria-hidden="true">${c.ok ? '✓' : '✗'}</span>
+      <div><b>${esc(c.label)}</b>
+        <div class="detail">${esc(c.detail)}</div>
+        ${c.ok ? '' : `<div class="fix">${esc(c.fix)}${c.link ? ` <a href="${esc(c.link)}" target="_blank" rel="noopener">How</a>` : ''}</div>`}
+      </div>
+    </div>`).join('');
+
+  const fill = (id, value) => { if (document.activeElement !== $(id)) $(id).value = value ?? ''; };
+  fill('appName', app.appName);
+  fill('appId', app.appId);
+  fill('versionName', app.versionName);
+  fill('versionCode', app.versionCode);
+  $('packageInfo').innerHTML = `Plugins: ${app.plugins.map((p) => `<span class="mono">${esc(p.name)} ${esc(p.version ?? 'missing')}</span>`).join(', ')}`;
+
+  const admob = money.admob;
+  if (document.activeElement?.closest('#ads') == null) {
+    $('enableAds').checked = money.enableAds;
+    $('admobApp').value = admob.appId || '';
+    $('admobInterstitial').value = admob.interstitial || '';
+    $('admobRewarded').value = admob.rewarded || '';
+    $('admobTest').checked = admob.test !== false;
+  }
+  const real = [admob.interstitial && 'interstitial', admob.rewarded && 'rewarded'].filter(Boolean);
+  $('adsStatus').innerHTML = !money.enableAds ? '<span class="pill warn">Off</span> no ads: rewards given free'
+    : real.length ? `<span class="pill ok">AdMob</span> real ${real.join(' + ')}${admob.test ? ' · test ads' : ' · <b>live ads</b>'}${real.length < 2 ? ', the other mocked' : ''}`
+    : '<span class="pill warn">Mocked</span> no AdMob ids: the placeholder ad screen';
+  $('iapStatus').innerHTML = money.iap.length
+    ? money.iap.map((p) => `<span class="mono">${esc(p.id)}</span> ${esc(p.type ?? '')} ${esc(p.price ?? '')}`).join('<br>')
+    : '<span class="pill warn">None</span> not set up yet (products go in <span class="mono">platforms.config.json</span> → <span class="mono">android.iap</span>)';
+  $('analyticsStatus').innerHTML = money.analytics
+    ? `<span class="pill ok">${esc(money.analytics.provider ?? 'On')}</span>`
+    : '<span class="pill warn">Logs only</span> measure() prints to the console (Firebase or GameAnalytics later)';
+
+  renderDevices(state.devices, state.emulators);
+  renderApk();
+  renderJob(state.job);
+}
+
+function renderDevices(devices, emulators) {
+  const usable = [...devices.filter((d) => d.state === 'device').map((d) => d.serial), ...emulators];
+  if (!usable.includes(selected)) selected = usable[0] || '';
+  const items = [
+    ...devices.map((d) => {
+      const live = d.state === 'device';
+      const note = d.state === 'unauthorized' ? 'unlock the phone and allow USB debugging' : d.state === 'offline' ? 'offline: unplug and plug in again' : d.emulator ? 'emulator (running)' : 'USB';
+      return `<div class="device ${live ? '' : 'off'} ${selected === d.serial ? 'selected' : ''}" data-serial="${live ? esc(d.serial) : ''}" role="radio" aria-checked="${selected === d.serial}" tabindex="${live ? 0 : -1}">
+        <span class="name">${esc(d.model)}</span><span class="serial">${esc(d.serial)}</span>
+        <span class="pill ${live ? 'ok' : 'warn'}">${esc(note)}</span></div>`;
+    }),
+    ...emulators.map((name) => `<div class="device ${selected === name ? 'selected' : ''}" data-serial="${esc(name)}" role="radio" aria-checked="${selected === name}" tabindex="0">
+        <span class="name">${esc(name.replace(/_/g, ' '))}</span><span class="serial">emulator</span><span class="pill warn">starts when run</span></div>`),
+  ];
+  $('devices').innerHTML = items.length ? items.join('') : `<div class="empty">No phone found.
+    <ol><li>On the phone: Settings › About phone › tap <b>Build number</b> 7 times.</li>
+    <li>Settings › System › Developer options › <b>USB debugging</b> on.</li>
+    <li>Plug it in with a data cable and tap <b>Allow</b> on the phone.</li></ol></div>`;
+  for (const el of $('devices').querySelectorAll('.device[data-serial]')) {
+    if (!el.dataset.serial) continue;
+    const pick = () => { selected = el.dataset.serial; try { localStorage.setItem('android.device', selected); } catch {} renderDevices(devices, emulators); updateButtons(); };
+    el.addEventListener('click', pick);
+    el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
+  }
+  updateButtons();
+}
+
+function renderApk() {
+  const apk = state.app.apk;
+  $('apkInfo').innerHTML = apk
+    ? `APK: <span class="mono">${esc(apk.path)}</span> · ${(apk.size / 1048576).toFixed(1)} MB · ${new Date(apk.at).toLocaleString()} <button class="small" id="reveal">Show in folder</button>`
+    : 'No APK built yet.';
+  $('reveal')?.addEventListener('click', () => api('/api/reveal', {}).catch((e) => toast(e.message, true)));
+}
+
+function updateButtons() {
+  if (!state) return;
+  const build = ok('java') && ok('sdk') && ok('project') && ok('capacitor');
+  $('run').disabled = running || !build || !selected;
+  $('apk').disabled = running || !build;
+  $('install').disabled = running || !state.app.apk || !ok('adb') || !selected || !state.devices.some((d) => d.serial === selected);
+  $('open').disabled = running || !ok('studio') || !ok('project');
+  $('sync').disabled = running || !ok('project') || !ok('capacitor');
+  $('run').title = !build ? 'Set up this computer first (left)' : !selected ? 'Plug in a phone' : '';
+}
+
+function renderJob(job) {
+  running = !!job?.running;
+  $('status').textContent = running ? `${job.action}…` : job?.last ? `${job.last.action}: ${job.last.ok ? 'done' : 'failed'} (${job.last.seconds} s)` : 'Idle';
+  $('status').className = `status${running ? ' running' : ''}`;
+  $('stop').hidden = !running;
+  updateButtons();
+}
+
+function addLog(entry) {
+  const log = $('log');
+  const atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 40;
+  const line = document.createElement('div');
+  if (entry.kind !== 'out') line.className = entry.kind;
+  line.textContent = entry.line;
+  log.appendChild(line);
+  while (log.childElementCount > 3000) log.firstChild.remove();
+  if (atBottom) log.scrollTop = log.scrollHeight;
+}
+
+function listen() {
+  const source = new EventSource('/api/log');
+  source.onmessage = (e) => addLog(JSON.parse(e.data));
+  source.addEventListener('job', (e) => {
+    const job = JSON.parse(e.data);
+    const was = running;
+    renderJob(job);
+    if (was && !job.running) load();
+  });
+}
+
+async function act(action) {
+  try {
+    await api('/api/action', { action, target: selected });
+  } catch (error) {
+    toast(error.message, true);
+  }
+}
+
+$('run').addEventListener('click', () => act('run'));
+$('apk').addEventListener('click', () => act('apk'));
+$('install').addEventListener('click', () => act('install'));
+$('open').addEventListener('click', () => act('open'));
+$('sync').addEventListener('click', () => act('sync'));
+$('stop').addEventListener('click', () => api('/api/stop', {}).catch((e) => toast(e.message, true)));
+$('clear').addEventListener('click', () => { $('log').textContent = ''; });
+$('recheck').addEventListener('click', () => load().then(() => toast('Checked')));
+$('refreshDevices').addEventListener('click', refreshDevices);
+
+$('package').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    await api('/api/package', { appName: $('appName').value, appId: $('appId').value, versionName: $('versionName').value, versionCode: $('versionCode').value });
+    toast('Package saved');
+    document.activeElement?.blur();
+    load();
+  } catch (error) { toast(error.message, true); }
+});
+$('ads').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    await api('/api/ads', { enableAds: $('enableAds').checked, appId: $('admobApp').value, interstitial: $('admobInterstitial').value, rewarded: $('admobRewarded').value, test: $('admobTest').checked });
+    toast('Ads saved: used from the next build');
+    document.activeElement?.blur();
+    load();
+  } catch (error) { toast(error.message, true); }
+});
+
+async function refreshDevices() {
+  if (!state) return;
+  try {
+    const { devices, emulators } = await api('/api/devices');
+    state.devices = devices;
+    state.emulators = emulators;
+    renderDevices(devices, emulators);
+  } catch { /* (the server's gone: load() says so) */ }
+}
+
+load();
+listen();
+setInterval(refreshDevices, 4000);
+</script>
+</body>
+</html>

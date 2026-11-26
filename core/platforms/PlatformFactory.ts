@@ -17,6 +17,8 @@ export async function getPlatformInstance(name: string): Promise<IPlatformConnec
     if (platform === 'gamedis') return new (await import('./GameDistributionPlatform')).default();
     if (platform === 'gamepix') return new (await import('./GamePixPlatform')).default();
     if (platform === 'youtube') return new (await import('./YouTubePlayablePlatform')).default();
+    // The phone app (native/README.md).
+    if (platform === 'android' || platform === 'ios') return new (await import('./CapacitorPlatform')).default();
     // Local runs ('local'), cached/demo builds ('default'), 'mock' and anything unnamed: no SDK, every call logged, ads
     // simulated (MockPlatform). Real platform builds name theirs above.
     return new (await import('./MockPlatform')).default();

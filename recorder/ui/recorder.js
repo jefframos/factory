@@ -27,8 +27,8 @@ const persist = () => {
     }
 };
 
-/** The output size and the faked pixel ratio. */
-const format = { width: saved.width || 1080, height: saved.height || 1920, dpr: saved.dpr || 2 };
+/** The output size and the faked pixel ratio (until one is saved, the first capture preset's: loadPresets). */
+const format = { width: saved.width || 1080, height: saved.height || 1620, dpr: saved.dpr || 2 };
 /** The dpr and query the game was loaded with (a change reloads it). */
 let loaded = { dpr: 0, query: null };
 /** Layer overrides: a layer's key -> included or not. */
@@ -55,6 +55,9 @@ const hook = () => {
 
 async function loadPresets() {
     const presets = await fetch('api/presets').then((r) => r.json());
+    // Nothing saved yet: the first preset is the default.
+    const [first] = presets.capture;
+    if (!saved.width && first) Object.assign(format, { width: first.width, height: first.height, dpr: first.dpr });
     for (const preset of presets.capture) {
         const option = new Option(preset.name, JSON.stringify(preset));
         ui.format.add(option);

@@ -7,6 +7,7 @@
 import { Howl, Howler } from 'howler';
 import { SaveStorage } from 'core/platforms/SaveStorage';
 import PlatformHandler from 'core/platforms/PlatformHandler';
+import SoundManager from 'core/audio/SoundManager';
 
 const MUTED_KEY = 'wall.muted';
 
@@ -60,6 +61,14 @@ let musicWanted = false;
 let soundsIn = false;
 let path = '';
 let muted = false;
+/** Hidden (the tab, the app), and an ad on. */
+let paused = false;
+let hushed = false;
+
+/** Howler's mute from all that wants it off: the player's toggle, the platform's mute (always wins: YouTube, CrazyGames), a pause, an ad. */
+function applyMute(): void {
+    Howler.mute(muted || paused || hushed || SoundManager.instance.platformMuted);
+}
 
 export const WallAudio = {
     saveKeys: [MUTED_KEY],
@@ -67,9 +76,17 @@ export const WallAudio = {
     initialize(folder: string): void {
         path = `./${folder}/audio/`;
         muted = SaveStorage.getItem(MUTED_KEY) === 'true';
-        Howler.mute(muted);
-        PlatformHandler.instance.onPause.add(() => Howler.mute(true));
-        PlatformHandler.instance.onResume.add(() => Howler.mute(muted));
+        applyMute();
+        PlatformHandler.instance.onPause.add(() => {
+            paused = true;
+            applyMute();
+        });
+        PlatformHandler.instance.onResume.add(() => {
+            paused = false;
+            applyMute();
+        });
+        // (SoundManager sets Howler's mute itself when the platform's changes: the rest of what wants it off is put back over it.)
+        SoundManager.instance.onMuteChange.add(applyMute);
     },
 
     /** The sounds, once the first screen's up (nothing in its way): a few at a time, the soonest heard first; then the music, if it's wanted. */
@@ -122,7 +139,8 @@ export const WallAudio = {
 
     /** Silent for an ad, and back. */
     hush(on: boolean): void {
-        Howler.mute(on || muted);
+        hushed = on;
+        applyMute();
     },
 
     get muted(): boolean {
@@ -131,7 +149,7 @@ export const WallAudio = {
 
     toggleMuted(): boolean {
         muted = !muted;
-        Howler.mute(muted);
+        applyMute();
         SaveStorage.setItem(MUTED_KEY, String(muted));
         return muted;
     },

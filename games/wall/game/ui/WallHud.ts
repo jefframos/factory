@@ -14,35 +14,39 @@ import { Frenzy } from './Frenzy';
 import { HitPill } from './HitPill';
 import { HudBar } from './HudBar';
 import { LookOffer } from './LookOffer';
-import { FLOATING, SHOWS, short } from '../data/WallConfig';
+import { HOLD, SHOWS, short } from '../data/WallConfig';
+import { HoldButton, HOLD_BUTTON } from './HoldButton';
+import { RelicButton, RelicPanel, relicsKnown } from './Relics';
 import { MedalFly, RewindButton, RewindPopup, RewindShow, rewindKnown } from './Rewind';
 import { POWER, PowerButton } from './PowerButton';
 import { Powers } from '../data/Powers';
-import { NEXT_HELPER, NextHelper } from './NextHelper';
 import { TRAY_TOP, Tray, TrayActions } from './Tray';
 import { WallAudio } from '../audio/WallAudio';
 import { WallProgress } from '../data/WallProgress';
 import { newLooks } from '../data/Looks';
 import { Wardrobe, WardrobeActions, dot } from './Wardrobe';
-import { fit, frame, sprite, text, write } from './parts';
+import { fit, frame, ringSprite, sprite, text, write } from './parts';
 
-const BAR = { width: 430, height: 42, y: 100, wideY: 44, color: 0xffb52e, low: 0xff5a3d };
+// (y: low enough that the wall's badge clears the cash pill's note over it.)
+const BAR = { width: 430, height: 42, y: 112, wideY: 44, color: 0xffb52e, low: 0xff5a3d };
 /** Upright, how far down the screen its bar comes (the HUD's units). */
 export const BAR_FOOT = BAR.y + BAR.height / 2;
-/** Something given: held up this long, and its flight (seconds). */
-const GIFT = { held: 1.15, flies: 0.5 };
+/** Something given: held up this long, and its flight (seconds); the picture and the light behind it, across. */
+const GIFT = { held: 1.15, flies: 0.5, size: 140, rays: 330 };
 /** A boss's time: under the bar. And the button that calls it back. */
 const TIMER = { width: 300, height: 28, below: 40 };
 /** A frenzy's time under the bar (and under a boss's). */
 const UNDER = { frenzy: 46, timed: 88 };
-/** The next helper: under the rewind button (and under what rewinding's brought), or in its place till it's there. */
-const HELPER = { under: 108, won: 156, up: 59 };
 const RETRY = { width: 330, height: 92, up: 62, wideUp: 90 };
 /** The bar's name is this wide at most (its life's beside it). */
 const TITLE_WIDTH = 225;
 /** The wall's number, on a shield (Mow's): over the bar's left end. */
 const WALL_BADGE = { size: 76, in: 6, covers: 38, stroke: 0x1f49a8 };
 const FLOATS = 14;
+/** The offer, upright, between the relics' button and the damage pills: room under and over it, its size (with its flag and timer), and how small or big it may be. */
+const OFFER_GAP = { below: 64, above: 64, tall: 268, wide: 172, least: 0.55, most: 0.85 };
+/** The circle that says where to tap, across half of it. */
+const TAP_RING = 58;
 const BUTTON_SIZE = 58;
 const WARDROBE_SIZE = 82;
 
@@ -62,10 +66,13 @@ export class WallHud extends PIXI.Container {
     public readonly rewindPopup: RewindPopup;
     public readonly rewindShow = new RewindShow();
     private readonly rewindButton: RewindButton;
+    /** The relic shop (medals), its button under the rewind's; and hold to punch's button, low on the right. */
+    public readonly relicPanel: RelicPanel;
+    private readonly relicButton: RelicButton;
+    public readonly holdButton = new HoldButton();
     private readonly offer: LookOffer;
     private readonly floater: Floater;
     private readonly frenzy = new Frenzy();
-    private readonly nextHelper = new NextHelper();
     private readonly powers = Powers.all.map((power) => new PowerButton(power, (words, sub) => this.announce(words, sub, 1)));
     private readonly hitPill = new HitPill();
     private readonly wardrobeButton = new PIXI.Container();
@@ -132,7 +139,7 @@ export class WallHud extends PIXI.Container {
             this.news = -1;
         });
         this.offer = new LookOffer(looks, (name) => {
-            this.announce(`${name}!`, 'NEW LOOK', 1.1);
+            this.announce(`${name}!`, '', 1.1);
             actions.flaunt();
         });
         this.floater = new Floater(actions.floater);
@@ -140,6 +147,12 @@ export class WallHud extends PIXI.Container {
         this.rewindButton = new RewindButton(() => {
             WallAnalytics.buttonTapped('rewind');
             this.rewindPopup.setOpen(true);
+        });
+        // (What a relic changes shows by itself: the tray reads the progress each frame.)
+        this.relicPanel = new RelicPanel((open) => (this.tray.visible = !open), () => undefined);
+        this.relicButton = new RelicButton(() => {
+            WallAnalytics.buttonTapped('relics');
+            this.relicPanel.setOpen(true);
         });
         const back = sprite('Button_Round03_Dark', WARDROBE_SIZE);
         const clothes = sprite('PictoIcon_Clothes', WARDROBE_SIZE * 0.66);
@@ -166,13 +179,19 @@ export class WallHud extends PIXI.Container {
         tapHand.position.set(-16, -10);
         const tapText = text('TAP!', 54, 0xffffff);
         tapText.y = -92;
-        this.tap.addChild(this.ring, tapHand, tapText);
+        // The circle to tap (as the enemies' are): an orange ring, and one closing in on it again and again.
+        // (Drawn smooth: ringSprite, not PIXI.Graphics, whose edges come out jagged.)
+        const circle = ringSprite(TAP_RING, 8, 0xff8a1e, { width: 14, color: 0x50190a, alpha: 0.75 });
+        const closing = ringSprite(TAP_RING, 5, 0xffb04a, { width: 9, color: 0x46190a, alpha: 0.6 });
+        this.tap.addChild(this.ring, circle, closing, tapHand, tapText);
+        gsap.fromTo(closing.scale, { x: 1.8, y: 1.8 }, { x: 1, y: 1, duration: 0.75, repeat: -1, ease: 'power1.in' });
+        gsap.fromTo(closing, { alpha: 0 }, { alpha: 1, duration: 0.2, repeat: -1, repeatDelay: 0.55 });
         gsap.to(this.ring.scale, { x: this.ring.scale.x * 1.35, y: this.ring.scale.y * 1.35, duration: 0.5, yoyo: true, repeat: -1, ease: 'sine.inOut' });
         gsap.to(tapHand, { y: 14, duration: 0.4, yoyo: true, repeat: -1, ease: 'sine.inOut' });
         this.tap.visible = false;
 
         this.sound = this.soundButton();
-        this.addChild(this.frenzy.glow, this.flash, this.floater, this.barBack, ...this.floats, this.timer, this.frenzy, this.combo, this.banner, this.tap, this.retry, this.tray, this.hitPill, this.sound, this.wardrobeButton, this.rewindButton, this.nextHelper, ...this.powers, this.offer, this.wardrobe, this.rewindPopup, this.rewindShow);
+        this.addChild(this.frenzy.glow, this.flash, this.floater, this.barBack, ...this.floats, this.timer, this.frenzy, this.combo, this.banner, this.tap, this.retry, this.tray, this.hitPill, this.sound, this.wardrobeButton, this.rewindButton, this.relicButton, this.holdButton, ...this.powers, this.offer, this.wardrobe, this.rewindPopup, this.relicPanel, this.rewindShow);
         [this.barBack, this.combo, this.banner, this.tap].forEach((child) => (child.eventMode = 'none'));
         this.reposition();
     }
@@ -320,8 +339,8 @@ export class WallHud extends PIXI.Container {
         const screen = Game.overlayScreenData;
         if (!screen) return;
         const from = new PIXI.Point(screen.center.x, screen.topLeft.y + screen.height * 0.47);
-        const rays = sprite('Image_Effect_Rotate', 520);
-        const big = sprite(icon, 210);
+        const rays = sprite('Image_Effect_Rotate', GIFT.rays);
+        const big = sprite(icon, GIFT.size);
         if (tint) {
             const metal = PIXI.Sprite.from(`${icon}_metal`);
             metal.anchor.set(0.5);
@@ -372,7 +391,7 @@ export class WallHud extends PIXI.Container {
 
     public startFrenzy(): void {
         this.frenzy.start();
-        this.announce('FRENZY!', `ALL DAMAGE x${FLOATING.frenzy.mult}`, 1);
+        this.announce('FRENZY!', '', 1);
         WallAudio.play('tool', 1, 1.2);
     }
 
@@ -392,7 +411,7 @@ export class WallHud extends PIXI.Container {
 
     /** Something's open over the wall. */
     public get busy(): boolean {
-        return this.wardrobe.isOpen || this.rewindPopup.isOpen || this.rewindShow.visible;
+        return this.wardrobe.isOpen || this.rewindPopup.isOpen || this.relicPanel.isOpen || this.rewindShow.visible;
     }
 
     /** How many new things there are to wear, on the wardrobe's button. */
@@ -412,8 +431,9 @@ export class WallHud extends PIXI.Container {
     public update(delta: number): void {
         this.tray.update(delta);
         // (From the first upgrade on: there's something to see it grow by.)
-        this.hitPill.visible = WallProgress.best > 1 && !this.wardrobe.isOpen && !this.rewindPopup.isOpen;
+        this.hitPill.visible = WallProgress.best > 1 && !this.wardrobe.isOpen && !this.rewindPopup.isOpen && !this.relicPanel.isOpen;
         this.hitPill.position.copyFrom(this.tray.hitSpot);
+        this.placeOffer();
         this.powers.forEach((button) => button.update(delta, !this.busy));
         if (this.hitPill.visible) this.hitPill.update(delta, this.combo.visible ? this.comboShown : 1);
         this.wardrobe.update();
@@ -427,24 +447,46 @@ export class WallHud extends PIXI.Container {
         if (this.wardrobeButton.visible) WallAnalytics.buttonShown('wardrobe');
         if (this.rewindButton.visible) WallAnalytics.buttonShown('rewind');
         if (this.rewindButton.visible) this.rewindButton.update(delta, this.barShare, this.flying > 0);
+        this.relicButton.visible = relicsKnown() && !this.busy;
+        if (this.relicButton.visible) {
+            WallAnalytics.buttonShown('relics');
+            this.relicButton.update(delta);
+        }
+        // (Hold to punch's button: from its wall on, while there's something to hit.)
+        this.holdButton.visible = HOLD.on && WallProgress.best >= HOLD.wall && !this.busy;
+        if (this.holdButton.visible) WallAnalytics.buttonShown('hold');
+        this.holdButton.update(delta, WallProgress.holdRate);
         this.rewindPopup.update(delta);
         this.offer.update(delta, this.playing && !this.busy);
         this.floater.update(delta, this.playing, !this.busy);
         this.frenzy.update(delta, this.playing || this.fightOn, !this.busy);
         this.frenzy.y = this.barBack.y + (this.timer.visible ? UNDER.timed : UNDER.frenzy);
-        this.nextHelper.update(!this.busy);
-        const below = this.rewindButton.visible ? (WallProgress.medalMult > 1 ? HELPER.won : HELPER.under) : -HELPER.up;
-        this.nextHelper.position.set(this.rewindButton.x, this.rewindButton.y + below + NEXT_HELPER.height / 2);
         this.rewindShow.update(delta);
     }
 
+    /**
+     * Upright, the offer goes down the left: in the gap between the relics' button and the weapon's damage over its card,
+     * as big as fits there (it follows the cards as they come).
+     */
+    private placeOffer(): void {
+        const screen = Game.safeScreenData ?? Game.overlayScreenData;
+        if (!screen || screen.width > screen.height * 1.15) return;
+        const top = this.relicButton.y + OFFER_GAP.below;
+        const bottom = this.hitPill.y - OFFER_GAP.above;
+        const scale = Math.max(OFFER_GAP.least, Math.min(OFFER_GAP.most, (bottom - top) / OFFER_GAP.tall));
+        this.offer.scale.set(scale);
+        this.offer.position.set(screen.topLeft.x + 14 + (OFFER_GAP.wide * scale) / 2, (top + bottom) / 2);
+    }
+
     public reposition(): void {
-        const screen = Game.overlayScreenData;
-        if (!screen) return;
+        const full = Game.overlayScreenData;
+        if (!full) return;
+        // (The flash over all of it; the rest clear of the phone's corners, camera and gesture bar.)
+        this.flash.position.copyFrom(full.topLeft);
+        this.flash.width = full.width;
+        this.flash.height = full.height;
+        const screen = Game.safeScreenData ?? full;
         const { topLeft } = screen;
-        this.flash.position.copyFrom(topLeft);
-        this.flash.width = screen.width;
-        this.flash.height = screen.height;
         const wide = screen.width > screen.height * 1.15;
         const barY = topLeft.y + (wide ? BAR.wideY : BAR.y);
         this.barBack.position.set(screen.center.x, barY);
@@ -453,11 +495,17 @@ export class WallHud extends PIXI.Container {
         this.retry.position.set(screen.center.x, topLeft.y + screen.height - (wide ? RETRY.wideUp : TRAY_TOP + RETRY.up));
         this.rewindPopup.reposition();
         // Down the right side (on a wide screen, by the cards): the power-ups, and under them what's offered.
-        const side = topLeft.x + screen.width - (wide ? 290 + 24 + 80 : 66);
+        const side = topLeft.x + screen.width - (wide ? 290 + 24 + 80 : 14 + POWER.size / 2);
         this.powers.forEach((button, i) => button.position.set(side, topLeft.y + (wide ? 160 : 182) + i * POWER.every));
-        this.offer.position.set(wide ? side - 20 : topLeft.x + screen.width - 96, topLeft.y + (wide ? 160 : 182) + this.powers.length * POWER.every + 72);
+        if (wide) this.offer.position.set(side - 20, topLeft.y + 160 + this.powers.length * POWER.every + 72);
         this.rewindShow.reposition();
         this.rewindButton.position.set(topLeft.x + (wide ? 24 : 16) + 60, topLeft.y + (wide ? 640 : 206));
+        // (Under the rewind's, past its strip; on a wide screen, beside it.)
+        this.relicButton.position.set(this.rewindButton.x + (wide ? 150 : 0), this.rewindButton.y + (wide ? 0 : 248));
+        this.relicPanel.reposition();
+        // (Hold to punch: low on the right, where the thumb is, over the cards.)
+        const holdBottom = topLeft.y + screen.height - (wide ? 24 : TRAY_TOP + 16) - HOLD_BUTTON.size / 2;
+        this.holdButton.position.set(wide ? screen.center.x + 260 : topLeft.x + screen.width - 18 - HOLD_BUTTON.size / 2, holdBottom);
         this.tray.reposition();
         this.banner.position.set(screen.center.x, topLeft.y + screen.height * 0.32);
         this.wardrobe.reposition();

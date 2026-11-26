@@ -7,13 +7,15 @@
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { Game } from 'core/Game';
+import PlatformHandler from 'core/platforms/PlatformHandler';
 import { WallAudio } from '../audio/WallAudio';
 import { Gameplay } from '../ads/Gameplay';
 import { WallAnalytics } from '../analytics/WallAnalytics';
 import { LOOK_TABS, Look, LookItem, SlotId, gainLook, lookPrice, lookState, lookWall, newLooks, wornIn, wornLook } from '../data/Looks';
-import { short, toolAt, toolsAfter, toolLevel, toolsUpTo } from '../data/WallConfig';
+import { RARITY, RarityDef, rarityOf, short, toolAt, toolRarity, toolsAfter, toolLevel, toolsUpTo } from '../data/WallConfig';
 import { WallProgress } from '../data/WallProgress';
 import { frame, sprite, text } from './parts';
+import { rarityBand, rarityCard } from './Rarity';
 
 const PANEL = { width: 696, tall: 0.56, most: 800, top: 16, pad: 22, header: 74, tabs: 62 };
 const CARD = { width: 150, height: 164, gap: 12, columns: 4, art: 116 };
@@ -197,7 +199,7 @@ export class Wardrobe extends PIXI.Container {
             art.anchor.set(0.5);
             this.ask({ ...look, [slot]: item }, art);
             const price = lookPrice(item);
-            const card = this.card(art, item.id === worn.id, state !== 'wall', state === 'wall' ? `WALL ${lookWall(item)}` : '', state === 'buy' ? { price, can: WallProgress.cash >= price } : state === 'video' ? { video: true, can: true } : undefined);
+            const card = this.card(art, item.id === worn.id, state !== 'wall', state === 'wall' ? `WALL ${lookWall(item)}` : '', state === 'buy' ? { price, can: WallProgress.cash >= price } : state === 'video' ? { video: true, can: true } : undefined, rarityOf(item.rarity));
             this.tappable(card, () => this.pickLook(slot, item, owned));
             return card;
         });
@@ -241,9 +243,15 @@ export class Wardrobe extends PIXI.Container {
         const pick = WallProgress.heldPick;
         const newest = toolAt(level);
         const had = toolsUpTo(level);
+        // (A tool's rarity: the grade it got to, while it was the newest.)
+        const reached = (tool: ReturnType<typeof toolAt>) => {
+            let at = toolLevel(tool.id);
+            while (at < level && toolAt(at + 1).id === tool.id) at++;
+            return toolRarity(at);
+        };
         const add = (tool: ReturnType<typeof toolAt>, id: string, worn: boolean, owned: boolean, label: string) => {
             const art = toolArt(tool, CARD.art * 0.85, !owned);
-            const card = this.card(art, worn, owned, label);
+            const card = this.card(art, worn, owned, label, undefined, owned ? reached(tool) : RARITY[0]);
             this.tappable(card, () => {
                 if (!owned) return false;
                 if (WallProgress.heldPick === id) return true;
@@ -261,13 +269,23 @@ export class Wardrobe extends PIXI.Container {
         ];
     }
 
-    private card(art: PIXI.Container, worn: boolean, owned: boolean, label: string, cost?: Cost): PIXI.Container {
+    /**
+     * A card in its rarity's colour (common grey ... prismatic rainbow), its stars in a dark band over its foot (as the pack's
+     * collection cards); with a wall or a price there, the stars go up top.
+     */
+    private card(art: PIXI.Container, worn: boolean, owned: boolean, label: string, cost?: Cost, rarity: RarityDef = RARITY[0]): PIXI.Container {
         const card = new PIXI.Container();
-        const back = frame('CardFrame03_n_Bg', [30, 29, 30, 33], CARD.width, CARD.height, 0.7);
-        back.tint = worn ? COLORS.worn : cost?.video ? COLORS.video : cost ? COLORS.sale : owned ? COLORS.owned : COLORS.locked;
-        art.y = label || cost ? -16 : 0;
+        const back = rarityCard(rarity, CARD.width, CARD.height);
+        back.position.set(-CARD.width / 2, -CARD.height / 2);
+        // (Locked: dimmer, the colour still there to want.)
+        if (!owned) back.tint = 0x9a9aaa;
+        const foot = !label && !cost;
+        art.y = foot ? -10 : -12;
         if (!owned) art.alpha = 0.45;
         card.addChild(back, art);
+        const band = rarityBand(rarity, CARD.width - 22, foot ? 22 : 17);
+        band.y = foot ? CARD.height / 2 - 24 : -CARD.height / 2 + 20;
+        card.addChild(band);
         if (label) {
             const words = text(label, 20, owned ? 0xffffff : 0xffc98a);
             words.scale.set(Math.min(1, (CARD.width - 26) / words.width));
@@ -320,9 +338,11 @@ export class Wardrobe extends PIXI.Container {
     public update(): void {
         if (!this.isOpen) return;
         for (let i = 0; i < PICTURES_A_FRAME && this.pending.length; i++) {
-            const { look, art } = this.pending.shift()!;
+            const { look, art } = this.pending[0];
             const image = this.actions.picture(look, PICTURE);
-            if (!image) continue;
+            // (Not yet: the hands are still loading. The next frame, again.)
+            if (!image) break;
+            this.pending.shift();
             const canvas = document.createElement('canvas');
             canvas.width = canvas.height = PICTURE;
             canvas.getContext('2d')!.putImageData(image, 0, 0);
@@ -351,7 +371,7 @@ export class Wardrobe extends PIXI.Container {
     }
 
     public reposition(): void {
-        const screen = Game.overlayScreenData;
+        const screen = Game.safeScreenData ?? Game.overlayScreenData;
         if (!screen || !this.isOpen) return;
         const { topLeft, width, height, center } = screen;
         this.backdrop.clear().beginFill(0x000000, 0.001).drawRect(topLeft.x - 400, topLeft.y - 400, width + 800, height + 800).endFill();
@@ -378,7 +398,9 @@ function setArt(art: PIXI.Sprite, texture: PIXI.Texture): void {
 }
 
 /** A card's price: money on gold (grey: not enough), or a video's. */
-export function costStrip({ price, video, can }: Cost, width = CARD.width - 24, y = CARD.height / 2 - 32): PIXI.Container {
+export function costStrip({ price, video: forVideo, can }: Cost, width = CARD.width - 24, y = CARD.height / 2 - 32): PIXI.Container {
+    // (A build without ads gives the video ones for nothing, so no video icon on them.)
+    const video = forVideo && PlatformHandler.ENABLE_VIDEO_ADS;
     const made = new PIXI.Container();
     const back = frame('BasicFrame_Round12', [12, 12, 12, 12], width, 40);
     back.tint = video ? 0xff4fa3 : can ? 0xffc21f : 0x50546a;

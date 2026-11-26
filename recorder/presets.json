@@ -1,16 +1,16 @@
 {
-    "_comment": "capture: the screen formats the recorder can set the game to (width x height in output pixels; dpr: the pixel ratio faked for the game, so its page is width/dpr x height/dpr CSS pixels). export: the editor's output presets; limits are warnings only. A project can add its own in recorder.presets.json at its root (same shape). Platform rules change: check them before uploading.",
+    "_comment": "capture: the screen formats the recorder can set the game to (width x height in output pixels; dpr: the pixel ratio faked for the game, so its page is width/dpr x height/dpr CSS pixels). export: the editor's output presets; limits are warnings only. A project can add its own in recorder.presets.json at its root (same shape). Platform rules change: check them before uploading. The first of each is the default: the recorder starts on the first capture format, the editor on the first export preset.",
     "capture": [
+        {
+            "name": "CrazyGames portrait 2:3 · 1080×1620",
+            "width": 1080,
+            "height": 1620,
+            "dpr": 2
+        },
         {
             "name": "Phone portrait 9:16 · 1080×1920",
             "width": 1080,
             "height": 1920,
-            "dpr": 2
-        },
-        {
-            "name": "CrazyGames Portrait 2:3",
-            "width": 1080,
-            "height": 1620,
             "dpr": 2
         },
         {
@@ -83,7 +83,7 @@
             "speed": "balanced",
             "audio": true,
             "audioKbps": 192
-        }
+        },
         {
             "name": "Vertical 1080×1920 MP4 (Shorts, Reels, TikTok)",
             "format": "mp4",
@@ -247,6 +247,6 @@
             "speed": "balanced",
             "audio": false,
             "audioKbps": 0
-        },
+        }
     ]
 }

@@ -1,12 +1,14 @@
 // HitPill.ts
 //
 // Over PUNCH HARDER's card: what a hit does now, the tool in hand and the damage, everything counted (the combo too, while there's one). It jumps as it
-// grows. Tapped, a bubble says where it comes from: the tool's own, the boosts, the medals, the crew's share, the combo;
-// the next tap, anywhere, closes it.
+// grows. Above it, the crew's: all the animals' damage a second as it stands (their boosts, the medals, a frenzy), once
+// there's a crew; it changes only when that does (a hire, a boost), never with the hits. Either tapped, a bubble says where
+// it comes from: the tool's own, the boosts, the medals, the crew's share, the combo, all the crew a second; the next tap,
+// anywhere, closes it.
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
-import { hitNumber, short } from '../data/WallConfig';
+import { gradedName, hitNumber, short, toolAt } from '../data/WallConfig';
 import { WallProgress } from '../data/WallProgress';
 import { toolArt } from './Wardrobe';
 import { fit, frame, sprite, text, write } from './parts';
@@ -15,11 +17,15 @@ export const HIT_PILL = { width: 132, height: 46 };
 const COLOR = { back: 0x1c1d33, plain: 0xffffff, combo: 0xffe14a };
 const SAME_TAP_MS = 80;
 const BUBBLE = { width: 250, row: 38, pad: 18, seconds: 4 };
+/** The total's pill, over the hit's: its size, and the gap between them. */
+const TOTAL = { width: 132, height: 38, gap: 6 };
 
 export class HitPill extends PIXI.Container {
     private readonly icon = new PIXI.Container();
     private readonly value = text('', 30, COLOR.plain, 0x100e18, 7);
     private readonly bubble = new PIXI.Container();
+    private readonly total = new PIXI.Container();
+    private readonly totalValue = text('', 24, COLOR.plain, 0x100e18, 6);
     private tool = '';
     private shown = 0;
     private bubbleFor = 0;
@@ -36,10 +42,20 @@ export class HitPill extends PIXI.Container {
         this.value.position.set(-width / 2 + 46, -1);
         this.bubble.visible = false;
         this.bubble.eventMode = 'none';
-        this.addChild(back, this.icon, this.value, this.bubble);
+        // The total, over it: all the damage a second.
+        const totalBack = frame('ResourceBar_Single_Bg', [11, 11, 11, 11], TOTAL.width, TOTAL.height);
+        totalBack.tint = COLOR.back;
+        const totalIcon = sprite('Wall_chick', 34);
+        totalIcon.position.set(-TOTAL.width / 2 + 18, -1);
+        this.totalValue.anchor.set(0, 0.5);
+        this.totalValue.position.set(-TOTAL.width / 2 + 40, -1);
+        this.total.addChild(totalBack, totalIcon, this.totalValue);
+        this.total.y = -height / 2 - TOTAL.gap - TOTAL.height / 2;
+        this.total.visible = false;
+        this.addChild(back, this.icon, this.value, this.total, this.bubble);
         this.eventMode = 'static';
         this.cursor = 'pointer';
-        this.hitArea = new PIXI.Rectangle(-width / 2 - 14, -height / 2 - 10, width + 24, height + 20);
+        this.hitArea = new PIXI.Rectangle(-width / 2 - 14, -height / 2 - TOTAL.gap - TOTAL.height - 10, width + 24, height + TOTAL.gap + TOTAL.height + 20);
         // (Not a punch too.)
         this.on('pointerdown', (event: PIXI.FederatedPointerEvent) => {
             event.stopPropagation();
@@ -51,6 +67,12 @@ export class HitPill extends PIXI.Container {
     /** `combo`: times the damage now (1: none). */
     public update(delta: number, combo: number): void {
         this.combo = combo;
+        const crew = WallProgress.crewDps;
+        this.total.visible = crew > 0;
+        if (this.total.visible) {
+            const label = `${short(crew)}/s`;
+            if (label !== this.totalValue.text) write(this.totalValue, label, TOTAL.width - 50);
+        }
         const { tool } = WallProgress;
         if (tool.id !== this.tool) {
             this.tool = tool.id;
@@ -89,14 +111,18 @@ export class HitPill extends PIXI.Container {
 
     /** Where it comes from, row by row. */
     private showBubble(): void {
-        const { tool, boosts, medals, crew } = WallProgress.damageParts;
+        const { tool, boosts, medals, relics, crew } = WallProgress.damageParts;
         const { frenzy } = WallProgress;
-        const rows: [string, string, string][] = [['Wall_fists', WallProgress.tool.name.toUpperCase(), short(tool)]];
+        const rows: [string, string, string][] = [['Wall_fists', (WallProgress.tool.id === toolAt(WallProgress.punchLevel).id ? gradedName(WallProgress.punchLevel) : WallProgress.tool.name).toUpperCase(), short(tool)]];
         if (boosts > 1) rows.push(['ItemIcon_Star_Gold', 'BOOSTS', `x${short(boosts)}`]);
         if (medals > 1) rows.push(['ItemIcon_Trophy_Gold', 'REWINDS', `x${short(medals)}`]);
+        if (relics > 1) rows.push(['Icon_GradeBadge_Master', 'RELICS', `x${short(relics)}`]);
         if (frenzy > 1) rows.push(['ItemIcon_Energy_Blue', 'FRENZY', `x${short(frenzy)}`]);
         if (crew > 0) rows.push(['Wall_chick', 'CREW', `+${short(crew)}`]);
         if (this.combo > 1) rows.push(['ItemIcon_Energy_Blue', 'COMBO', `x${short(this.combo)}`]);
+        if (WallProgress.crewDps > 0) {
+            rows.push(['Wall_chick', 'ALL CREW', `${short(WallProgress.crewDps)}/s`]);
+        }
         this.bubble.removeChildren().forEach((child) => child.destroy({ children: true }));
         const height = rows.length * BUBBLE.row + BUBBLE.pad * 2 + 38;
         const back = frame('CardFrame03_n_Bg', [30, 29, 30, 33], BUBBLE.width, height, 0.7);
@@ -118,7 +144,8 @@ export class HitPill extends PIXI.Container {
             number.position.set(BUBBLE.width / 2 - 20, y);
             this.bubble.addChild(art, words, number);
         });
-        this.bubble.position.set(-HIT_PILL.width / 2 + BUBBLE.width / 2 - 4, -HIT_PILL.height / 2 - height / 2 - 8);
+        const above = this.total.visible ? TOTAL.gap + TOTAL.height : 0;
+        this.bubble.position.set(-HIT_PILL.width / 2 + BUBBLE.width / 2 - 4, -HIT_PILL.height / 2 - above - height / 2 - 8);
         this.bubble.visible = true;
         // (Not the tap that's opening it.)
         window.setTimeout(() => !this.destroyed && this.bubble.visible && window.addEventListener('pointerdown', this.onTap, true));

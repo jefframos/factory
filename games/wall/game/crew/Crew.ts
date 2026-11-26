@@ -136,7 +136,7 @@ export class Crew {
         const own = hash(kind, n, 1, 77);
         const home = this.homeOf(kind, n);
         this.members.push({
-            kind, n, home, at: home.clone(), target: new THREE.Vector3(), phase: atOnce ? 'wait' : 'drop', time: 0, wait: own * def.every,
+            kind, n, home, at: home.clone(), target: new THREE.Vector3(), phase: atOnce ? 'wait' : 'drop', time: 0, wait: (own * def.every) / WallProgress.crewSpeed,
             seconds: LEAP.seconds, yaw: Math.PI, yawTo: Math.PI, squash: 0, flip: 0, own,
         });
     }
@@ -237,7 +237,8 @@ export class Crew {
         member.squash = 1;
         member.at.copy(member.home);
         // (Less what its way there took: the farther ones hit as often.)
-        member.wait = Math.max(0.05, def.every - member.seconds - BACK.seconds) * (0.85 + Math.random() * 0.3) + extra;
+        // (STAMPEDE: sooner.)
+        member.wait = Math.max(0.05, def.every / WallProgress.crewSpeed - member.seconds - BACK.seconds) * (0.85 + Math.random() * 0.3) + extra;
         // Back to the wall, side on, or a look at the player.
         member.yawTo = Math.random() < 0.35 ? (Math.random() - 0.5) * 0.9 : Math.PI + (Math.random() - 0.5) * 1.6;
     }
@@ -258,7 +259,7 @@ export class Crew {
             ball.from.copy(member.home).setY(def.size * 1.3);
             ball.to.copy(target);
             member.squash = 1;
-            member.wait = def.every * (0.85 + Math.random() * 0.3);
+            member.wait = (def.every / WallProgress.crewSpeed) * (0.85 + Math.random() * 0.3);
             return;
         }
         target.z += def.size * NOSE;
@@ -269,7 +270,8 @@ export class Crew {
 
     /** What one's hit does: its share of its kind's damage a second. */
     private damageOf({ kind }: { kind: number }, def: CrewDef): number {
-        return (WallProgress.dpsEach(def) * WallProgress.owned(def.id) * def.every) / Math.max(1, this.shown[kind]);
+        // (Its damage a second counts STAMPEDE's speed: each hit is what comes between two, so as often, no harder.)
+        return (WallProgress.dpsEach(def) * WallProgress.owned(def.id) * (def.every / WallProgress.crewSpeed)) / Math.max(1, this.shown[kind]);
     }
 
     private updateThrown(delta: number): void {

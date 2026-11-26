@@ -1,9 +1,25 @@
 # WALLBREAK
 
+## Description
+
+Smash through wall after wall with your bare fists, then boxing gloves, hammers, axes and swords! Hire a crew of animals that punch for you, upgrade your weapon, beat the enemies and bosses hiding behind the walls, and rewind to start again stronger.
+
+## Controls
+
+- **Punch:** tap or click the wall; hit the glowing weak spot for extra damage and combos. Two fingers punch with both hands. Space also punches.
+- **Upgrade:** tap the cards at the bottom to buy a stronger weapon, more crew and boosts (keys 1-4 buy the first four).
+- **Power-ups:** tap the buttons on the right, and catch what floats by for cash and chests.
+- **Menus:** tap or click the buttons (wardrobe, rewind); Esc closes them.
+
+---
+
 Punch a voxel wall to pieces, walk through, punch the next. The design: [wallbreak-design-readme.md](wallbreak-design-readme.md)
 (its build order, section 8). Run it: `GAME=wall` in `.env`, `npm run dev`. `?debug=1` adds three panels: **Wall** (cash, bricks,
 skip walls, new game), **Camera** (its settings, in play and in fights; COPY gives them as `camera` in `ui/wall.json`) and **Effects** (a switch and a strength for every effect, kept in the browser; COPY gives them as
 `ui/effects.json` wants them).
+
+**Android app**: `npm run android` opens a panel that checks the setup, lists the phones plugged in and runs it on one or builds an APK (mock ads till AdMob is set): [native/README.md](../../native/README.md).
+The plan for the stores (accounts, costs, in-app purchases, every step): [WALLBREAK on Android](https://claude.ai/artifact/TdaLhThEY7Q3vesak4RkDu).
 
 ## What's built (steps 1-8)
 
@@ -25,12 +41,31 @@ skip walls, new game), **Camera** (its settings, in play and in fights; COPY giv
 - **The crew** (cash). Eight animals that headbutt or throw on their own, each there from a wall on.
 - **Boosts** (bricks, which walls bring). Each of the crew's at 1, 5, 15, 30... copies, and others: hits that add some of the
   crew's damage, cash, the weak spot, a longer combo.
-- **What floats by** (`ui/Floater`, `floating`, from wall 2): every 16-26 s bills (the wall's HP in cash), a frenzy (from wall 12: all damage
-  x2 for 30 s) or a golden chest (from wall 6, for a video: five walls' worth). Their switch is in the Effects panel.
-- **The next helper** (`ui/NextHelper`): under the rewind button, in shadow with a question mark, and the wall it comes at.
+- **Rarity** (`rarity` in `ui/wall.json`): common, uncommon, rare, epic, legendary, mythic, prismatic, as the pack's collection
+  cards (`Preview/5_Collection_List`): the card in its tier's colour (`ItemFrame02_Single_*`: grey, green, blue, purple, gold,
+  red, rainbow) and 1 to 7 stars (rainbow for prismatic) in a dark band ([ui/Rarity.ts](game/ui/Rarity.ts)). Every look has one
+  (`ui/looks.json`), the rarer from later walls (prismatic from 120 to 200), so later runs still bring new ones. A tool's is its
+  grade: as it came, then each level it's kept (`tools.levelsAfter` 6, so each later tool goes green to red); the weapon's card
+  and its glow show it.
+- **Relics** ([ui/Relics.ts](game/ui/Relics.ts), `relics`): bought with medals, for good, from the first rewind (a button under
+  the rewind's): STRONG ARM (all damage x1.5 a level), WILD HERD (crew damage x2), STAMPEDE (crew x1.25 faster), IRON GRIP
+  (+1 hold punch a second), GOLD DUST (cash x1.5), QUICK CHARGE (power-ups charge 20% sooner), HEAD START (a rewind starts 3
+  walls further, up to wall 13). A medal spent gives no damage any more; each is the pack's grade badge.
+- **Hold to punch** (`hold`, from wall 25): a big HOLD button low on the right; held, the hands punch on their own (3 a second
+  and IRON GRIP's), where AUTO would; a finger held on the wall does it too, where it is.
+- **What comes when**, the first time through: one new thing a wall, a gift or something new on screen, never two, and no words to
+  read about it. 2 the red gloves, 3 the chick, 4 the weak spot (a TAP ring on it till it's hit), 5 a free weapon level, 6 the beaver,
+  7 a free weapon level, 8 floating cash, 9 boosts (bought for who leaves them three walls), 10 medals, 11 the hog, 12 enemies,
+  13 a free weapon level, 14 the wardrobe and its offers, 15 the monkey, 16 TWO HANDS, 17 golden chests, 18 a free weapon level,
+  19 buying nudges, 20 the first boss, 21 frenzy, 22 the cow, 23 a free weapon level, 24 AUTO HIT, 25 hold to punch (`hold`: a finger held down punches on its own, 3 a second, slower than AUTO and than tapping), then the panda at 26, a weapon level
+  at 27, the elephant at 29, a weapon level at 31, the giraffe at 33 (each helper's card shows up with it). Free weapon levels only to
+  who hasn't bought them, free helpers (beaver, hog, monkey) only to who hasn't hired one. A rewind keeps half the weapon's level
+  (its popup shows which weapon). Walls 4-30 take about 10-20 s each for a casual player (simulated; a boss up to half a minute).
+- **What floats by** (`ui/Floater`, `floating`, from wall 8): every 16-26 s bills (the wall's HP in cash), a frenzy (from wall 21: all damage
+  x2 for 30 s) or a golden chest (from wall 17, for a video: five walls' worth). Their switch is in the Effects panel.
 - **Away** (`away`): back after 3 minutes or more, the crew's earned some cash (paid at the first click; no popup), the same again
   floats by for a video.
-- **The nudge** (`nudge`, from wall 12): something affordable left for 15 s, a hand points at the best of it.
+- **The nudge** (`nudge`, from wall 19): something affordable left for 15 s, a hand points at the best of it.
 - **The weak spot** (from wall 5). x5, and hit again within 2.2 s each time, a combo on every hit up to x4.
 - **Enemies and bosses** (`ui/wall.json` `enemies`; `on`: false and there are none at all, `?enemies=0` or 1 and the debug panel try
   it either way). Minions behind every third wall from 12 on and a boss behind every tenth from 20 on, whose gate says so: dark red with a
@@ -40,12 +75,12 @@ skip walls, new game), **Camera** (its settings, in play and in fights; COPY giv
   Its time up it's gone, and minions come, wave after wave (they pay), until FIGHT BOSS! calls it back. Each boss is bigger than the one before, and the
   colours (the skeletons' bones, the others' hue) change every two bosses and with each rewind; some are a pair (the debug Bosses panel shows them all). A wall's only done once
   what's behind it is. Models: Mob's (`tools/build-enemies.mjs`), got one at a time as their walls come near.
-- **Power-ups** (`data/Powers`, `ui/PowerButton`, `powers`): down the right side, TWO HANDS (from wall 4: each hit's followed by the other
-  hand's, the same tool in it) and AUTO HIT (from wall 7: 4 hits a second on its own), 30 s each, together too; then they charge (or a
+- **Power-ups** (`data/Powers`, `ui/PowerButton`, `powers`): down the right side, TWO HANDS (from wall 16: each hit's followed by the other
+  hand's, the same tool in it) and AUTO HIT (from wall 24: 4 hits a second on its own), 30 s each, together too; then they charge (or a
   video has them on at once). Their icons are drawn (`art/power_*.png`, full size; `Wall_power_*` in the atlas); the floating orbs: `tools/build-powers.mjs`.
 - **Medals** (from wall 10, every third wall: 10, 13, 16 ...; minions are at 12, 15, 18 ... and bosses at 20, 30 ..., so a wall has one thing,
   and none right before a boss): a golden one turns behind the wall; the wall down, it flies to the Rewind button (the wall's number of them). **REWIND** (from wall 15) cashes them in: back to wall 1 with the first gloves and all damage up for good (+6% each); boosts and
-  looks are kept, and nothing's given to help the next time up. Its popup says so, opens by itself once ever (at wall 20: `rewind.popup`), and its show spins the clock back.
+  looks are kept, and nothing's given to help the next time up. Its popup says so, opens by itself once ever (at wall 21, after the first boss: `rewind.popup`; sooner if that boss gets away), and its show spins the clock back.
 - **The music**: a lo-fi loop, written and played by `tools/build-music.py` (76 bpm, 24 bars, seamless); it comes in on the first click.
 - **The save** (SaveStorage) and **the events** (`game/analytics/WallAnalytics.ts`: the table of them all).
 - **Gameplay and ads** (`game/ads/Gameplay.ts`): gameplayStart on the first click, stop while the wardrobe, the rewind popup or an

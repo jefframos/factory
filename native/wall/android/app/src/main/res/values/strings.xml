@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">WALLBREAK</string>
+    <string name="title_activity_main">WALLBREAK</string>
+    <string name="package_name">com.hyperchip.wallbreak</string>
+    <string name="custom_url_scheme">com.hyperchip.wallbreak</string>
+    <string name="admob_app_id">ca-app-pub-3940256099942544~3347511713</string>
+</resources>

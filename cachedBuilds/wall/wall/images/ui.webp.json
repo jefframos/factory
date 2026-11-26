@@ -1240,7 +1240,7 @@
         "h": 130
       }
     },
-    "ItemFrame03_Single_Purple": {
+    "ItemFrame03_Single_Red": {
       "frame": {
         "x": 1082,
         "y": 134,
@@ -1260,7 +1260,7 @@
         "h": 130
       }
     },
-    "ItemFrame03_Single_Gray": {
+    "ItemFrame03_Single_Purple": {
       "frame": {
         "x": 1079,
         "y": 266,
@@ -1280,10 +1280,50 @@
         "h": 130
       }
     },
-    "ItemFrame03_Single_Blue": {
+    "ItemFrame03_Single_Green": {
       "frame": {
         "x": 1079,
         "y": 396,
+        "w": 128,
+        "h": 130
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 128,
+        "h": 130
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 130
+      }
+    },
+    "ItemFrame03_Single_Gray": {
+      "frame": {
+        "x": 1070,
+        "y": 526,
+        "w": 128,
+        "h": 130
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 128,
+        "h": 130
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 130
+      }
+    },
+    "ItemFrame03_Single_Blue": {
+      "frame": {
+        "x": 1070,
+        "y": 656,
         "w": 128,
         "h": 130
       },
@@ -1320,7 +1360,7 @@
         "h": 62
       }
     },
-    "ItemFrame02_Single_Purple": {
+    "ItemFrame02_Single_Red": {
       "frame": {
         "x": 480,
         "y": 996,
@@ -1340,7 +1380,7 @@
         "h": 62
       }
     },
-    "ItemFrame02_Single_Navy": {
+    "ItemFrame02_Single_Purple": {
       "frame": {
         "x": 778,
         "y": 111,
@@ -1360,7 +1400,7 @@
         "h": 62
       }
     },
-    "ItemFrame02_Single_Green": {
+    "ItemFrame02_Single_Navy": {
       "frame": {
         "x": 778,
         "y": 173,
@@ -1380,7 +1420,7 @@
         "h": 62
       }
     },
-    "ItemFrame02_Single_Gray": {
+    "ItemFrame02_Single_Hologram1": {
       "frame": {
         "x": 311,
         "y": 699,
@@ -1400,7 +1440,7 @@
         "h": 62
       }
     },
-    "ItemFrame02_Single_Blue": {
+    "ItemFrame02_Single_Green": {
       "frame": {
         "x": 196,
         "y": 713,
@@ -1420,10 +1460,50 @@
         "h": 62
       }
     },
+    "ItemFrame02_Single_Gray": {
+      "frame": {
+        "x": 480,
+        "y": 1058,
+        "w": 60,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 60,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 60,
+        "h": 62
+      }
+    },
+    "ItemFrame02_Single_Blue": {
+      "frame": {
+        "x": 542,
+        "y": 1058,
+        "w": 60,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 60,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 60,
+        "h": 62
+      }
+    },
     "Image_Effect_Star01_Yellow": {
       "frame": {
         "x": 1015,
-        "y": 697,
+        "y": 786,
         "w": 183,
         "h": 183
       },
@@ -1480,6 +1560,206 @@
         "h": 71
       }
     },
+    "Icon_GradeBadge_Silver": {
+      "frame": {
+        "x": 630,
+        "y": 986,
+        "w": 122,
+        "h": 101
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 3,
+        "y": 14,
+        "w": 122,
+        "h": 101
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "Icon_GradeBadge_Platinum": {
+      "frame": {
+        "x": 604,
+        "y": 1110,
+        "w": 122,
+        "h": 98
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 3,
+        "y": 15,
+        "w": 122,
+        "h": 98
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "Icon_GradeBadge_Master": {
+      "frame": {
+        "x": 480,
+        "y": 1122,
+        "w": 128,
+        "h": 103
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 13,
+        "w": 128,
+        "h": 103
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "Icon_GradeBadge_Iron": {
+      "frame": {
+        "x": 279,
+        "y": 1252,
+        "w": 128,
+        "h": 100
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 14,
+        "w": 128,
+        "h": 100
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "Icon_GradeBadge_Grandmaster": {
+      "frame": {
+        "x": 381,
+        "y": 1252,
+        "w": 128,
+        "h": 114
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 7,
+        "w": 128,
+        "h": 114
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "Icon_GradeBadge_Gold": {
+      "frame": {
+        "x": 279,
+        "y": 1143,
+        "w": 98,
+        "h": 125
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 15,
+        "y": 1,
+        "w": 98,
+        "h": 125
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "Icon_GradeBadge_Diamond": {
+      "frame": {
+        "x": 497,
+        "y": 1252,
+        "w": 127,
+        "h": 100
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1,
+        "y": 14,
+        "w": 127,
+        "h": 100
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "Icon_GradeBadge_Challenger": {
+      "frame": {
+        "x": 599,
+        "y": 1210,
+        "w": 128,
+        "h": 114
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 7,
+        "w": 128,
+        "h": 114
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "Icon_GradeBadge_Bronze": {
+      "frame": {
+        "x": 715,
+        "y": 1210,
+        "w": 93,
+        "h": 101
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 18,
+        "y": 14,
+        "w": 93,
+        "h": 101
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "Icon_GradeBadge_Beginner": {
+      "frame": {
+        "x": 715,
+        "y": 1313,
+        "w": 101,
+        "h": 100
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 14,
+        "y": 14,
+        "w": 101,
+        "h": 100
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
     "Icon_Exclamation": {
       "frame": {
         "x": 992,
@@ -1502,8 +1782,8 @@
     },
     "Icon_Close02": {
       "frame": {
-        "x": 279,
-        "y": 1126,
+        "x": 599,
+        "y": 1340,
         "w": 75,
         "h": 75
       },
@@ -1542,12 +1822,12 @@
     },
     "Icon_Arrow_Next1": {
       "frame": {
-        "x": 875,
-        "y": 832,
+        "x": 406,
+        "y": 1143,
         "w": 55,
         "h": 107
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -1562,12 +1842,12 @@
     },
     "handHud": {
       "frame": {
-        "x": 236,
-        "y": 934,
+        "x": 728,
+        "y": 1142,
         "w": 62,
         "h": 70
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 9,
@@ -1580,10 +1860,50 @@
         "h": 80
       }
     },
+    "GradeIcon_Star_s_Yellow": {
+      "frame": {
+        "x": 837,
+        "y": 356,
+        "w": 42,
+        "h": 45
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 42,
+        "h": 45
+      },
+      "sourceSize": {
+        "w": 42,
+        "h": 45
+      }
+    },
+    "GradeIcon_Star_s_Premium": {
+      "frame": {
+        "x": 1015,
+        "y": 697,
+        "w": 45,
+        "h": 47
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 45,
+        "h": 47
+      },
+      "sourceSize": {
+        "w": 45,
+        "h": 47
+      }
+    },
     "Glow_Circle01": {
       "frame": {
-        "x": 544,
-        "y": 1027,
+        "x": 992,
+        "y": 971,
         "w": 180,
         "h": 180
       },
@@ -1622,12 +1942,12 @@
     },
     "CardFrame03_n_Bg": {
       "frame": {
-        "x": 300,
-        "y": 934,
+        "x": 800,
+        "y": 1142,
         "w": 64,
         "h": 67
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -1642,12 +1962,12 @@
     },
     "Button_Round03_Dark": {
       "frame": {
-        "x": 1070,
-        "y": 526,
+        "x": 817,
+        "y": 1208,
         "w": 130,
         "h": 122
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -1662,8 +1982,8 @@
     },
     "Button01_s_Red": {
       "frame": {
-        "x": 356,
-        "y": 1143,
+        "x": 875,
+        "y": 832,
         "w": 70,
         "h": 114
       },
@@ -1682,12 +2002,12 @@
     },
     "Button01_s_Green": {
       "frame": {
-        "x": 472,
-        "y": 1143,
+        "x": 817,
+        "y": 1340,
         "w": 70,
         "h": 114
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -1702,12 +2022,12 @@
     },
     "Button01_s_Gray": {
       "frame": {
-        "x": 279,
-        "y": 1203,
+        "x": 933,
+        "y": 1340,
         "w": 70,
         "h": 114
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -1722,8 +2042,8 @@
     },
     "BorderFrame_Round20_Single_Dark": {
       "frame": {
-        "x": 1070,
-        "y": 650,
+        "x": 941,
+        "y": 1142,
         "w": 44,
         "h": 46
       },
@@ -1742,7 +2062,7 @@
     },
     "BorderFrame_Circle78": {
       "frame": {
-        "x": 366,
+        "x": 236,
         "y": 934,
         "w": 76,
         "h": 78
@@ -1762,8 +2082,8 @@
     },
     "BasicFrame_Round12": {
       "frame": {
-        "x": 875,
-        "y": 889,
+        "x": 497,
+        "y": 1381,
         "w": 32,
         "h": 34
       },

@@ -336,7 +336,7 @@ export const GameAnalytics = {
      * the canvas would be uncapped; and, if it was lowered, the resolution it's at (AdaptiveResolution, percent).
      */
     performance(fps: number, resolution: number): void {
-        const speed = fps < 30 ? 'under-30' : fps < 45 ? '30-45' : fps < 55 ? '45-55' : '55-plus';
+        const speed = fps < 30 ? 'under30' : fps < 45 ? '30to45' : fps < 55 ? '45to55' : '55plus';
         const ratio = Math.min(2, window.devicePixelRatio || 1);
         const megapixels = (window.innerWidth * window.innerHeight * ratio * ratio) / 1e6;
         const size = megapixels < 1 ? 'small' : megapixels <= 2.1 ? 'hd' : megapixels <= 4 ? 'qhd' : '4k';

@@ -6,7 +6,7 @@
 // the browser's away), shortly after any change and as the game's left.
 
 import { SaveStorage } from 'core/platforms/SaveStorage';
-import { AUTO, AWAY, BOOSTS, BoostDef, CREW, CrewDef, REWIND, SHOWS, WEAK, bricksOf, crewCost, givenLevel, ToolDef, punchCost, punchDamage, toolAt, toolsUpTo, medalsOf, wallAt } from './WallConfig';
+import { AUTO, AWAY, BOOSTS, BoostDef, CREW, CrewDef, HOLD, RELICS, REWIND, RelicDef, RelicId, SHOWS, WEAK, bricksOf, relicCost, relicValue, crewCost, givenLevel, ToolDef, punchCost, punchDamage, toolAt, toolsUpTo, medalsOf, wallAt } from './WallConfig';
 
 const KEY = 'wall.save';
 const VERSION = 1;
@@ -53,9 +53,11 @@ interface SaveData {
     fights: number;
     /** When it was last saved (ms since 1970). */
     at: number;
+    /** Relics bought with medals: their levels, by id. */
+    relics: Record<string, number>;
 }
 
-const fresh = (): SaveData => ({ version: VERSION, wall: 1, cash: 0, punch: 0, best: 1, bricks: 0, crew: {}, boosts: [], medals: 0, runMedals: 0, rewinds: 0, steps: [], played: false, worn: {}, seen: {}, held: '', looks: [], fight: false, farming: false, offers: 0, playSec: 0, fights: 0, at: 0 });
+const fresh = (): SaveData => ({ version: VERSION, wall: 1, cash: 0, punch: 0, best: 1, bricks: 0, crew: {}, boosts: [], medals: 0, runMedals: 0, rewinds: 0, steps: [], played: false, worn: {}, seen: {}, held: '', looks: [], fight: false, farming: false, offers: 0, playSec: 0, fights: 0, at: 0, relics: {} });
 
 function read(): SaveData {
     try {
@@ -72,8 +74,12 @@ function read(): SaveData {
 
 let state = fresh();
 let ready = false;
+/** The wall each boost was first there to be bought for them at (this session). */
+const affordableSince = new Map<string, number>();
 /** All damage, times this, for now (Frenzy). Not saved. */
 let frenzy = 1;
+/** CREW RUSH's speed while it's on (not saved). */
+let crewRush = 1;
 /** What the crew earned while they were away, till it's paid. */
 let awayCash = 0;
 let timer: number | undefined;
@@ -210,12 +216,12 @@ export const WallProgress = {
     /** What a plain hit does. */
     get damage(): number {
         const { punch, punchFromCrew } = boostTotals();
-        return punchDamage(state.punch) * punch * this.medalMult * frenzy + this.crewDps * punchFromCrew;
+        return punchDamage(state.punch) * punch * this.medalMult * this.relic('power') * frenzy + this.crewDps * punchFromCrew;
     },
     /** What a plain hit's made of: the tool's level, the boosts (times), the medals (times), the crew's share (added). */
-    get damageParts(): { tool: number; boosts: number; medals: number; crew: number } {
+    get damageParts(): { tool: number; boosts: number; medals: number; relics: number; crew: number } {
         const { punch, punchFromCrew } = boostTotals();
-        return { tool: punchDamage(state.punch), boosts: punch, medals: this.medalMult, crew: this.crewDps * punchFromCrew };
+        return { tool: punchDamage(state.punch), boosts: punch, medals: this.medalMult, relics: this.relic('power'), crew: this.crewDps * punchFromCrew };
     },
     get frenzy(): number {
         return frenzy;
@@ -225,7 +231,53 @@ export const WallProgress = {
         changed();
     },
     get cashMult(): number {
-        return boostTotals().cash;
+        return boostTotals().cash * this.relic('gold');
+    },
+
+    // ---------------------------------------------------------------- relics
+
+    relicLevel(id: RelicId): number {
+        return state.relics[id] ?? 0;
+    },
+    /** What a relic does now (1 or 0 till it's bought: see relicValue). */
+    relic(id: RelicId): number {
+        const def = RELICS.find((r) => r.id === id);
+        return def ? relicValue(def, this.relicLevel(id)) : 1;
+    },
+    /** Its next level: there to buy (not at its most), and the medals are there. */
+    canBuyRelic(def: RelicDef): boolean {
+        const level = this.relicLevel(def.id);
+        return (def.max === undefined || level < def.max) && state.medals >= relicCost(def, level);
+    },
+    /** Any relic there is to buy now. */
+    get relicToBuy(): boolean {
+        return RELICS.some((def) => this.canBuyRelic(def));
+    },
+    /** Bought with medals (spent: they give no damage any more); false if it can't be. */
+    buyRelic(def: RelicDef): boolean {
+        if (!this.canBuyRelic(def)) return false;
+        state.medals -= relicCost(def, this.relicLevel(def.id));
+        state.relics[def.id] = this.relicLevel(def.id) + 1;
+        changed();
+        return true;
+    },
+    /** The crew's hits come this many times as often (STAMPEDE). */
+    get crewSpeed(): number {
+        return this.relic('stampede') * crewRush;
+    },
+    /** CREW RUSH (a power-up): the crew this many times as fast while it's on (1: off). */
+    setCrewRush(mult: number): void {
+        if (mult === crewRush) return;
+        crewRush = mult;
+        changed();
+    },
+    /** Hold to punch's punches a second (IRON GRIP adds). */
+    get holdRate(): number {
+        return HOLD.perSecond + this.relic('grip');
+    },
+    /** The power-ups' charging time, times this (QUICK CHARGE). */
+    get chargeMult(): number {
+        return this.relic('charge');
     },
     get weakMult(): number {
         return WEAK.mult * boostTotals().weak;
@@ -308,7 +360,7 @@ export const WallProgress = {
     /** One of them's damage a second. */
     dpsEach(def: CrewDef): number {
         const { crewAll, crewOf } = boostTotals();
-        return def.dps * crewAll * (crewOf[def.id] ?? 1) * this.medalMult * frenzy;
+        return def.dps * crewAll * (crewOf[def.id] ?? 1) * this.medalMult * this.relic('power') * this.relic('herd') * this.crewSpeed * frenzy;
     },
 
     /** All of the crew's damage a second. */
@@ -366,7 +418,12 @@ export const WallProgress = {
     autoBoost(): BoostDef | undefined {
         if (state.wall > AUTO.boostsUntil) return undefined;
         const boost = this.boostsThere[0];
-        return boost && state.bricks >= boost.bricks * AUTO.boostsAfter && this.buyBoost(boost) ? boost : undefined;
+        if (!boost || state.bricks < boost.bricks * AUTO.boostsAfter) return undefined;
+        // (Theirs to pick for some walls first: one bought for them as it comes up would vanish under their finger.)
+        const since = affordableSince.get(boost.id) ?? state.wall;
+        affordableSince.set(boost.id, since);
+        if (state.wall - since < AUTO.boostsWait) return undefined;
+        return this.buyBoost(boost) ? boost : undefined;
     },
 
     // ---------------------------------------------------------------- boosts
@@ -404,11 +461,12 @@ export const WallProgress = {
         return state.wall >= REWIND.wall;
     },
 
-    /** Back to wall 1 with the first tool: cash, bricks, crew and PUNCH HARDER's levels gone; the boosts and the medals kept. */
+    /** Back to wall 1: cash, bricks and crew gone, PUNCH HARDER at part of its level (`rewind.keep`); the boosts and the medals kept. */
     rewind(): boolean {
         if (!this.canRewind) return false;
         state.medals += state.runMedals;
-        Object.assign(state, { runMedals: 0, wall: 1, punch: REWIND.punch, held: '', cash: 0, bricks: 0, crew: {}, state: undefined, fight: false, farming: false, rewinds: state.rewinds + 1 });
+        // (HEAD START: further on than wall 1.)
+        Object.assign(state, { runMedals: 0, wall: 1 + this.relic('start'), punch: Math.max(1, Math.floor(state.punch * REWIND.keep)), held: '', cash: 0, bricks: 0, crew: {}, state: undefined, fight: false, farming: false, rewinds: state.rewinds + 1 });
         changed();
         return true;
     },

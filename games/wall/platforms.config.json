@@ -2,8 +2,43 @@
     "poki": {
         "className": "PokiPlatform",
         "importPath": "core/platforms/PokiPlatform",
-        "gameId": "",
+        "gameId": "poki-game-123",
         "enableAds": true,
         "folderPath": "wall"
+    },
+    "crazygames": {
+        "className": "CrazyGamesPlatform",
+        "importPath": "core/platforms/CrazyGamesPlatform",
+        "gameId": "cg-456",
+        "enableAds": true,
+        "folderPath": "wall"
+    },
+    "crazygames-no-ads": {
+        "className": "CrazyGamesPlatform",
+        "importPath": "core/platforms/CrazyGamesPlatform",
+        "gameId": "cg-456",
+        "enableAds": false,
+        "folderPath": "wall"
+    },
+    "android": {
+        "className": "CapacitorPlatform",
+        "importPath": "core/platforms/CapacitorPlatform",
+        "gameId": "com.hyperchip.wallbreak",
+        "enableAds": true,
+        "folderPath": "wall",
+        "admob": {
+            "appId": "",
+            "interstitial": "",
+            "rewarded": "",
+            "test": true
+        }
+    },
+    "youtube": {
+        "className": "YouTubePlayablePlatform",
+        "importPath": "core/platforms/YouTubePlayablePlatform",
+        "gameId": "f7cdc30e8fd14e50a3170c485f207936",
+        "enableAds": true,
+        "folderPath": "wall",
+        "apiScript": "https://www.youtube.com/game_api/v1"
     }
 }

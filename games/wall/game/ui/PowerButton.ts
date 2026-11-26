@@ -14,10 +14,10 @@ import { Power, Powers } from '../data/Powers';
 import { WallProgress } from '../data/WallProgress';
 import { frame, sprite, text, write } from './parts';
 
-export const POWER = { size: 108, icon: 92, every: 152 };
+export const POWER = { size: 92, icon: 76, every: 130 };
 /** Its time: under it. */
 const PILL = { height: 30, below: 18, back: 0x100e18, track: 0x2b2d4d, active: 0xffb52e, charging: 0x3fb8ff };
-const FRAMES = { hands: 'Blue', auto: 'Purple' } as const;
+const FRAMES = { hands: 'Blue', auto: 'Purple', crew: 'Green' } as const;
 const frameName = (color: string) => `ItemFrame03_Single_${color}`;
 
 export class PowerButton extends PIXI.Container {
@@ -28,9 +28,9 @@ export class PowerButton extends PIXI.Container {
     private readonly pill = new PIXI.Container();
     private readonly fill = frame('BasicFrame_Round12', [12, 12, 12, 12], POWER.size - 8, 22, 0.75);
     private readonly icon: PIXI.Sprite;
-    private readonly label = text('', 27, 0xffffff, 0x100e18, 7);
-    private readonly time = text('', 20, 0xffffff, 0x100e18, 5);
-    private readonly video = sprite('ItemIcon_Video', 40);
+    private readonly label = text('', 23, 0xffffff, 0x100e18, 6);
+    private readonly time = text('', 18, 0xffffff, 0x100e18, 5);
+    private readonly video = sprite('ItemIcon_Video', 34);
     private readonly hand = PIXI.Sprite.from('handHud');
     private drawn = '';
     private clock = Math.random() * 3;
@@ -42,7 +42,7 @@ export class PowerButton extends PIXI.Container {
         super();
         const { id, short } = power.def;
         this.back = frame(frameName(FRAMES[id]), [53, 53, 54, 56], POWER.size, POWER.size, 0.85);
-        this.icon = sprite(`Wall_power_${id}`, POWER.icon);
+        this.icon = sprite(power.def.icon ?? `Wall_power_${id}`, POWER.icon);
         this.icon.y = -7;
         this.label.text = short;
         this.label.y = POWER.size / 2 - 20;
@@ -54,7 +54,7 @@ export class PowerButton extends PIXI.Container {
         this.pill.y = POWER.size / 2 + PILL.below;
         this.time.y = -1;
         this.pill.addChild(edge, track, this.fill, this.time);
-        this.hand.width = this.hand.height = 76;
+        this.hand.width = this.hand.height = 64;
         this.hand.eventMode = 'none';
         this.body.addChild(this.focus, this.back, this.glow, this.icon, this.label, this.pill, this.video, this.hand);
         this.addChild(this.body);
@@ -79,7 +79,7 @@ export class PowerButton extends PIXI.Container {
         if (!this.known) {
             this.known = true;
             WallAnalytics.powerShown(def.id);
-            if (WallProgress.markStep(`power-${def.id}`)) this.said('NEW POWER!', def.name);
+            WallProgress.markStep(`power-${def.id}`);
             this.bump(0.3);
         }
         const ready = phase === 'ready';
@@ -132,7 +132,7 @@ export class PowerButton extends PIXI.Container {
         WallProgress.markStep(`power-used-${def.id}`);
         WallAnalytics.power(def.id, charged ? 'used' : 'video');
         WallAudio.play('tool', 1, 1.1);
-        this.said(`${def.name}!`, def.what);
+        this.said(`${def.name}!`, '');
         this.bump(1.3);
     }
 

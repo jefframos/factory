@@ -17,10 +17,27 @@ export type AnalyticsAction = 'start' | 'complete' | 'fail' | 'visible' | 'inter
 
 /** Characters Poki reserves (`/` for event paths, `^` to join the three values) — replaced in every value. */
 const RESERVED_ANALYTICS_CHARS = /[/^]/g;
+/** The AdMob ad units of a phone build (empty: that kind of ad is mocked), and whether to ask for test ads. */
+export interface AdMobConfig {
+    appId?: string;
+    interstitial?: string;
+    rewarded?: string;
+    test?: boolean;
+}
+
+/** Poki refuses an event with more numbers than this across category, what and action. */
+const MAX_NUMBERS = 2;
 
 export default class PlatformHandler {
     public static ENABLE_VIDEO_ADS = true;
     public static GAME_ID = "YOUR_GAME_ID_HERE";
+    /** The phone app's AdMob ad units (platforms.config.json `admob`): a kind left empty is mocked (CapacitorPlatform). */
+    public static ADMOB: AdMobConfig | undefined;
+    /**
+     * The phone's back button (CapacitorPlatform): the game closes what's open over it and says true; false (or none set)
+     * and the app goes to the background.
+     */
+    public static backButton: (() => boolean) | null = null;
     public isGameplayActive = false;
 
     public readonly onPause: Signal = new Signal();
@@ -89,7 +106,7 @@ export default class PlatformHandler {
      * the exact moment the thing happens. Ads are already tracked by the platform's own ad calls,
      * so only measure the in-game offer that leads to one, not the ad itself.
      *
-     * Safe to call anytime: values are trimmed, `/` and `^` become `-`, an event with an empty
+     * Safe to call anytime: values are trimmed, `/` and `^` become `-`, a third number is joined to what's before it, an event with an empty
      * value is dropped, it's a no-op before initialize() or on a platform without analytics, and
      * a throwing SDK is caught — analytics never breaks gameplay.
      */
@@ -98,6 +115,16 @@ export default class PlatformHandler {
         if (values.some(value => value.length === 0)) {
             console.warn('[Analytics] dropped an event with an empty value:', category, what, action);
             return;
+        }
+        // Poki takes at most MAX_NUMBERS numbers across the three (each part between dashes that's only digits counts): the rest
+        // are joined to the word before them, so the event still goes and still reads ("05-30-45" -> "05-30to45").
+        let numbers = 0;
+        for (let v = 0; v < values.length; v++) {
+            values[v] = values[v].split('-').reduce((parts: string[], part) => {
+                if (/^\d+$/.test(part) && ++numbers > MAX_NUMBERS && parts.length) parts[parts.length - 1] += `to${part}`;
+                else parts.push(part);
+                return parts;
+            }, []).join('-');
         }
         const [cleanCategory, cleanWhat, cleanAction] = values;
         try {

@@ -15,7 +15,7 @@ function log(message: string, ...args: unknown[]): void {
 }
 
 /** The rewarded-video stand-in: a dark full-screen layer with a filling bar; resolves once it's done and gone. */
-function fakeRewardedVideo(): Promise<void> {
+export function fakeRewardedVideo(): Promise<void> {
     return new Promise((resolve) => {
         const layer = document.createElement('div');
         Object.assign(layer.style, {

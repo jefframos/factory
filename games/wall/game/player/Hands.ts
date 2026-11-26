@@ -278,13 +278,16 @@ export class Hands {
         this.placeSleeve(arm);
         // (A render target's linear; and the right way up.)
         const image = new ImageData(size, size);
+        let seen = false;
         for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
             const from = ((size - 1 - y) * size + x) * 4;
             const to = (y * size + x) * 4;
             for (let k = 0; k < 3; k++) image.data[to + k] = SRGB[pixels[from + k]];
             image.data[to + 3] = pixels[from + 3];
+            if (pixels[from + 3] > 0) seen = true;
         }
-        return image;
+        // (Nothing drawn: not ready. Asked again, rather than an empty card.)
+        return seen ? image : null;
     }
 
     private wear(tool: ToolLook | undefined): void {

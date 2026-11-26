@@ -60,7 +60,8 @@ async function runBuilds() {
     // Ensure main dist folder exists
     if (!fs.existsSync(distRoot)) fs.mkdirSync(distRoot);
 
-    const platformKeys = Object.keys(platforms).filter(k => k !== 'local');
+    // (The phone apps are built by tools/android, not zipped for a portal.)
+const platformKeys = Object.keys(platforms).filter(k => k !== 'local' && k !== 'android' && k !== 'ios');
 
     for (const platformKey of platformKeys) {
         // Create absolute paths for Vite and Archiver

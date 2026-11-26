@@ -5,6 +5,8 @@
 import * as PIXI from 'pixi.js';
 
 const FONT = 'Baloo2-ExtraBold';
+/** For numbers that have to read small (the phone's own, bold). */
+const PLAIN = 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
 
 export function text(value: string, size: number, fill: number, stroke = 0x17120e, thick = Math.max(4, size / 5)): PIXI.Text {
     const made = new PIXI.Text(value, new PIXI.TextStyle({ fontFamily: FONT, fontSize: size, fill, stroke, strokeThickness: thick, lineJoin: 'round' }));
@@ -28,6 +30,13 @@ export function sprite(name: string, size: number): PIXI.Sprite {
     return made;
 }
 
+/** Small figures in the device's own bold face, a thin outline: they read where the rounded face would blur. */
+export function plainText(value: string, size: number, fill: number, stroke = 0x100e18, thick = 3): PIXI.Text {
+    const made = new PIXI.Text(value, new PIXI.TextStyle({ fontFamily: PLAIN, fontWeight: '800', fontSize: size, fill, stroke, strokeThickness: thick, lineJoin: 'round' }));
+    made.anchor.set(0.5);
+    return made;
+}
+
 /** A label that's only as wide as `width`. */
 export function fit(label: PIXI.Text, width: number): void {
     label.scale.set(1);
@@ -47,5 +56,45 @@ export function flag(words: PIXI.Text, width: number): PIXI.Container {
     made.addChild(frame('Label_Tail_Single_Red', [14, 20, 17, 18], width, 34, 0.68));
     words.y = -2;
     made.addChild(words);
+    return made;
+}
+
+/** Rings drawn once (a 2D canvas is always smooth, where the WebGL canvas has no antialiasing), by look. */
+const rings = new Map<string, PIXI.Texture>();
+/** How much sharper than drawn a ring's texture is. */
+const RING_RES = 2;
+
+/**
+ * A smooth ring, centred (a container at scale 1): `radius` to the middle of its line, `width` across, `color`; `edge`: a darker line under it (wider,
+ * see-through), as PIXI.Graphics' would be, without the jagged edges.
+ */
+export function ringSprite(radius: number, width: number, color: number, edge?: { width: number; color: number; alpha?: number }): PIXI.Container {
+    const key = `${radius}|${width}|${color}|${edge ? `${edge.width}|${edge.color}|${edge.alpha ?? 1}` : ''}`;
+    let texture = rings.get(key);
+    if (!texture) {
+        const reach = radius + Math.max(width, edge?.width ?? 0) / 2 + 2;
+        const side = Math.ceil(reach * 2 * RING_RES);
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = side;
+        const context = canvas.getContext('2d')!;
+        const line = (w: number, c: number, alpha: number) => {
+            context.beginPath();
+            context.arc(side / 2, side / 2, radius * RING_RES, 0, Math.PI * 2);
+            context.lineWidth = w * RING_RES;
+            context.strokeStyle = `#${c.toString(16).padStart(6, '0')}`;
+            context.globalAlpha = alpha;
+            context.stroke();
+        };
+        if (edge) line(edge.width, edge.color, edge.alpha ?? 1);
+        line(width, color, 1);
+        texture = PIXI.Texture.from(canvas);
+        rings.set(key, texture);
+    }
+    const picture = new PIXI.Sprite(texture);
+    picture.anchor.set(0.5);
+    picture.scale.set(1 / RING_RES);
+    // (In a container at scale 1, so it can be scaled and faded like any.)
+    const made = new PIXI.Container();
+    made.addChild(picture);
     return made;
 }

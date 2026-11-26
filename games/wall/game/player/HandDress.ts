@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { Look, LookItem, Pattern } from '../data/Looks';
 import { HandModel } from './HandModel';
+import { withRim } from './Rim';
 
 /** The sleeve's pattern, drawn this many times round it and along it. */
 const TILES = { size: 64, around: 2, along: 6 };
@@ -201,7 +202,7 @@ export function paintMetal(model: THREE.Object3D, color: string, glow: number): 
         if (!mesh.userData.own) {
             mesh.userData.own = true;
             mesh.geometry = mesh.geometry.clone();
-            mesh.material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55 });
+            mesh.material = withRim(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55 }));
         }
         mesh.geometry.setAttribute('color', new THREE.BufferAttribute(painted, 3));
         const material = mesh.material as THREE.MeshStandardMaterial;
@@ -291,7 +292,7 @@ export class HandDress {
         this.boxing.clear();
         if (!on) return;
         const glove = this.glove!.clone();
-        const leather = standard(boxing!, 0.45);
+        const leather = withRim(standard(boxing!, 0.45));
         glove.traverse((child) => {
             const mesh = child as THREE.Mesh;
             if (!mesh.isMesh) return;

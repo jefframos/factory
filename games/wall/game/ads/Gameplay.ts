@@ -7,7 +7,7 @@
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import { WallAudio } from '../audio/WallAudio';
 
-type Block = 'wardrobe' | 'rewind' | 'ad';
+type Block = 'wardrobe' | 'rewind' | 'relics' | 'ad';
 
 const blocks = new Set<Block>();
 let begun = false;
@@ -69,7 +69,8 @@ export const Gameplay = {
 
     /** A natural break: an ad, if the platform thinks so. */
     async commercialBreak(): Promise<void> {
-        if (ads > 0) return;
+        // (A build without ads, e.g. crazygames-no-ads: never one.)
+        if (!PlatformHandler.ENABLE_VIDEO_ADS || ads > 0) return;
         await ad(() => PlatformHandler.instance.platform.showCommercialBreak(), undefined);
     },
 
