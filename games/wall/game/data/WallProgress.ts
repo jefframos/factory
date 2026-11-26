@@ -6,7 +6,8 @@
 // the browser's away), shortly after any change and as the game's left.
 
 import { SaveStorage } from 'core/platforms/SaveStorage';
-import { AUTO, AWAY, BOOSTS, BoostDef, CREW, CrewDef, HOLD, RELICS, REWIND, RelicDef, RelicId, SHOWS, WEAK, bricksOf, relicCost, relicValue, crewCost, givenLevel, ToolDef, punchCost, punchDamage, toolAt, toolsUpTo, medalsOf, wallAt } from './WallConfig';
+import PlatformHandler from 'core/platforms/PlatformHandler';
+import { AUTO, AWAY, BOOSTS, BoostDef, CREW, CrewDef, HOLD, PRODUCTS, ProductDef, RELICS, REWIND, RelicDef, RelicId, SHOWS, WEAK, bricksOf, relicCost, relicValue, crewCost, givenLevel, ToolDef, punchCost, punchDamage, toolAt, toolsUpTo, medalsOf, wallAt } from './WallConfig';
 
 const KEY = 'wall.save';
 const VERSION = 1;
@@ -55,9 +56,11 @@ interface SaveData {
     at: number;
     /** Relics bought with medals: their levels, by id. */
     relics: Record<string, number>;
+    /** The shop's one-time products had (bought, or restored from the store). */
+    bought: string[];
 }
 
-const fresh = (): SaveData => ({ version: VERSION, wall: 1, cash: 0, punch: 0, best: 1, bricks: 0, crew: {}, boosts: [], medals: 0, runMedals: 0, rewinds: 0, steps: [], played: false, worn: {}, seen: {}, held: '', looks: [], fight: false, farming: false, offers: 0, playSec: 0, fights: 0, at: 0, relics: {} });
+const fresh = (): SaveData => ({ version: VERSION, wall: 1, cash: 0, punch: 0, best: 1, bricks: 0, crew: {}, boosts: [], medals: 0, runMedals: 0, rewinds: 0, steps: [], played: false, worn: {}, seen: {}, held: '', looks: [], fight: false, farming: false, offers: 0, playSec: 0, fights: 0, at: 0, relics: {}, bought: [] });
 
 function read(): SaveData {
     try {
@@ -231,7 +234,48 @@ export const WallProgress = {
         changed();
     },
     get cashMult(): number {
-        return boostTotals().cash * this.relic('gold');
+        return boostTotals().cash * this.relic('gold') * this.boughtMult('cash');
+    },
+
+    // ---------------------------------------------------------------- the shop
+
+    /** A one-time product's had. */
+    owns(id: string): boolean {
+        return state.bought.includes(id);
+    },
+    /** What's had for good gives this (x, e.g. DOUBLE CASH's cash; 1: nothing). */
+    boughtMult(what: 'cash'): number {
+        return PRODUCTS.reduce((mult, def) => (this.owns(def.id) && def.give[what] ? mult * def.give[what]! : mult), 1);
+    },
+    /** NO ADS: no breaks (videos stay, for who wants their rewards). */
+    get noAds(): boolean {
+        return PRODUCTS.some((def) => def.give.noAds && this.owns(def.id));
+    },
+    /** AUTO HOLD: a tap on HOLD keeps it on. */
+    get autoHold(): boolean {
+        return PRODUCTS.some((def) => def.give.autoHold && this.owns(def.id));
+    },
+    /**
+     * Paid for: what it gives, at once (`look`: picked by the shop, as Looks can't be read from here). A one-time one is had
+     * from then on; given twice it isn't (a restore only marks it).
+     */
+    grant(def: ProductDef): void {
+        if (def.kind === 'once') {
+            if (this.owns(def.id)) return;
+            state.bought.push(def.id);
+        }
+        const { levels, cashWalls, medals } = def.give;
+        if (levels) state.punch += levels;
+        if (cashWalls) state.cash += wallAt(state.wall).hp * cashWalls;
+        if (medals) state.medals += medals;
+        changed();
+    },
+    /** One-time products the store says are owned (a reinstall, another device): had, nothing given again. */
+    restore(ids: string[]): void {
+        const once = PRODUCTS.filter((def) => def.kind === 'once' && ids.includes(def.id) && !this.owns(def.id));
+        if (!once.length) return;
+        state.bought.push(...once.map((def) => def.id));
+        changed();
     },
 
     // ---------------------------------------------------------------- relics
@@ -569,6 +613,19 @@ export const WallProgress = {
         } catch (error) {
             console.warn('[WallProgress] could not save', error);
         }
+    },
+
+    /** RESET DATA (the settings): the save erased from the platform's storage, waited for, then the game starts over. */
+    async wipe(): Promise<void> {
+        ready = false;
+        window.clearTimeout(timer);
+        try {
+            await PlatformHandler.instance.platform?.removeItem(KEY);
+        } catch (error) {
+            console.warn('[WallProgress] wipe failed', error);
+        }
+        SaveStorage.removeItem(KEY);
+        window.location.reload();
     },
 
     /** Debug: a new game. */

@@ -2,20 +2,25 @@
 //
 // Hold to punch, by the thumb: a big button low on the right. Held down, the hands punch on their own (WallScene, HOLD
 // punches a second plus IRON GRIP's), where AUTO would; let go anywhere, they stop. Pressed, it sinks and glows, its punches a second over it. There from
-// wall HOLD.wall on.
+// wall HOLD.wall on. Held, it hurries on between walls too (HOLD.rush): ▶▶ in its corner.
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
-import { frame, plainText, sprite, text } from './parts';
+import { frame, sprite, text } from './parts';
 
 export const HOLD_BUTTON = { size: 128, icon: 82 };
 
 export class HoldButton extends PIXI.Container {
-    /** It's held down now. */
+    /** It's held down now (or latched on, with AUTO HOLD). */
     public pressed = false;
+    /** AUTO HOLD's had: a tap keeps it on, the next lets it go. */
+    public latching = false;
+    private latched = false;
+    private readonly lock = sprite('Icon_Lock03', 34);
     private readonly body = new PIXI.Container();
     private readonly glow = sprite('ItemFrame_BgGlow', HOLD_BUTTON.size + 30);
-    private readonly rate = plainText('', 18, 0xffffff);
+    /** Its label: HOLD, and its punches a second while it's held. */
+    private readonly words = text('HOLD', 26, 0xffffff, 0x5c0f16, 7);
     private pointer: number | null = null;
     private clock = 0;
 
@@ -27,12 +32,22 @@ export class HoldButton extends PIXI.Container {
         const back = frame('ItemFrame03_Single_Red', [53, 53, 54, 56], size, size, 0.9);
         const fist = sprite('Wall_fists', HOLD_BUTTON.icon);
         fist.y = -10;
-        const words = text('HOLD', 26, 0xffffff, 0x5c0f16, 7);
-        words.y = size / 2 - 24;
-        this.rate.anchor.set(0.5);
-        this.rate.y = -size / 2 - 14;
-        this.body.addChild(this.glow, back, fist, words);
-        this.addChild(this.body, this.rate);
+        this.words.y = size / 2 - 24;
+        // Fast forward, a round badge on its corner (as the rewind's): held, it also hurries on between walls.
+        const forward = new PIXI.Container();
+        const disc = sprite('BorderFrame_Circle78', 46);
+        disc.tint = 0x2a1050;
+        forward.addChild(disc);
+        for (const x of [-6, 6]) {
+            const arrow = sprite('Icon_Arrow_Next1', 20);
+            arrow.x = x;
+            forward.addChild(arrow);
+        }
+        forward.position.set(-size / 2 + 6, -size / 2 + 6);
+        this.lock.position.set(size / 2 - 12, -size / 2 + 12);
+        this.lock.visible = false;
+        this.body.addChild(this.glow, back, fist, this.words, forward, this.lock);
+        this.addChild(this.body);
         this.eventMode = 'static';
         this.cursor = 'pointer';
         this.hitArea = new PIXI.Circle(0, 0, size * 0.62);
@@ -47,6 +62,14 @@ export class HoldButton extends PIXI.Container {
     }
 
     private press(id: number): void {
+        // (AUTO HOLD: latched on, a tap lets it go.)
+        if (this.latched) {
+            this.latched = false;
+            this.lock.visible = false;
+            this.pointer = null;
+            this.release();
+            return;
+        }
         if (this.pressed) return;
         this.pressed = true;
         this.pointer = id;
@@ -55,11 +78,19 @@ export class HoldButton extends PIXI.Container {
     }
 
     private readonly onUp = (event: PointerEvent): void => {
-        if (this.pointer === null || event.pointerId === this.pointer) this.release();
+        if (this.pointer === null || event.pointerId !== this.pointer) return;
+        // (AUTO HOLD: let go of, it stays on.)
+        if (this.latching && this.pressed) {
+            this.latched = true;
+            this.lock.visible = true;
+            this.pointer = null;
+            return;
+        }
+        this.release();
     };
 
     private readonly release = (): void => {
-        if (!this.pressed) return;
+        if (!this.pressed || this.latched) return;
         this.pressed = false;
         this.pointer = null;
         gsap.killTweensOf(this.body.scale);
@@ -78,8 +109,9 @@ export class HoldButton extends PIXI.Container {
         this.clock += delta;
         if (!this.visible && this.pressed) this.release();
         this.glow.alpha = this.pressed ? 0.75 + 0.25 * Math.sin(this.clock * 12) : 0;
-        this.rate.visible = this.pressed;
-        if (this.pressed) this.rate.text = `${perSecond}/s`;
+        // (Held: its label says how fast it's going.)
+        const label = this.pressed ? `${perSecond}/s` : 'HOLD';
+        if (this.words.text !== label) this.words.text = label;
     }
 
     public override destroy(options?: boolean | PIXI.IDestroyOptions): void {

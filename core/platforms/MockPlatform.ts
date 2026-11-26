@@ -52,6 +52,52 @@ export function fakeRewardedVideo(): Promise<void> {
     });
 }
 
+/** The mock shop: `?shop=1` in the URL (or `?shop`) gives the mock platform purchases, to try a game's shop locally. */
+const MOCK_SHOP = (() => {
+    try {
+        return new URLSearchParams(window.location.search).has('shop') && new URLSearchParams(window.location.search).get('shop') !== '0';
+    } catch {
+        return false;
+    }
+})();
+/** What the mock shop's sold for good, kept in the browser (restorePurchases). */
+const MOCK_OWNED = 'mock.purchases';
+
+/** The purchase stand-in: a dark screen with the product and BUY / CANCEL; resolves with the choice. */
+export function fakePurchase(id: string): Promise<boolean> {
+    return new Promise((resolve) => {
+        const layer = document.createElement('div');
+        Object.assign(layer.style, {
+            position: 'fixed', inset: '0', zIndex: '10000', background: 'rgba(5, 5, 8, 0.9)', display: 'flex',
+            flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '18px',
+            fontFamily: 'sans-serif', color: '#e8e4f0', pointerEvents: 'all', userSelect: 'none',
+        } satisfies Partial<CSSStyleDeclaration>);
+        const title = document.createElement('div');
+        title.textContent = 'MOCK PURCHASE';
+        Object.assign(title.style, { fontSize: '22px', fontWeight: 'bold', letterSpacing: '3px' } satisfies Partial<CSSStyleDeclaration>);
+        const what = document.createElement('div');
+        what.textContent = id;
+        Object.assign(what.style, { fontSize: '16px', opacity: '0.7', fontFamily: 'monospace' } satisfies Partial<CSSStyleDeclaration>);
+        const row = document.createElement('div');
+        Object.assign(row.style, { display: 'flex', gap: '14px' } satisfies Partial<CSSStyleDeclaration>);
+        const button = (label: string, color: string, result: boolean) => {
+            const made = document.createElement('button');
+            made.textContent = label;
+            Object.assign(made.style, { font: 'bold 18px sans-serif', padding: '12px 26px', borderRadius: '10px', border: '0', background: color, color: '#fff', cursor: 'pointer' } satisfies Partial<CSSStyleDeclaration>);
+            made.addEventListener('click', (event) => {
+                event.stopPropagation();
+                layer.remove();
+                resolve(result);
+            });
+            return made;
+        };
+        row.append(button('BUY', '#2fa36b', true), button('CANCEL', '#6b6680', false));
+        layer.append(title, what, row);
+        for (const event of ['pointerdown', 'pointerup', 'touchstart', 'keydown']) layer.addEventListener(event, (e) => e.stopPropagation());
+        document.body.appendChild(layer);
+    });
+}
+
 export default class MockPlatform implements IPlatformConnection {
     public isGameplayActive = false;
 
@@ -126,6 +172,44 @@ export default class MockPlatform implements IPlatformConnection {
         }
         log('showRewardedVideo -> rewarded');
         return true;
+    }
+
+    // ---------------------------------------------------------------- the mock shop (?shop=1)
+
+    public canBuy(): boolean {
+        return MOCK_SHOP;
+    }
+
+    /** The mock knows no store prices: the game's own are shown. */
+    public async productPrices(ids: string[]): Promise<Record<string, string>> {
+        log(`productPrices ${ids.join(', ')}`);
+        return {};
+    }
+
+    /** BUY or CANCEL on a stand-in screen; what's bought is kept in the browser for restorePurchases. */
+    public async purchase(id: string): Promise<boolean> {
+        if (!MOCK_SHOP) return false;
+        log(`purchase "${id}" -> asking`);
+        SoundManager.instance.muteAllSounds();
+        try {
+            const bought = await fakePurchase(id);
+            log(`purchase "${id}" -> ${bought ? 'bought' : 'cancelled'}`);
+            if (bought) {
+                const owned = await this.restorePurchases();
+                if (!owned.includes(id)) localStorage.setItem(MOCK_OWNED, JSON.stringify([...owned, id]));
+            }
+            return bought;
+        } finally {
+            SoundManager.instance.restoreSound();
+        }
+    }
+
+    public async restorePurchases(): Promise<string[]> {
+        try {
+            return MOCK_SHOP ? (JSON.parse(localStorage.getItem(MOCK_OWNED) ?? '[]') as string[]) : [];
+        } catch {
+            return [];
+        }
     }
 
     /** No analytics backend locally — just logs what a real platform would receive (see PlatformHandler.measure()). */

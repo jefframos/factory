@@ -211,6 +211,11 @@ export const WallAnalytics = {
         if (once(`crew-${id}-${count}`)) send('crew', `${place}-${id}-${two(count)}`, given ? 'gift' : 'bought');
     },
 
+    /** A shop product: bought, or the store's window closed without. */
+    shop(id: string, action: 'bought' | 'cancelled'): void {
+        send('shop', id, action);
+    },
+
     /** A relic's level bought with medals. */
     relic(id: string, level: number): void {
         send('relic', id, `level-${level}`);
@@ -268,11 +273,11 @@ export const WallAnalytics = {
     },
 
     /** A button's there. */
-    buttonShown(what: 'wardrobe' | 'rewind' | 'relics' | 'hold'): void {
+    buttonShown(what: 'wardrobe' | 'rewind' | 'relics' | 'hold' | 'shop'): void {
         shownOnce('button', what);
     },
 
-    buttonTapped(what: 'wardrobe' | 'rewind' | 'relics'): void {
+    buttonTapped(what: 'wardrobe' | 'rewind' | 'relics' | 'shop'): void {
         sendOnce('button', what, 'interact');
     },
 

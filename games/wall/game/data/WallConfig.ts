@@ -114,6 +114,20 @@ export interface PowerDef {
     perSecond?: number;
 }
 export const POWERS = data.powers as PowerDef[];
+
+/** What the shop sells (where the platform has purchases): had for good, or used up as it's bought. */
+export interface ProductDef {
+    id: string;
+    kind: 'once' | 'consumable';
+    section: 'offer' | 'forever' | 'medals';
+    name: string;
+    what: string;
+    /** Shown where the store says no price. */
+    price: string;
+    icon: string;
+    give: { levels?: number; cashWalls?: number; medals?: number; look?: string; noAds?: boolean; cash?: number; autoHold?: boolean };
+}
+export const PRODUCTS = data.shop.products as unknown as ProductDef[];
 /** Hold to punch: from a wall on, a finger held down punches on its own (slower than AUTO, than tapping). */
 export const HOLD = data.hold;
 
@@ -427,9 +441,12 @@ export function toolsUpTo(level: number): ToolDef[] {
 export function short(value: number): string {
     if (value < 1000) return value < 10 && value % 1 ? value.toFixed(1) : String(Math.floor(value));
     const units = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
-    const power = Math.min(units.length - 1, Math.floor(Math.log10(value) / 3));
+    // (Past Dc, two letters as idle games have them: aa, ab ... zz; enough for far past any wall there'll be.)
+    const power = Math.min(units.length + 26 * 26 - 1, Math.floor(Math.log10(value) / 3));
     const scaled = value / Math.pow(1000, power);
-    return `${scaled < 10 ? scaled.toFixed(2) : scaled < 100 ? scaled.toFixed(1) : Math.floor(scaled)}${units[power]}`;
+    const over = power - units.length;
+    const unit = over < 0 ? units[power] : String.fromCharCode(97 + Math.floor(over / 26), 97 + (over % 26));
+    return `${scaled < 10 ? scaled.toFixed(2) : scaled < 100 ? scaled.toFixed(1) : Math.floor(scaled)}${unit}`;
 }
 
 /** A hit's damage as it's shown: off the hit and on the HUD, the same. */

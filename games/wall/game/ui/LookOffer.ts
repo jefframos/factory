@@ -70,17 +70,22 @@ export class LookOffer extends PIXI.Container {
     }
 
     /** `allowed`: nothing's open over the wall, and it's being played. */
-    public update(delta: number, allowed: boolean): void {
+    /**
+     * `allowed`: there's a wall being hit (new offers come, and a shown one's time runs); `covered`: a panel's open over it.
+     * Once up it stays up between walls, so it doesn't blink as they go by fast; only a panel hides it.
+     */
+    public update(delta: number, allowed: boolean, covered = false): void {
         if (this.busy) return;
         if (this.shown) {
-            this.visible = allowed;
-            if (!allowed) return;
+            this.visible = !covered;
+            if (covered) return;
             this.clock += delta;
             this.rays.rotation = this.clock * 0.5;
             this.focus.alpha = 0.6 + 0.4 * Math.sin(this.clock * 5);
             this.art.y = -30 + Math.sin(this.clock * 3) * 4;
             this.body.rotation = Math.sin(this.clock * 2.2) * 0.025;
-            this.timer -= delta;
+            // (Its time runs only while there's a wall being hit.)
+            if (allowed) this.timer -= delta;
             this.left.setShare(this.timer / OFFERS.stays);
             // (Got some other way meanwhile, or let go.)
             if (this.timer <= 0 || ownsLook(this.shown.slot, this.shown.item)) this.hide(OFFERS.wait);

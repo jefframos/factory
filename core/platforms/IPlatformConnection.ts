@@ -63,6 +63,23 @@ export interface IPlatformConnection {
     onResume?(callback: () => void): void;
     onAudioChanged?(callback: (enabled: boolean) => void): void;
 
+    // ---- In-app purchases: only where the platform has them (the phone app, CrazyGames when it's let in, the mock with
+    // ?shop=1). A platform without them leaves these out, and a game shows no shop (Poki, YouTube, GameDistribution, GamePix).
+
+    /** Purchases can be made now (the platform has them, and e.g. the player's signed in). */
+    canBuy?(): boolean;
+    /** Each product's price as the store says it (local currency); one it doesn't know is left out (the game's own then). */
+    productPrices?(ids: string[]): Promise<Record<string, string>>;
+    /** Buys one: true once it's paid for (false: cancelled or failed). The game grants it. */
+    purchase?(id: string): Promise<boolean>;
+    /** The ads are mocked now, by choice (the phone app's settings: faster to test); setAdsMocked switches it. */
+    adsMocked?(): boolean;
+    setAdsMocked?(mocked: boolean): void;
+    /** The platform's recent status lines (e.g. the phone app's AdMob: started, loaded, failed with its code), for a settings console. */
+    diagnostics?(): string[];
+    /** What's owned for good, by id (a reinstall, another device): the game marks those of its one-time products as had. */
+    restorePurchases?(): Promise<string[]>;
+
     /**
      * Whether Game.ts is allowed to use the web Page Visibility API
      * (document.hidden/visibilitychange) to pause/resume the ticker.

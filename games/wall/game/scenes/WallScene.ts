@@ -139,6 +139,8 @@ export default class WallScene extends ThreeScene {
     private flauntFor = 0;
     /** The weak spot's being pointed at. */
     private teaching = false;
+    /** What's between two walls now (the wait after one's down, the walk to the next): HOLD speeds it up. */
+    private between?: gsap.core.Tween;
     /** The finger held down (hold to punch): which, where (-1..1), how long, the next punch in. */
     private held: { id: number; x: number; y: number; for: number; next: number } | null = null;
     /** The hold button's next punch in (seconds). */
@@ -247,7 +249,9 @@ export default class WallScene extends ThreeScene {
         window.addEventListener('keydown', this.onKey);
         // (The phone's back button: what's open over the wall closes; nothing is, and the app goes to the background.)
         PlatformHandler.backButton = () => {
-            if (this.hud.relicPanel.isOpen) this.hud.relicPanel.setOpen(false);
+            if (this.hud.settingsPanel.isOpen) this.hud.settingsPanel.setOpen(false);
+            else if (this.hud.shopPanel.isOpen) this.hud.shopPanel.setOpen(false);
+            else if (this.hud.relicPanel.isOpen) this.hud.relicPanel.setOpen(false);
             else if (this.hud.rewindPopup.isOpen) this.hud.rewindPopup.setOpen(false);
             else if (this.hud.wardrobe.isOpen) this.hud.wardrobe.setOpen(false);
             else return false;
@@ -339,7 +343,7 @@ export default class WallScene extends ThreeScene {
         WallAudio.play('boom');
         gsap.delayedCall(0.25, () => WallAudio.play('coins'));
         this.vibrate(60);
-        gsap.delayedCall(ADVANCE.wait, () => {
+        this.between = gsap.delayedCall(ADVANCE.wait, () => {
             if (this.destroyed_) return;
             if (fight) this.startFight();
             else this.advance();
@@ -420,7 +424,7 @@ export default class WallScene extends ThreeScene {
         WallProgress.nextWall();
         WallAudio.play('coins');
         this.hud.announce(boss ? `${bossKind(number, WallProgress.rewinds).name} BEATEN!` : 'CLEAR!', words, boss ? 1.4 : 0.6);
-        gsap.delayedCall(boss ? 1 : 0.35, () => {
+        this.between = gsap.delayedCall(boss ? 1 : 0.35, () => {
             if (!this.destroyed_) this.advance();
         });
     }
@@ -508,7 +512,7 @@ export default class WallScene extends ThreeScene {
         this.hud.setShare(1);
         this.tunnel.setRoom(roomAt(WallProgress.wall));
         this.takeMedal();
-        gsap.to(this, { walked: 1, duration: ADVANCE.seconds, ease: 'power2.inOut', onComplete: () => {
+        this.between = gsap.to(this, { walked: 1, duration: ADVANCE.seconds, ease: 'power2.inOut', onComplete: () => {
             if (!this.destroyed_) this.arrive();
         } });
     }
@@ -590,6 +594,9 @@ export default class WallScene extends ThreeScene {
      * (slower than AUTO and than tapping: for resting, not for winning). With two hands on, each one's two.
      */
     private updateHold(delta: number): void {
+        // (Held, the way between walls goes faster too: back to where it was in a moment.)
+        const rushing = this.hud.holdButton.pressed && HOLD.on && WallProgress.best >= HOLD.wall;
+        if (this.between?.isActive()) this.between.timeScale(rushing ? HOLD.rush : 1);
         if (!HOLD.on || WallProgress.best < HOLD.wall) return;
         if ((this.phase !== 'playing' && this.phase !== 'fighting') || this.hud.busy) return;
         const rate = WallProgress.holdRate;

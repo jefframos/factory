@@ -1,6 +1,6 @@
 {
     "appId": "com.hyperchip.wallbreak",
-    "appName": "WALLBREAK",
+    "appName": "Break a Wall",
     "webDir": "../../dist/_builds_wall/android",
     "plugins": {
         "SystemBars": {

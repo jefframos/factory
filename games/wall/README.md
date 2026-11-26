@@ -44,13 +44,18 @@ The plan for the stores (accounts, costs, in-app purchases, every step): [WALLBR
 - **Rarity** (`rarity` in `ui/wall.json`): common, uncommon, rare, epic, legendary, mythic, prismatic, as the pack's collection
   cards (`Preview/5_Collection_List`): the card in its tier's colour (`ItemFrame02_Single_*`: grey, green, blue, purple, gold,
   red, rainbow) and 1 to 7 stars (rainbow for prismatic) in a dark band ([ui/Rarity.ts](game/ui/Rarity.ts)). Every look has one
-  (`ui/looks.json`), the rarer from later walls (prismatic from 120 to 200), so later runs still bring new ones. A tool's is its
+  (`ui/looks.json`), the rarer from later walls (legendary 110-260, mythic 220-450, prismatic 400-700; numbers past Dc go aa, ab ... zz), so later runs still bring new ones. A tool's is its
   grade: as it came, then each level it's kept (`tools.levelsAfter` 6, so each later tool goes green to red); the weapon's card
   and its glow show it.
 - **Relics** ([ui/Relics.ts](game/ui/Relics.ts), `relics`): bought with medals, for good, from the first rewind (a button under
   the rewind's): STRONG ARM (all damage x1.5 a level), WILD HERD (crew damage x2), STAMPEDE (crew x1.25 faster), IRON GRIP
   (+1 hold punch a second), GOLD DUST (cash x1.5), QUICK CHARGE (power-ups charge 20% sooner), HEAD START (a rewind starts 3
   walls further, up to wall 13). A medal spent gives no damage any more; each is the pack's grade badge.
+- **Shop** ([ui/Shop.ts](game/ui/Shop.ts), `shop`): only where the platform has purchases (`canBuy()`: the phone app,
+  CrazyGames once it's let in; none on Poki, YouTube, GameDistribution, GamePix), from wall 5, a button under the wardrobe's.
+  The starter pack, then NO ADS, DOUBLE CASH, AUTO HOLD (had for good, restored from the store at the start) and medal packs.
+  **Try it locally with `?shop=1`**: the mock platform sells everything through a BUY / CANCEL screen and keeps what's had for
+  good in the browser (`mock.purchases` in localStorage; clear it to buy again).
 - **Hold to punch** (`hold`, from wall 25): a big HOLD button low on the right; held, the hands punch on their own (3 a second
   and IRON GRIP's), where AUTO would; a finger held on the wall does it too, where it is.
 - **What comes when**, the first time through: one new thing a wall, a gift or something new on screen, never two, and no words to

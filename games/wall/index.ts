@@ -2,8 +2,9 @@
 
 import { Game } from 'core/Game';
 import HtmlLoader from 'core/loader/HtmlLoader';
-import PlatformHandler, { type AdMobConfig } from 'core/platforms/PlatformHandler';
+import PlatformHandler, { type AdMobConfig, type IapConfig } from 'core/platforms/PlatformHandler';
 import { SaveStorage } from 'core/platforms/SaveStorage';
+import { restoreShop } from './game/ui/Shop';
 import { getPlatformInstance } from 'core/platforms/PlatformFactory';
 import { SceneManager } from 'core/scene/SceneManager';
 import SetupThree from 'core/scene/SetupThree';
@@ -19,7 +20,7 @@ import { WallAudio } from './game/audio/WallAudio';
 import { WallProgress } from './game/data/WallProgress';
 import WallScene from './game/scenes/WallScene';
 
-type PlatformConfigEntry = { gameId?: string; enableAds?: boolean; folderPath?: string; admob?: AdMobConfig };
+type PlatformConfigEntry = { gameId?: string; enableAds?: boolean; folderPath?: string; admob?: AdMobConfig; iap?: IapConfig };
 
 const FONTS = ['Baloo2-ExtraBold'];
 /** The longest the loading screen waits for the hands (the wall's there without them). */
@@ -47,9 +48,12 @@ export default class WallGame extends Game {
             PlatformHandler.GAME_ID = config?.gameId || '';
             PlatformHandler.ENABLE_VIDEO_ADS = config?.enableAds ?? true;
             PlatformHandler.ADMOB = config?.admob;
+            PlatformHandler.IAP = config?.iap;
             await PlatformHandler.instance.initialize(await getPlatformInstance(platformName));
             await SaveStorage.load([...WallProgress.saveKeys, ...WallAudio.saveKeys]);
             WallProgress.begin();
+            // (One-time purchases the store says are had: marked, in the background.)
+            void restoreShop();
             PlatformHandler.instance.platform.startLoad();
             WallAudio.initialize(this.folderPath);
             this.stageContainer.addChild(this.gameContainer);

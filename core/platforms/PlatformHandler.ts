@@ -25,6 +25,11 @@ export interface AdMobConfig {
     test?: boolean;
 }
 
+/** The phone app's purchases: RevenueCat's public key for Google Play (empty: mocked purchases, to try the shop). */
+export interface IapConfig {
+    revenuecat?: string;
+}
+
 /** Poki refuses an event with more numbers than this across category, what and action. */
 const MAX_NUMBERS = 2;
 
@@ -33,6 +38,8 @@ export default class PlatformHandler {
     public static GAME_ID = "YOUR_GAME_ID_HERE";
     /** The phone app's AdMob ad units (platforms.config.json `admob`): a kind left empty is mocked (CapacitorPlatform). */
     public static ADMOB: AdMobConfig | undefined;
+    /** The phone app's purchases (platforms.config.json `iap`): with no store key set, they're mocked (CapacitorPlatform). */
+    public static IAP: IapConfig | undefined;
     /**
      * The phone's back button (CapacitorPlatform): the game closes what's open over it and says true; false (or none set)
      * and the app goes to the background.

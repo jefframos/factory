@@ -27,10 +27,13 @@
         "enableAds": true,
         "folderPath": "wall",
         "admob": {
-            "appId": "",
-            "interstitial": "",
-            "rewarded": "",
+            "appId": "ca-app-pub-4041750571630291~4554219334",
+            "interstitial": "ca-app-pub-4041750571630291/3611130767",
+            "rewarded": "ca-app-pub-4041750571630291/2581507169",
             "test": true
+        },
+        "iap": {
+            "revenuecat": ""
         }
     },
     "youtube": {
