@@ -101,7 +101,14 @@ the AdMob ids, the **upload key**, the RevenueCat key (empty: purchases mocked),
 - **Signing**: Android Studio > Build > Generate Signed App Bundle. Keep the keystore and its passwords out of the repo (it's
   public; `*.jks`, `*.keystore` and `keystore.properties` are ignored) and backed up: lose it and the app can't be updated.
 - **Analytics**: `measure()` only logs in the app for now (Firebase or GameAnalytics next).
-- **Purchases**: not in yet (the plan: RevenueCat behind an optional `purchase()` on the platform).
+- **Purchases**: RevenueCat (`@revenuecat/purchases-capacitor`), keys in `platforms.config.json` `android.iap`:
+  - `revenuecatTest` (`test_…`, RevenueCat's **Test Store**): used by every debug build (`android:run`, `android:apk`, Android
+    Studio). Buying shows RevenueCat's own sheet with succeed / fail / cancel; no Play account, no real money. Add the
+    products to the Test Store in RevenueCat with the game's shop ids (`starter`, `no_ads`, … in `games/wall/ui/wall.json`).
+  - `revenuecat` (`goog_…`): used by the AAB (`android:aab`), real Google Play Billing. The products made in Play Console
+    with the same ids, imported into RevenueCat. Never a `test_` key here: the SDK crashes a release build with one (the
+    build script refuses it).
+  - No key for the build: mocked purchases (the BUY / CANCEL screen). The settings' console shows what RevenueCat did.
 
 ## A new game's app
 

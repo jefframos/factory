@@ -14,7 +14,7 @@ import { WallAnalytics } from '../analytics/WallAnalytics';
 import { LOOK_TABS, Look, LookItem, SlotId, gainLook, lookPrice, lookState, lookWall, newLooks, wornIn, wornLook } from '../data/Looks';
 import { RARITY, RarityDef, rarityOf, short, toolAt, toolRarity, toolsAfter, toolLevel, toolsUpTo } from '../data/WallConfig';
 import { WallProgress } from '../data/WallProgress';
-import { frame, sprite, text } from './parts';
+import { button, frame, sprite, text } from './parts';
 import { rarityBand, rarityCard } from './Rarity';
 
 const PANEL = { width: 696, tall: 0.56, most: 800, top: 16, pad: 22, header: 74, tabs: 62 };
@@ -402,8 +402,8 @@ export function costStrip({ price, video: forVideo, can }: Cost, width = CARD.wi
     // (A build without ads gives the video ones for nothing, so no video icon on them.)
     const video = forVideo && PlatformHandler.ENABLE_VIDEO_ADS;
     const made = new PIXI.Container();
-    const back = frame('BasicFrame_Round12', [12, 12, 12, 12], width, 40);
-    back.tint = video ? 0xff4fa3 : can ? 0xffc21f : 0x50546a;
+    // (The pack's glossy button: pink for a video, yellow to buy, dark when it can't be.)
+    const back = button(video ? 'Pink' : can ? 'Yellow' : 'DarkGray', width, 40);
     const label = text(video ? 'FREE' : price ? `$${short(price)}` : 'FREE!', 27, 0xffffff, 0x100e18, 6);
     made.addChild(back, label);
     if (video) {
@@ -413,7 +413,8 @@ export function costStrip({ price, video: forVideo, can }: Cost, width = CARD.wi
         label.x = 18;
     }
     label.scale.set(Math.min(1, (width - (video ? 60 : 18)) / label.width));
-    label.y = -2;
+    // (Over the button's face, above its darker bottom band.)
+    label.y = -3;
     made.y = y;
     return made;
 }

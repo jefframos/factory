@@ -13,9 +13,10 @@ import gsap from 'gsap';
 import { Game } from 'core/Game';
 import { BoostDef, CREW, CrewDef, NUDGE, SHOWS, punchCost, punchMult, short, toolAt, toolRarity } from '../data/WallConfig';
 import { WallAnalytics } from '../analytics/WallAnalytics';
-import { WallProgress } from '../data/WallProgress';
+import { BUY_MODES, BuyMode, WallProgress } from '../data/WallProgress';
+import { WallAudio } from '../audio/WallAudio';
 import { HIT_PILL } from './HitPill';
-import { flag, frame, plainText, sprite, text, write } from './parts';
+import { FillButton, button, flag, frame, plainText, sprite, text, write } from './parts';
 
 /** (As many as fit, and the next one peeking in.) */
 const CARD = { size: 134, height: 164, gap: 11, side: 14, margin: 32, icon: 80 };
@@ -37,7 +38,8 @@ const BRICK = 'Wall_brick';
 const PANEL = { pad: 11, top: 13, foot: 26, color: 0x15162a, alpha: 0.55 };
 const PILL = { height: 42, cash: 246, bricks: 124, gap: 34, y: 44 };
 /** A boost's price: a brick and how many, in a pill that fills with those there are. */
-const BRICKS = { width: 118, height: 34, y: 28 };
+/** A boost's price bar: kept off the badge's bottom edge (its frame's border). */
+const BRICKS = { width: 118, height: 30, y: 25 };
 const PILL_COLOR = 0x1c1d33;
 /** The strip that fills up with the money there is. */
 const STRIP = { width: CARD.size - 22, height: 36, y: 55 };
@@ -75,6 +77,94 @@ interface Look {
     tail?: string;
     /** An exclamation mark on its corner: it can be bought. */
     alert?: boolean;
+    /** Not there yet (the next of the crew): its picture dark, its wall where the price goes. */
+    locked?: boolean;
+}
+
+/** Each animal's card colour, by how good it is (CREW's order): green, blue, purple, gold, red. */
+const CREW_GRADES: Frame[] = ['Green', 'Green', 'Blue', 'Blue', 'Purple', 'Purple', 'Yellow', 'Yellow', 'Red', 'Red'];
+
+/**
+ * The buy mode's menu: its round button (☰), and the tabs that slide out of it to the right (x1, x10, MAX), each `tab` wide,
+ * `gap` apart, `height` high; how long the slide takes. `row`: the room it takes between the boosts and the crew (upright).
+ */
+const MENU = { size: 42, tab: { width: 82, height: 42 }, gap: 6, slide: 0.25 };
+/** The tabs' whole width, out. */
+const TABS_WIDTH = 3 * (MENU.tab.width + MENU.gap) + MENU.gap;
+const BUY_WORDS: Record<BuyMode, string> = { 1: 'x1', 10: 'x10', 0: 'MAX' };
+
+/** A small round button with three bars (☰): opens and closes the buy mode's tabs. */
+function burgerButton(toggle: () => void): PIXI.Container {
+    const made = new PIXI.Container();
+    const back = sprite('Button_Circle122', MENU.size);
+    back.tint = 0x3a3f6e;
+    const bars = new PIXI.Graphics();
+    for (const y of [-7, 0, 7]) bars.beginFill(0xffffff).drawRoundedRect(-9, y - 1.75, 18, 3.5, 1.75).endFill();
+    made.addChild(back, bars);
+    made.eventMode = 'static';
+    made.cursor = 'pointer';
+    made.hitArea = new PIXI.Circle(0, 0, MENU.size / 2 + 8);
+    made.on('pointerdown', (event: PIXI.FederatedPointerEvent) => {
+        event.stopPropagation();
+        toggle();
+        gsap.fromTo(made.scale, { x: 0.8, y: 0.8 }, { x: 1, y: 1, duration: 0.3, ease: 'back.out(3)' });
+    });
+    return made;
+}
+
+/**
+ * The buy mode's tabs: x1, x10, MAX side by side, the one picked a lit button, the others dark; tapped, that one's picked.
+ * They slide out to the right of where they're put (the menu's button's right edge) and back in under a mask.
+ */
+class ModeTabs extends PIXI.Container {
+    private readonly strip = new PIXI.Container();
+    private readonly cover = new PIXI.Graphics();
+    private readonly tabs = BUY_MODES.map((mode) => {
+        const tab = new PIXI.Container();
+        const back = button('DarkGray', MENU.tab.width, MENU.tab.height);
+        const words = text(BUY_WORDS[mode], 24, 0xffffff, 0x100e18, 6);
+        words.y = -3;
+        tab.addChild(back, words);
+        tab.eventMode = 'static';
+        tab.cursor = 'pointer';
+        tab.hitArea = new PIXI.Rectangle(-MENU.tab.width / 2, -MENU.tab.height / 2 - 4, MENU.tab.width, MENU.tab.height + 8);
+        tab.on('pointerdown', (event: PIXI.FederatedPointerEvent) => {
+            event.stopPropagation();
+            if (!this.open || WallProgress.buyMode === mode) return;
+            WallProgress.setBuyMode(mode);
+            WallAudio.play('claim', 0.5, 1.3);
+            gsap.fromTo(tab.scale, { x: 0.88, y: 0.88 }, { x: 1, y: 1, duration: 0.25, ease: 'back.out(3)' });
+        });
+        return { mode, tab, back };
+    });
+    private readonly width_ = BUY_MODES.length * (MENU.tab.width + MENU.gap) + MENU.gap;
+    public open = false;
+    private shown?: BuyMode;
+
+    public constructor() {
+        super();
+        this.tabs.forEach(({ tab }, i) => (tab.x = MENU.gap + MENU.tab.width / 2 + i * (MENU.tab.width + MENU.gap)));
+        this.cover.beginFill(0xffffff).drawRect(0, -MENU.tab.height / 2 - 8, this.width_, MENU.tab.height + 16).endFill();
+        this.strip.addChild(...this.tabs.map(({ tab }) => tab));
+        this.strip.mask = this.cover;
+        this.strip.x = -this.width_;
+        this.addChild(this.strip, this.cover);
+        this.refresh();
+    }
+
+    /** Out (slid to the right) or in (back under the button). */
+    public setOpen(open: boolean): void {
+        this.open = open;
+        gsap.killTweensOf(this.strip);
+        gsap.to(this.strip, { x: open ? 0 : -this.width_, duration: MENU.slide, ease: open ? 'back.out(1.4)' : 'power2.in' });
+    }
+
+    public refresh(): void {
+        const mode = WallProgress.buyMode;
+        if (mode === this.shown) return;
+        this.shown = mode;
+        for (const { mode: one, back } of this.tabs) back.texture = PIXI.Texture.from(`Button01_s_${one === mode ? 'Yellow' : 'DarkGray'}`);
+    }
 }
 
 const itemFrame = (color: Frame, width: number, height: number) => frame(`ItemFrame02_Single_${color}`, [25, 28, 25, 27], width, height);
@@ -106,8 +196,8 @@ class Card extends PIXI.Container {
     private readonly corner = frame('BasicFrame_Round12', [12, 12, 12, 12], 56, 32, 0.8);
     private readonly count = text('', 23, 0xffffff);
     private readonly effect = plainText('', 19, 0xffec82);
-    private readonly strip = frame('BasicFrame_Round12', [12, 12, 12, 12], STRIP.width, STRIP.height);
-    private readonly fill = frame('BasicFrame_Round12', [12, 12, 12, 12], STRIP.width, STRIP.height);
+    /** The price: a button that fills as the cash comes (full: press it). */
+    private readonly bar = new FillButton(STRIP.width, STRIP.height, 'Yellow');
     private readonly price = text('', 29, 0xffffff, 0x100e18, 7);
     private readonly tailText = text('', 21, 0xffffff);
     private readonly tail = flag(this.tailText, 88);
@@ -115,6 +205,8 @@ class Card extends PIXI.Container {
     private shown = '';
     private can = false;
     private clock = Math.random() * WRIGGLE.every;
+    /** Shown locked last time (the next of the crew). */
+    public locked = false;
 
     public constructor() {
         super();
@@ -130,12 +222,9 @@ class Card extends PIXI.Container {
         this.corner.position.set(-CARD.size / 2 + 7, -CARD.height / 2 + 9);
         this.count.position.set(-CARD.size / 2 + 35, -CARD.height / 2 + 24);
         this.effect.y = 20;
-        this.strip.tint = 0x081032;
-        this.strip.alpha = 0.6;
-        this.strip.y += STRIP.y;
-        this.fill.y += STRIP.y;
+        this.bar.y = STRIP.y;
         this.tail.y = -CARD.height / 2;
-        this.addChild(this.focus, this.back, this.glow, this.picture, this.corner, this.count, this.effect, this.strip, this.fill, this.price, this.tail, this.alert);
+        this.addChild(this.focus, this.back, this.glow, this.picture, this.corner, this.count, this.effect, this.bar, this.price, this.tail, this.alert);
     }
 
     public set(look: Look): void {
@@ -147,6 +236,11 @@ class Card extends PIXI.Container {
         this.back.texture = PIXI.Texture.from(`ItemFrame02_Single_${look.frame}`);
         this.icon.texture = PIXI.Texture.from(look.icon);
         this.icon.scale.set(CARD.icon / Math.max(this.icon.texture.width, this.icon.texture.height, 1));
+        // (Locked: a silhouette, and no glow behind it.)
+        this.locked = !!look.locked;
+        this.icon.tint = look.locked ? 0x000000 : 0xffffff;
+        this.icon.alpha = look.locked ? 0.55 : 1;
+        this.glow.visible = !look.locked;
         this.metal.visible = !!look.tint;
         if (look.tint) {
             this.metal.texture = PIXI.Texture.from(`${look.icon}_metal`);
@@ -156,11 +250,8 @@ class Card extends PIXI.Container {
         this.corner.visible = this.count.visible = !!look.count;
         write(this.count, look.count, 48);
         write(this.effect, look.effect, CARD.size - 16);
-        // (Full, it's the button.)
-        this.fill.visible = look.share > 0.01;
-        this.fill.width = Math.max(26, STRIP.width * look.share);
-        this.fill.tint = look.can ? 0xffc21f : 0xf08a2a;
-        this.fill.alpha = look.can ? 1 : 0.85;
+        // (Full, it's the whole button.)
+        this.bar.set(look.can ? 1 : look.share);
         write(this.price, look.price, CARD.size - 28);
         // (Under the flag, if it has one.)
         this.corner.y = -CARD.height / 2 + (look.tail ? 20 : 9);
@@ -211,9 +302,9 @@ class Badge extends PIXI.Container {
     private readonly what = text('', 23, 0xffffff, 0x100e18, 6);
     private readonly value = text('', 23, 0xffec82, 0x100e18, 6);
     private readonly price = text('', 25, 0xffffff, 0x100e18, 6);
-    private readonly pill = frame('BasicFrame_Round12', [12, 12, 12, 12], BRICKS.width, BRICKS.height);
-    private readonly fill = frame('BasicFrame_Round12', [12, 12, 12, 12], BRICKS.width, BRICKS.height);
-    private readonly brick = sprite('Wall_brick', 34);
+    /** The price in bricks: a button that fills as they come (full: press it). */
+    private readonly bar = new FillButton(BRICKS.width, BRICKS.height, 'Green');
+    private readonly brick = sprite('Wall_brick', 31);
     private clock = Math.random() * WRIGGLE.every;
     private can = false;
     public boost?: BoostDef;
@@ -225,16 +316,12 @@ class Badge extends PIXI.Container {
         this.icon.x = this.glow.x = -BADGE.width / 2 + 48;
         const left = -BADGE.width / 2 + 92;
         [this.what, this.value, this.price].forEach((label) => label.anchor.set(0, 0.5));
-        this.what.position.set(left, -30);
-        this.value.position.set(left, -5);
-        this.pill.x = this.fill.x = left - 4;
-        this.pill.y += BRICKS.y;
-        this.fill.y += BRICKS.y;
-        this.pill.tint = 0x081032;
-        this.pill.alpha = 0.65;
+        this.what.position.set(left, -32);
+        this.value.position.set(left, -7);
+        this.bar.position.set(left - 4 + BRICKS.width / 2, BRICKS.y);
         this.brick.position.set(left + 20, BRICKS.y - 1);
         this.price.position.set(left + 46, BRICKS.y - 2);
-        this.addChild(this.focus, this.back, this.glow, this.icon, this.what, this.value, this.pill, this.fill, this.brick, this.price);
+        this.addChild(this.focus, this.back, this.glow, this.icon, this.what, this.value, this.bar, this.brick, this.price);
     }
 
     public set(boost: BoostDef): void {
@@ -250,11 +337,7 @@ class Badge extends PIXI.Container {
         }
         this.can = WallProgress.bricks >= boost.bricks;
         this.back.texture = PIXI.Texture.from(`ItemFrame02_Single_${this.can ? 'Yellow' : 'Navy'}`);
-        const share = Math.min(1, WallProgress.bricks / boost.bricks);
-        this.fill.visible = share > 0.01;
-        this.fill.width = Math.max(26, BRICKS.width * share);
-        this.fill.tint = this.can ? 0x35c24a : 0xd0603a;
-        this.fill.alpha = this.can ? 1 : 0.8;
+        this.bar.set(Math.min(1, WallProgress.bricks / boost.bricks));
         this.focus.visible = this.can;
     }
 
@@ -313,6 +396,24 @@ export class Tray extends PIXI.Container {
     private readonly crew = CREW.map(() => new Card());
     private readonly badges = Array.from({ length: BADGE.shown }, () => new Badge());
     private readonly hand = PIXI.Sprite.from('handHud');
+    /** x1 / x10 / MAX: how many of the crew a tap hires. */
+    private readonly mode = new ModeTabs();
+    private modeOn = false;
+    /** The buy mode's toggle shown (the menu's button opens and closes it). */
+    private modeOpen = false;
+    /** Upright: the boosts' row (its y), where they start from at the left at the most (past the menu), and how far they've slid
+     * aside for the tabs (0 to 1). */
+    private badgeRow = 0;
+    private badgeLeft = 0;
+    private readonly badgeSlide = { t: 0 };
+    private readonly menu = burgerButton(() => {
+        this.modeOpen = !this.modeOpen;
+        WallAudio.play('claim', 0.5, this.modeOpen ? 1.2 : 1);
+        this.mode.setOpen(this.modeOpen);
+        // (Upright, the boosts make way for the tabs, and come back as they go.)
+        gsap.killTweensOf(this.badgeSlide);
+        gsap.to(this.badgeSlide, { t: this.modeOpen ? 1 : 0, duration: MENU.slide, ease: this.modeOpen ? 'power2.out' : 'power2.in' });
+    });
     /** The cards and what goes with them (smaller on a wide screen). */
     private readonly cards = new PIXI.Container();
     private readonly arrows = [1, -1].map((way) => arrowButton(way));
@@ -357,6 +458,8 @@ export class Tray extends PIXI.Container {
         this.list.addChild(...this.crew);
         this.hand.width = this.hand.height = 84;
         this.hand.visible = false;
+        this.mode.visible = false;
+        this.menu.visible = false;
         this.hand.eventMode = 'none';
         gsap.to(this.hand.pivot, { y: -60, duration: 0.4, yoyo: true, repeat: -1, ease: 'sine.inOut' });
         this.track.tint = 0x100e18;
@@ -368,7 +471,7 @@ export class Tray extends PIXI.Container {
         this.thumb.tint = 0x3fa9ff;
         this.scrollBar.addChild(this.track, this.thumb);
         this.scrollBar.eventMode = 'none';
-        this.cards.addChild(this.panel, this.listMask, this.list, this.punchBox, this.scrollBar, ...this.arrows, this.hand);
+        this.cards.addChild(this.panel, this.listMask, this.list, this.punchBox, this.scrollBar, ...this.arrows, this.mode, this.menu, this.hand);
         this.addChild(this.cash, this.bricks, ...this.badges, this.cards);
         this.cards.eventMode = 'passive';
         this.arrows.forEach((arrow, i) => {
@@ -608,17 +711,28 @@ export class Tray extends PIXI.Container {
         return card instanceof Badge ? 'boost' : card === this.punch ? 'punch' : 'crew';
     }
 
-    /** Bought: was it what the hand points at? */
+    /** Bought: was it what the hand points at? And that kind's learnt: no hand for it again. */
     private tell(card: Card | Badge): void {
         this.left_ = 0;
         if (this.nudged === card) WallAnalytics.nudge(this.kindOf(card), 'bought');
+        WallProgress.markStep(this.learnt(card));
     }
 
-    /** Left unbought long enough: the hand at the best of it (a boost, PUNCH HARDER, the newest of the crew). */
+    /** The step that says a kind's been bought by the player once (a boost: any of them; the crew: each animal). */
+    private learnt(card: Card | Badge): string {
+        const place = card instanceof Card ? this.crew.indexOf(card) : -1;
+        return `learnt-${place >= 0 ? `crew-${CREW[place].id}` : this.kindOf(card)}`;
+    }
+
+    /**
+     * Left unbought long enough: the hand at the best of it (a boost, PUNCH HARDER, the newest of the crew), only while that
+     * kind's new to the player: once they've bought one themselves (tell), it's never pointed at again.
+     */
     private nudge(delta: number): void {
-        const badge = this.badges.find((one) => one.visible && one.boost && WallProgress.bricks >= one.boost.bricks);
-        const crew = CREW.map((def, i) => ({ def, card: this.crew[i] })).reverse().find(({ def, card }) => card.visible && WallProgress.cash >= WallProgress.costOf(def));
-        const punch = this.punch.visible && WallProgress.canPunchHarder ? this.punch : undefined;
+        const fresh = (card: Card | Badge) => !WallProgress.stepDone(this.learnt(card));
+        const badge = this.badges.find((one) => one.visible && one.boost && WallProgress.bricks >= one.boost.bricks && fresh(one));
+        const crew = CREW.map((def, i) => ({ def, card: this.crew[i] })).reverse().find(({ def, card }) => card.visible && WallProgress.crewOpen(def) && WallProgress.cash >= WallProgress.costOfMany(def, WallProgress.buyCount(def)) && fresh(card));
+        const punch = this.punch.visible && WallProgress.canPunchHarder && fresh(this.punch) ? this.punch : undefined;
         const best = badge ?? punch ?? crew?.card;
         this.left_ = best && WallProgress.best >= NUDGE.wall ? this.left_ + delta : 0;
         const on = this.left_ > NUDGE.after ? best : undefined;
@@ -641,22 +755,48 @@ export class Tray extends PIXI.Container {
     }
 
     private refreshCrew(): void {
+        // (The next kind to come shows locked with its wall, once there's one of the crew to hire: each a step to wait for.)
+        const next = CREW.some((def) => WallProgress.crewOpen(def)) ? WallProgress.nextCrew : undefined;
         CREW.forEach((def, i) => {
             const card = this.crew[i];
-            const open = WallProgress.best >= def.wall;
-            // (Only those there: none teased before their wall.)
-            card.visible = open;
-            if (!open) return;
+            const open = WallProgress.crewOpen(def);
+            card.visible = open || def === next;
+            if (!open) {
+                if (def === next) {
+                    card.set({
+                        frame: 'Gray',
+                        icon: `Wall_${def.id}`,
+                        count: '',
+                        effect: `+${short(WallProgress.dpsEach(def))}/s`,
+                        price: `WALL ${def.wall}`,
+                        can: false,
+                        share: 0,
+                        tail: 'NEXT',
+                        locked: true,
+                    });
+                }
+                return;
+            }
+            // (Just come: a jump, from locked to there.)
+            if (card.locked) {
+                card.locked = false;
+                card.bought();
+            }
             const owned = WallProgress.owned(def.id);
-            const cost = WallProgress.costOf(def);
+            // (As many as the buy mode says: x1, x10, MAX; their price together, and what they add.)
+            const many = WallProgress.buyCount(def);
+            const cost = WallProgress.costOfMany(def, many);
             const can = WallProgress.cash >= cost;
+            const adds = WallProgress.dpsEach(def) * many;
             card.set({
-                frame: can ? 'Green' : 'Blue',
+                // (Its grade's colour, as good as it is: the chick always green, the giraffe red. That it can be bought shows
+                // in its focus line, its "!" and its full price button.)
+                frame: CREW_GRADES[Math.min(i, CREW_GRADES.length - 1)],
                 icon: `Wall_${def.id}`,
                 count: owned ? `LV${owned}` : '',
-                // (What they all do now, and what one more adds.)
-                effect: owned ? `${short(WallProgress.dpsEach(def) * owned)}/s (+${short(WallProgress.dpsEach(def))})` : `+${short(WallProgress.dpsEach(def))}/s`,
-                price: `$${short(cost)}`,
+                // (What they all do now, and what the buy adds.)
+                effect: owned ? `${short(WallProgress.dpsEach(def) * owned)}/s (+${short(adds)})` : `+${short(adds)}/s`,
+                price: many > 1 ? `x${many} $${short(cost)}` : `$${short(cost)}`,
                 can,
                 share: WallProgress.cash / cost,
                 tail: owned ? undefined : 'NEW!',
@@ -729,29 +869,53 @@ export class Tray extends PIXI.Container {
         const bottom = topLeft.y + height - CARD.margin;
         const step = CARD.size + CARD.gap;
         const own = CARD.size * PUNCH.scale + PUNCH.gap;
+        // (The buy mode's slot, first in the panel, when it's there.)
+        const slot = 0;
         const cards = this.order.length * step - CARD.gap;
         const room = width - CARD.side * 2;
-        const fits = own + cards <= room;
+        const fits = own + slot + cards <= room;
         // (Always from the left: the weapon's card never moves as the others come.)
         const start = topLeft.x + CARD.side;
         this.punchBox.position.set(start + (CARD.size * PUNCH.scale) / 2, bottom + PUNCH.down - (CARD.height * PUNCH.scale) / 2);
-        this.left = start + own;
-        this.listWidth = (fits ? own + cards : room) - own;
+        this.left = start + own + slot;
+        this.listWidth = (fits ? own + slot + cards : room) - own - slot;
         this.listY = bottom - CARD.height / 2;
         this.list.y = this.listY;
         // Their panel: round them, or off the screen's side; they're cut off where it starts.
-        const edge = this.left - PANEL.pad;
+        const edge = start + own - PANEL.pad;
         const end = fits ? this.left + cards + PANEL.pad : topLeft.x + width + 40;
         const top = this.listY - CARD.height / 2 - PANEL.top;
         this.panel.visible = this.order.length > 0;
+        // (The buy mode's button at the left of the boosts' row, over the panel's corner; its tabs slide out of it to the right,
+        // the boosts, at the row's right, making way: placeBadges.)
+        const row = bottom - CARD.height - PANEL.top - ROW_GAP - BADGE.height / 2;
+        this.menu.position.set(edge + MENU.size / 2, row);
+        this.mode.position.set(edge + MENU.size + 4, row);
+        this.badgeRow = row;
+        this.badgeLeft = edge + MENU.size + 12;
         this.panel.position.set(edge, top);
         this.panel.width = Math.max(40, end - edge) / 1.4;
         this.panel.height = (CARD.height + PANEL.top + PANEL.foot) / 1.4;
-        this.listMask.clear().beginFill(0xffffff).drawRect(edge, top - 60, end - edge, CARD.height + 140).endFill();
+        // (The cards go under nothing as they scroll: cut off where they start, after the slot.)
+        const cut = edge;
+        this.listMask.clear().beginFill(0xffffff).drawRect(cut, top - 60, end - cut, CARD.height + 140).endFill();
         this.arrows.forEach((arrow) => (arrow.y = this.listY));
         this.scrollBar.position.set(this.left, bottom + BAR.below);
-        const row = bottom - CARD.height - PANEL.top - ROW_GAP - BADGE.height / 2;
-        this.badges.forEach((badge, i) => badge.position.set(start + CARD.size * PUNCH.scale + PUNCH.gap / 2 + BADGE.width / 2 + i * (BADGE.width + BADGE.gap), row));
+        this.placeBadges();
+    }
+
+    /**
+     * Upright: the boosts there are at the right of their row (but never over the menu's button); with the tabs out, slid right
+     * as far as they'd be over them (off the screen's side, some), back as they go in.
+     */
+    private placeBadges(): void {
+        if (this.wide) return;
+        const shown = this.badges.filter((badge) => badge.visible);
+        const width = shown.length * (BADGE.width + BADGE.gap) - BADGE.gap;
+        const from = Math.max(this.badgeLeft, this.screenRight - CARD.side - width);
+        const tabsEnd = this.mode.x + TABS_WIDTH + BADGE.gap;
+        const aside = this.modeOn ? Math.max(0, tabsEnd - from) * this.badgeSlide.t : 0;
+        shown.forEach((badge, i) => badge.position.set(from + aside + BADGE.width / 2 + i * (BADGE.width + BADGE.gap), this.badgeRow));
     }
 
     // ---------------------------------------------------------------- frame
@@ -767,6 +931,17 @@ export class Tray extends PIXI.Container {
             }
         }
         if (this.dirty) this.refresh();
+        // (The toggle once there's more than one kind to hire, from the beaver's wall, and the boosts' row is there (it's in it):
+        // before, one at a time is all there is.)
+        const modeOn = this.order.length > 0 && WallProgress.best >= Math.max(CREW[1].wall, SHOWS.boosts);
+        if (modeOn !== this.modeOn) {
+            this.modeOn = modeOn;
+            this.mode.visible = modeOn;
+            this.menu.visible = modeOn;
+            this.reposition();
+        }
+        this.mode.refresh();
+        this.placeBadges();
         this.nudge(delta);
         this.punch.update(delta);
         this.order.forEach((card) => card.update(delta));
@@ -808,6 +983,8 @@ export class Tray extends PIXI.Container {
             this.panel.visible = false;
             this.listY = CARD.height / 2;
             this.listMask.beginFill(0xffffff).drawRect(-14, -60, columns + 28, 1400).endFill();
+            this.menu.position.set(MENU.size / 2, -44);
+            this.mode.position.set(MENU.size + 4, -44);
             const side = topLeft.x + 24;
             this.cash.position.set(side + PILL.cash / 2, topLeft.y + PILL.y + 4);
             this.bricks.position.set(side + PILL.bricks / 2, topLeft.y + PILL.y + 4 + PILL.height + 24);

@@ -13,7 +13,6 @@ import { WallProgress } from '../data/WallProgress';
 import { rarityOf } from '../data/WallConfig';
 import { HudBar } from './HudBar';
 import { WardrobeActions, costStrip } from './Wardrobe';
-import { rarityBand } from './Rarity';
 import { flag, frame, sprite, text, write } from './parts';
 
 const CARD = { width: 164, height: 218, art: 122 };
@@ -33,7 +32,6 @@ export class LookOffer extends PIXI.Container {
     private readonly rays = sprite('Image_Effect_Rotate', 210);
     private readonly art = new PIXI.Sprite();
     private readonly nameText = text('', 22, 0xffffff, 0x100e18, 6);
-    private stars?: PIXI.Container;
     private readonly flagText = text('', 24, 0xffffff);
     /** What's left of its time: the HUD's own bar (crisp at any size). */
     private readonly left = new HudBar(TIMER.width, TIMER.height, 0xffe14a);
@@ -123,13 +121,10 @@ export class LookOffer extends PIXI.Container {
         this.last = found.item;
         WallProgress.countOffer();
         WallAnalytics.offer(kind, found.slot, found.item.id, 'visible');
-        // (Its frame: its rarity's; what kind of offer, on its flag.)
+        // (Its frame: its rarity's; what kind of offer, on its flag. No star band here: there's no room for it between the name
+        // and the price, which covered it.)
         const rarity = rarityOf(found.item.rarity);
         this.back.texture = PIXI.Texture.from(`ItemFrame02_Single_${rarity.frame}`);
-        this.stars?.destroy({ children: true });
-        this.stars = rarityBand(rarity, CARD.width - 30, 20);
-        this.stars.y = 62;
-        this.body.addChild(this.stars);
         write(this.flagText, FLAGS[kind], 84);
         write(this.nameText, found.item.name, CARD.width - 24);
         const canvas = document.createElement('canvas');

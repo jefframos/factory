@@ -23,6 +23,47 @@ export function frame(name: string, borders: [number, number, number, number], w
     return plane;
 }
 
+/** The pack's glossy buttons (Button01_s_*), as a price bar fills. */
+export type ButtonColor = 'Yellow' | 'Green' | 'Red' | 'Gray' | 'DarkGray' | 'Pink' | 'Blue';
+/** Button01_s_*: 70×114, round corners ~24 px; at half size they match the cards' frames. */
+const BUTTON = { borders: [26, 26, 26, 28] as [number, number, number, number], scale: 0.5 };
+
+/** One of the pack's glossy buttons, nine-sliced to a size (at least 28 px high), centred on its position. */
+export function button(color: ButtonColor, width: number, height: number): PIXI.NineSlicePlane {
+    return frame(`Button01_s_${color}`, BUTTON.borders, width, height, BUTTON.scale);
+}
+
+/**
+ * A price bar that's a button: the pack's dark button under its coloured one, the coloured one shown from the left as far as
+ * the price is there (a mask), so a full one is the whole glossy button, there to press. Centred on its position.
+ */
+export class FillButton extends PIXI.Container {
+    private readonly back: PIXI.NineSlicePlane;
+    private readonly fill: PIXI.NineSlicePlane;
+    private readonly cover = new PIXI.Graphics();
+    private shown = '';
+
+    public constructor(private readonly w: number, private readonly h: number, color: ButtonColor) {
+        super();
+        this.back = button('DarkGray', w, h);
+        this.fill = button(color, w, h);
+        this.fill.mask = this.cover;
+        this.addChild(this.back, this.fill, this.cover);
+    }
+
+    /** How much is there (0 to 1), and its colour. */
+    public set(share: number, color?: ButtonColor): void {
+        const key = `${share.toFixed(3)}|${color ?? ''}`;
+        if (key === this.shown) return;
+        this.shown = key;
+        if (color) this.fill.texture = PIXI.Texture.from(`Button01_s_${color}`);
+        const part = Math.max(0, Math.min(1, share));
+        this.fill.visible = part > 0.005;
+        this.cover.clear();
+        if (this.fill.visible) this.cover.beginFill(0xffffff).drawRect(-this.w / 2, -this.h / 2 - 2, this.w * part, this.h + 4).endFill();
+    }
+}
+
 export function sprite(name: string, size: number): PIXI.Sprite {
     const made = PIXI.Sprite.from(name);
     made.anchor.set(0.5);

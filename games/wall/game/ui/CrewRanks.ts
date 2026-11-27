@@ -1,8 +1,8 @@
 // CrewRanks.ts
 //
-// The crew's ranks, for good (through rewinds too), bought with gems (bosses drop them: WallConfig.gemsAt): each kind's
-// next rank doubles its damage again (RANKS.mult) and puts a hat on all of that kind, hard hat, viking hat, crown
-// (tools/build-hats.mjs). Its button sits under the relics' on the left, from the first boss on; marked when a rank's there
+// The crew's ranks, for good (through rewinds too), bought with gems (bosses and fights drop them: WallConfig.fightGems): each
+// kind's rank goes up a level at a time, 1 to 100 (RANKS), each adding to its damage; its hats come with the levels, hard hat
+// at 1, viking at 40, the crown at 100, the last (tools/build-hats.mjs), each doubling it again. Its button sits under the relics' on the left, from the first boss on; marked when a rank's there
 // to buy. Laid out as the relics' shop; its button, as theirs, under it on the left.
 
 import * as PIXI from 'pixi.js';
@@ -11,7 +11,7 @@ import { Game } from 'core/Game';
 import { Gameplay } from '../ads/Gameplay';
 import { WallAnalytics } from '../analytics/WallAnalytics';
 import { WallAudio } from '../audio/WallAudio';
-import { CREW, CrewDef, MAX_RANK, RANKS, rankCost, short } from '../data/WallConfig';
+import { CREW, CrewDef, MAX_RANK, RANKS, hatOf, nextHatAt, rankCost, rankMult, short } from '../data/WallConfig';
 import { WallProgress } from '../data/WallProgress';
 import { frame, plainText, sprite, text, write } from './parts';
 import { CARD_SLICE } from './Rarity';
@@ -20,11 +20,13 @@ import { CARD_SLICE } from './Rarity';
 const BUTTON = { size: 104, icon: 66, strip: 28 };
 export const CREW_BUTTON = BUTTON.size;
 const PANEL = { width: 640, top: 200 };
-const ROW = { width: 590, height: 88, gap: 8, icon: 70, hat: 46, buy: { width: 150, height: 66 } };
+const ROW = { width: 590, height: 80, gap: 6, icon: 64, hat: 42, buy: { width: 150, height: 64 } };
+/** The hats' names, for "VIKING AT LV 40". */
+const HAT_NAMES = ['HARD HAT', 'VIKING', 'CROWN'];
 const COLORS = { panel: 0x2f7a3a, inner: 0x3f9e4c, row: 0x1a3a20, locked: 0x2a2f33 };
 
-/** A rank's hat's picture (1 hard hat, 2 viking, 3 crown). */
-const hatIcon = (rank: number, size: number): PIXI.Sprite => sprite(`Wall_hat_${RANKS.hats[rank - 1]}`, size);
+/** A hat's picture (1 hard hat, 2 viking, 3 crown). */
+const hatIcon = (hat: number, size: number): PIXI.Sprite => sprite(`Wall_hat_${RANKS.hats[hat - 1]}`, size);
 
 // ---------------------------------------------------------------- the button
 
@@ -46,7 +48,7 @@ export class CrewButton extends PIXI.Container {
         const stripY = BUTTON.size / 2 - 8 - BUTTON.strip / 2;
         const chick = sprite('Wall_chick', BUTTON.icon);
         chick.y = 6;
-        const crown = hatIcon(MAX_RANK, BUTTON.icon * 0.55);
+        const crown = hatIcon(RANKS.hats.length, BUTTON.icon * 0.55);
         crown.y = -BUTTON.icon * 0.34;
         this.picture.addChild(chick, crown);
         this.picture.y = -BUTTON.strip / 2 + 2;
@@ -65,6 +67,18 @@ export class CrewButton extends PIXI.Container {
             event.stopPropagation();
             open();
         });
+    }
+
+    /** Where the gems fly to. */
+    public get target(): PIXI.Point {
+        return new PIXI.Point(this.x, this.y);
+    }
+
+    /** Some gems have got here: a jump. */
+    public got(): void {
+        gsap.killTweensOf(this.scale);
+        this.scale.set(1.18);
+        gsap.to(this.scale, { x: 1, y: 1, duration: 0.3, ease: 'back.out(3)' });
     }
 
     public update(delta: number): void {
@@ -124,7 +138,7 @@ export class CrewPanel extends PIXI.Container {
         gem.position.set(-104, top + 106);
         this.gems.anchor.set(0, 0.5);
         this.gems.position.set(-62, top + 106);
-        const note = plainText('BOSSES DROP GEMS · RANKS ARE FOR GOOD', 19, 0xe8ffe8);
+        const note = plainText('BOSSES AND FIGHTS DROP GEMS · RANKS ARE FOR GOOD', 19, 0xe8ffe8);
         note.y = top + 162;
         this.panel.addChild(back, inner, purse, gem, this.gems, note, this.rows, ribbon, title, close);
         this.addChild(this.dim, this.panel);
@@ -158,12 +172,13 @@ export class CrewPanel extends PIXI.Container {
         });
     }
 
-    /** A kind: itself in its hat, its name and what its rank does, and its next hat's price (or MAX, or the wall it comes at). */
+    /** A kind: itself in its hat, its name, its level and what it does, the next hat; and its next level's price (or MAX). */
     private row(def: CrewDef): PIXI.Container {
         const row = new PIXI.Container();
-        const rank = WallProgress.rankOf(def.id);
+        const level = WallProgress.rankLevel(def.id);
+        const rank = hatOf(level);
         const there = WallProgress.best >= def.wall;
-        const max = rank >= MAX_RANK;
+        const max = level >= MAX_RANK;
         const can = WallProgress.canRank(def);
         const back = frame('BasicFrame_Round12', [12, 12, 12, 12], ROW.width, ROW.height);
         back.tint = there ? COLORS.row : COLORS.locked;
@@ -181,9 +196,16 @@ export class CrewPanel extends PIXI.Container {
         const name = text(there ? def.plural.toUpperCase() : '???', 26, there ? 0xffffff : 0x9aa3a8, 0x100e18, 6);
         name.anchor.set(0, 0.5);
         name.position.set(-ROW.width / 2 + 104, -14);
-        const what = plainText(!there ? '???' : rank ? `x${RANKS.mult[rank - 1]} DAMAGE` : 'NO RANK YET', 19, rank ? 0x7dffa2 : 0xb9c3cc);
+        // (Its level and damage; then when its next hat comes.)
+        const hatNext = nextHatAt(level);
+        const said = !there ? '???'
+            : max ? `LV ${level} · x${short(rankMult(level))} DAMAGE · CROWNED`
+            : level ? `LV ${level} · x${short(rankMult(level))} DAMAGE · ${HAT_NAMES[hatOf(hatNext!) - 1]} AT LV ${hatNext}`
+            : `NO RANK YET · ${HAT_NAMES[0]} AT LV 1`;
+        const what = plainText(said, 18, level ? 0x7dffa2 : 0xb9c3cc);
         what.anchor.set(0, 0.5);
-        what.position.set(-ROW.width / 2 + 104, 18);
+        what.position.set(-ROW.width / 2 + 104, 16);
+        write(what, said, ROW.width - 104 - ROW.buy.width - 30);
         row.addChild(name, what);
         if (!there) return row;
         // The next hat, and its price.
@@ -193,14 +215,19 @@ export class CrewPanel extends PIXI.Container {
         if (max) {
             buy.addChild(text('MAX', 30, 0xffffff, 0x100e18, 7));
         } else {
-            const next = hatIcon(rank + 1, 50);
-            next.x = -44;
+            // (+1 LV, and its price in gems; the hat it brings, if the next level brings one.)
+            const brings = hatOf(level + 1) > rank;
+            const plus = text(brings ? '' : '+1', 24, 0xffffff, 0x100e18, 6);
+            plus.x = -46;
+            const next = brings ? hatIcon(rank + 1, 46) : undefined;
+            if (next) next.x = -44;
             const gem = sprite('Icon_Gem', 30);
-            gem.x = -4;
-            const cost = text(short(rankCost(def, rank)), 28, 0xffffff, 0x100e18, 7);
+            gem.x = -6;
+            const cost = text(short(rankCost(def, level)), 28, 0xffffff, 0x100e18, 7);
             cost.anchor.set(0, 0.5);
-            cost.x = 14;
-            buy.addChild(next, gem, cost);
+            cost.x = 12;
+            write(cost, short(rankCost(def, level)), 54);
+            buy.addChild(next ?? plus, gem, cost);
         }
         buy.eventMode = 'static';
         buy.cursor = 'pointer';
@@ -212,7 +239,9 @@ export class CrewPanel extends PIXI.Container {
                 return;
             }
             WallAudio.play('tool');
-            WallAnalytics.rank(def.id, WallProgress.rankOf(def.id));
+            // (Told at each hat and every 10 levels, not each of a hundred.)
+            const now = WallProgress.rankLevel(def.id);
+            if (hatOf(now) > hatOf(now - 1) || now % 10 === 0) WallAnalytics.rank(def.id, now);
             this.build();
         });
         row.addChild(buy);

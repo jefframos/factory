@@ -24,7 +24,7 @@ import { Gameplay } from '../ads/Gameplay';
 import { WallAnalytics } from '../analytics/WallAnalytics';
 import { buildEffectsPanel, fx } from '../config/Effects';
 import { Crew } from '../crew/Crew';
-import { AUTO, HOLD, RANKS, gemsAt, BoostDef, CAMERA, CASH, FLOATING, CREW, CREW_ROWS, CrewDef, TOOL_TYPES, POWERS, WALL, WEAK, ENEMIES, bossAt, bossKind, bossNumber, bossWall, enemiesOn, enemyModels, fightAt, fightModels, hitNumber, isBossWall, short, switchEnemies, toolAt, toolGrade, gradeColor, gradedName, toolsAfter, toolsUpTo, medalsOf, punchMult, REWIND, roomAt, wallAt } from '../data/WallConfig';
+import { AUTO, HOLD, RANKS, fightGems, BoostDef, CAMERA, CASH, FLOATING, CREW, CREW_ROWS, CrewDef, TOOL_TYPES, POWERS, WALL, WEAK, ENEMIES, bossAt, bossKind, bossNumber, bossWall, enemiesOn, enemyModels, fightAt, fightModels, hitNumber, isBossWall, short, switchEnemies, toolAt, toolGrade, gradeColor, gradedName, toolsAfter, toolsUpTo, medalsOf, punchMult, REWIND, roomAt, wallAt } from '../data/WallConfig';
 import { wornLook } from '../data/Looks';
 import { ModelQueue, ModelWant } from '../data/ModelQueue';
 import { WallProgress } from '../data/WallProgress';
@@ -41,6 +41,7 @@ import { Debris } from '../wall/Debris';
 import { Bite, Cell, VoxelWall } from '../wall/VoxelWall';
 import { HitMark } from '../wall/HitMark';
 import { Tunnel, WALL_HEIGHT, WALL_WIDTH } from '../wall/Tunnel';
+import { Dungeon } from '../wall/Dungeon';
 import { WeakSpot } from '../wall/WeakSpot';
 
 const MODELS = './wall/models/player/';
@@ -119,6 +120,8 @@ export default class WallScene extends ThreeScene {
     private readonly hands = new Hands();
     private readonly debris = new Debris();
     private readonly tunnel = new Tunnel();
+    /** The dungeon's props round the gates (ui/wall.json `dungeon`; "on": false, none). */
+    private readonly dungeon = new Dungeon(this.tunnel.gates);
     private readonly mark = new HitMark();
     private readonly around = new THREE.HemisphereLight(LIGHT.sky, LIGHT.ground, LIGHT.around);
     private readonly sun = new THREE.DirectionalLight(LIGHT.sun, LIGHT.strength);
@@ -240,10 +243,14 @@ export default class WallScene extends ThreeScene {
         this.game.uiLayer.addChild(this.hud);
         const medal = new PIXI.Sprite(PIXI.Texture.from('ItemIcon_Badge_Gold'));
         this.tunnel.setMedal(this.game.app.renderer.extract.canvas(medal) as HTMLCanvasElement);
+        // (The big picture of it, for the thick 3D one: the small Icon_Gem's for the counters.)
+        const gem = new PIXI.Sprite(PIXI.Texture.from('ItemIcon_Gem_Diamond_Purple'));
+        this.tunnel.setGem(this.game.app.renderer.extract.canvas(gem) as HTMLCanvasElement);
         const skull = new PIXI.Sprite(PIXI.Texture.from('ItemIcon_Skull'));
         this.tunnel.setSkull(this.game.app.renderer.extract.canvas(skull) as HTMLCanvasElement);
         this.showWall();
         this.modelsReady = this.loadModels();
+        void this.dungeon.load();
         this.wearLook();
         this.applyTool(true);
         window.addEventListener('keydown', this.onKey);
@@ -308,6 +315,10 @@ export default class WallScene extends ThreeScene {
         this.hud.setShare(this.wall.share);
         this.tunnel.setBoss(isBossWall(WallProgress.wall), isBossWall(WallProgress.wall + 1));
         this.tunnel.showMedal(this.phase === 'playing' && medalsOf(WallProgress.wall) > 0);
+        // (Wall 1's gate dressed up the most: the first the player sees.)
+        this.dungeon.showFirst(WallProgress.wall === 1);
+        // (A wall with a fight behind it: the gem it gives turns behind it, as a medal does.)
+        this.tunnel.showGem((this.phase === 'playing' || this.phase === 'fighting') && fightGems(WallProgress.wall) > 0);
     }
 
     private bringDown(): void {
@@ -355,6 +366,8 @@ export default class WallScene extends ThreeScene {
 
     private startFight(): void {
         this.phase = 'fighting';
+        // (The gem stays, turning behind the enemies: what beating them gives. Shown here too, for a fight a save comes back to.)
+        this.tunnel.showGem(fightGems(WallProgress.wall) > 0);
         this.landings = [];
         const number = WallProgress.wall;
         const kind = fightAt(number);
@@ -403,13 +416,19 @@ export default class WallScene extends ThreeScene {
         this.phase = 'falling';
         this.landings = [];
         let words = '';
+        // The gems it gives: the gem flies from where it turned to the crew's button (a boss's more of them).
+        const gems = fightGems(number);
+        if (gems > 0) {
+            const at = this.tunnel.takeGem();
+            at.project(this.threeCamera);
+            this.hud.flyGems(this.toHud(at.x, at.y), gems);
+        }
         if (boss) {
             const { cash, bricks } = ENEMIES.boss;
             const bonus = Math.round(wallAt(number).hp * cash * this.cashMult());
-            const gems = gemsAt(number);
             WallProgress.addCash(bonus);
             WallProgress.bossReward(bricks, gems);
-            words = `+$${short(bonus)}   +${gems} GEMS`;
+            words = `+${short(bonus)}   +${gems} GEMS`;
             this.hud.tray.won(this.toHud(0, 0.1));
             this.hud.flashScreen(0.5, 0.3);
             WallAudio.play('collapse');
@@ -420,6 +439,8 @@ export default class WallScene extends ThreeScene {
             this.shake = 0.8;
             this.vibrate(60);
         } else {
+            WallProgress.addGems(gems);
+            if (gems > 0) words = `+${gems} ${gems === 1 ? 'GEM' : 'GEMS'}`;
             this.hud.tray.won(this.toHud(0, -0.1));
             WallAudio.play('clear');
         }
@@ -996,18 +1017,20 @@ export default class WallScene extends ThreeScene {
         return true;
     }
 
+    /** A tap on a crew card: as many as the buy mode says (x1, x10, MAX), all at once, one sound. */
     private hire(def: CrewDef): boolean {
-        if (!WallProgress.hire(def)) {
+        const before = WallProgress.owned(def.id);
+        if (!WallProgress.hireMany(def, WallProgress.buyCount(def))) {
             WallAudio.play('error');
             return false;
         }
         const owned = WallProgress.owned(def.id);
         this.boughtAt = WallProgress.wall;
-        WallAnalytics.hire(def.id, owned);
+        for (let count = before + 1; count <= owned; count++) WallAnalytics.hire(def.id, count);
         WallAudio.play('claim', 0.8, 1.1);
         this.crew.refresh();
         this.crew.cheer(def.id);
-        if (owned === 1) this.hud.announce(`${def.name.toUpperCase()}!`, '', 1);
+        if (before === 0) this.hud.announce(`${def.name.toUpperCase()}!`, '', 1);
         return true;
     }
 
@@ -1277,6 +1300,7 @@ export default class WallScene extends ThreeScene {
         const toHit = this.phase === 'playing' ? this.wall.share > 0 : this.phase === 'fighting' && this.fight.enemies.alive.length > 0;
         this.crew.update(step, toHit && !this.hud.busy, this.phase === 'advancing');
         this.tunnel.update(delta);
+        this.dungeon.update(delta);
         (this.threeScene.fog as THREE.Fog).color.copy(this.tunnel.dark);
         this.around.intensity = LIGHT.around * fx('light');
         this.sun.intensity = LIGHT.strength * fx('light');
@@ -1517,6 +1541,7 @@ export default class WallScene extends ThreeScene {
             this.landings = [];
             this.wall.group.visible = false;
             this.tunnel.showMedal(false);
+            this.tunnel.showGem(false);
             const kind = this.fight.preview(look.boss, look.rewinds);
             void this.models.now(this.enemyWants(enemyModels(kind)));
             this.hud.setFight({ title: kind.name, boss: true, retry: false });

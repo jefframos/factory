@@ -9,7 +9,11 @@ import { SaveStorage } from 'core/platforms/SaveStorage';
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import SoundManager from 'core/audio/SoundManager';
 
+/** The old one switch for all of it (read once: off, and both stay off). */
 const MUTED_KEY = 'wall.muted';
+/** The music and the sound effects, each 'on' or 'off'. */
+const MUSIC_KEY = 'wall.music';
+const SFX_KEY = 'wall.sfx';
 
 interface Sound {
     files: string[];
@@ -60,22 +64,29 @@ let music: Howl | undefined;
 let musicWanted = false;
 let soundsIn = false;
 let path = '';
-let muted = false;
+let musicOff = false;
+let sfxOff = false;
 /** Hidden (the tab, the app), and an ad on. */
 let paused = false;
 let hushed = false;
 
-/** Howler's mute from all that wants it off: the player's toggle, the platform's mute (always wins: YouTube, CrazyGames), a pause, an ad. */
+/**
+ * Howler's mute from all that wants everything off: the platform's mute (always wins: YouTube, CrazyGames), a pause, an ad. The
+ * player's switches are each their own: the music's mutes the music, the sound effects' stops them being played.
+ */
 function applyMute(): void {
-    Howler.mute(muted || paused || hushed || SoundManager.instance.platformMuted);
+    Howler.mute(paused || hushed || SoundManager.instance.platformMuted);
+    music?.mute(musicOff);
 }
 
 export const WallAudio = {
-    saveKeys: [MUTED_KEY],
+    saveKeys: [MUTED_KEY, MUSIC_KEY, SFX_KEY],
 
     initialize(folder: string): void {
         path = `./${folder}/audio/`;
-        muted = SaveStorage.getItem(MUTED_KEY) === 'true';
+        const allOff = SaveStorage.getItem(MUTED_KEY) === 'true';
+        musicOff = (SaveStorage.getItem(MUSIC_KEY) ?? (allOff ? 'off' : 'on')) === 'off';
+        sfxOff = (SaveStorage.getItem(SFX_KEY) ?? (allOff ? 'off' : 'on')) === 'off';
         applyMute();
         PlatformHandler.instance.onPause.add(() => {
             paused = true;
@@ -110,6 +121,7 @@ export const WallAudio = {
 
     /** Plays one of its takes; `loud`: times its volume, `pitch`: times its pitch. */
     play(name: SoundName, loud = 1, pitch = 1): void {
+        if (sfxOff) return;
         const sound: Sound = SOUNDS[name];
         const howl = loaded.get(sound.files[Math.floor(Math.random() * sound.files.length)]);
         if (!howl) return;
@@ -131,6 +143,7 @@ export const WallAudio = {
         musicWanted = true;
         if (music || !soundsIn) return;
         music = new Howl({ src: [`${path}${MUSIC.file}.mp3`], volume: 0, sprite: { loop: [MUSIC.from, MUSIC.long, true] } });
+        music.mute(musicOff);
         music.once('load', () => {
             const id = music!.play('loop');
             music!.fade(0, MUSIC.volume, MUSIC.comesIn, id);
@@ -143,14 +156,24 @@ export const WallAudio = {
         applyMute();
     },
 
-    get muted(): boolean {
-        return muted;
+    get musicOn(): boolean {
+        return !musicOff;
     },
 
-    toggleMuted(): boolean {
-        muted = !muted;
+    get sfxOn(): boolean {
+        return !sfxOff;
+    },
+
+    /** The music on or off (kept). */
+    setMusic(on: boolean): void {
+        musicOff = !on;
         applyMute();
-        SaveStorage.setItem(MUTED_KEY, String(muted));
-        return muted;
+        SaveStorage.setItem(MUSIC_KEY, on ? 'on' : 'off');
+    },
+
+    /** The sound effects on or off (kept). */
+    setSfx(on: boolean): void {
+        sfxOff = !on;
+        SaveStorage.setItem(SFX_KEY, on ? 'on' : 'off');
     },
 };

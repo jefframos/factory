@@ -25,9 +25,15 @@ export interface AdMobConfig {
     test?: boolean;
 }
 
-/** The phone app's purchases: RevenueCat's public key for Google Play (empty: mocked purchases, to try the shop). */
+/**
+ * The phone app's purchases, through RevenueCat (both empty: mocked purchases, to try the shop).
+ * - `revenuecat`: the Google Play public key (goog_…), for release builds (the AAB): real Play Billing.
+ * - `revenuecatTest`: the Test Store key (test_…), for debug builds (run / APK): RevenueCat's own purchase sheet with
+ *   success / fail / cancel, no Play account needed. Never in a release build: the SDK crashes the app on one there.
+ */
 export interface IapConfig {
     revenuecat?: string;
+    revenuecatTest?: string;
 }
 
 /** Poki refuses an event with more numbers than this across category, what and action. */

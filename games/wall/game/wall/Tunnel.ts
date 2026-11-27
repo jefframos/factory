@@ -24,6 +24,8 @@ const LINES = { every: 2, width: 0.09, from: 18, reach: 34 };
  */
 const ROOM = { block: [0.36, 0.105], frame: [0.2, 0.25], beam: [0.24, 0.16], floor: [0.32, 0.065], line: [0.32, 0.042], dark: [0.45, 0.02] } as const;
 const MEDAL = { z: -3.4, y: WALL_HEIGHT * 0.5, size: 1.25, spin: 1.9, layers: 9, thick: 0.2, edge: 0xc9761a, bob: 0.12, rays: 6.4, glow: 5.2 };
+/** The gem: where the medal would be, as big; its inside a deep violet. */
+const GEM = { y: WALL_HEIGHT * 0.5, size: 1.2, edge: 0x5a1a9a };
 
 /** What's over a boss's gate: spikes, the skull's size and how far up it is, its light. */
 const BOSS_MARK = { spikes: 9, skull: 0.72, up: 0.62, glow: 3.6 };
@@ -47,15 +49,19 @@ function thickPicture(canvas: HTMLCanvasElement, edge: THREE.ColorRepresentation
     return group;
 }
 
-/** Soft light, or rays of it, drawn. */
-function light(rays: boolean): THREE.Sprite {
+/** A light's colours (r,g,b): its middle, halfway, its edge. Gold for the medal, violet for the gem. */
+const GOLD = ['255,226,130', '255,200,70', '255,170,30'];
+const VIOLET = ['236,190,255', '190,110,255', '150,60,255'];
+
+/** Soft light, or rays of it, drawn (in the medal's gold, or another's colours). */
+function light(rays: boolean, colors = GOLD): THREE.Sprite {
     const canvas = document.createElement('canvas');
     const s = (canvas.width = canvas.height = 256);
     const c = canvas.getContext('2d')!;
     const fade = c.createRadialGradient(s / 2, s / 2, 4, s / 2, s / 2, s / 2);
-    fade.addColorStop(0, rays ? 'rgba(255,226,130,0.75)' : 'rgba(255,232,150,1)');
-    fade.addColorStop(0.45, rays ? 'rgba(255,200,70,0.35)' : 'rgba(255,190,50,0.45)');
-    fade.addColorStop(1, 'rgba(255,170,30,0)');
+    fade.addColorStop(0, `rgba(${colors[0]},${rays ? 0.75 : 1})`);
+    fade.addColorStop(0.45, `rgba(${colors[1]},${rays ? 0.35 : 0.45})`);
+    fade.addColorStop(1, `rgba(${colors[2]},0)`);
     c.fillStyle = fade;
     if (!rays) c.fillRect(0, 0, s, s);
     else for (let i = 0; i < 12; i++) {
@@ -80,6 +86,11 @@ export class Tunnel {
     private readonly coin = new THREE.Group();
     private readonly rays = light(true);
     private readonly glow = light(false);
+    /** The gem behind a wall with a fight behind it (what beating it gives), as the medal: its own violet light. */
+    private readonly gem = new THREE.Group();
+    private readonly gemStone = new THREE.Group();
+    private readonly gemRays = light(true, VIOLET);
+    private readonly gemGlow = light(false, VIOLET);
     private time = 0;
     private markTime = 0;
     private readonly paints = Object.fromEntries(Object.keys(ROOM).map((part) => [part, new THREE.MeshLambertMaterial()])) as Record<keyof typeof ROOM, THREE.MeshLambertMaterial>;
@@ -88,6 +99,9 @@ export class Tunnel {
     private readonly accent = new THREE.Color();
     private readonly roomTo = new THREE.Color();
     private readonly accentTo = new THREE.Color();
+
+    /** The two gates: this wall's (the first, z 0), and the next one's behind it (what's put round them: Dungeon). */
+    public readonly gates: THREE.Group[];
 
     /** The dark between the gates (the fog, the sky). */
     public readonly dark = new THREE.Color();
@@ -106,6 +120,7 @@ export class Tunnel {
         const next = gate.clone();
         next.position.z = -WALL.gap;
         this.group.add(gate, next);
+        this.gates = [gate, next];
         for (const z of [0, -WALL.gap]) this.buildMark(z);
         this.buildLines();
         this.rays.scale.setScalar(MEDAL.rays);
@@ -116,6 +131,14 @@ export class Tunnel {
         this.medal.position.set(0, MEDAL.y, MEDAL.z);
         this.medal.visible = false;
         this.group.add(this.medal);
+        this.gemRays.scale.setScalar(MEDAL.rays);
+        this.gemGlow.scale.setScalar(MEDAL.glow);
+        this.gemRays.position.z = this.gemGlow.position.z = -0.8;
+        this.gemStone.scale.setScalar(GEM.size);
+        this.gem.add(this.gemRays, this.gemGlow, this.gemStone);
+        this.gem.position.set(0, GEM.y, MEDAL.z);
+        this.gem.visible = false;
+        this.group.add(this.gem);
     }
 
     private buildFrame(gate: THREE.Group): void {
@@ -254,6 +277,21 @@ export class Tunnel {
         return this.medal.position.clone();
     }
 
+    /** The gem's picture, once it's there. */
+    public setGem(canvas: HTMLCanvasElement): void {
+        this.gemStone.add(thickPicture(canvas, GEM.edge));
+    }
+
+    public showGem(shown: boolean): void {
+        this.gem.visible = shown;
+    }
+
+    /** It's won: where it is (to fly from), and it's gone. */
+    public takeGem(): THREE.Vector3 {
+        this.gem.visible = false;
+        return this.gem.position.clone();
+    }
+
     public update(delta: number): void {
         if (!this.room.equals(this.roomTo) || !this.accent.equals(this.accentTo)) {
             const t = 1 - Math.exp(-delta * ROOM_BLEND);
@@ -267,6 +305,13 @@ export class Tunnel {
         }
         this.markTime += delta;
         this.markGlows.forEach((glow) => glow.scale.setScalar(BOSS_MARK.glow * (1 + 0.14 * Math.sin(this.markTime * 4))));
+        if (this.gem.visible) {
+            const t = this.markTime;
+            this.gemStone.rotation.y = t * MEDAL.spin;
+            this.gemStone.position.y = Math.sin(t * 2.2) * MEDAL.bob;
+            this.gemRays.material.rotation = t * 0.35;
+            this.gemGlow.scale.setScalar(MEDAL.glow * (1 + 0.08 * Math.sin(t * 4)));
+        }
         if (!this.medal.visible) return;
         this.time += delta;
         this.coin.rotation.y = this.time * MEDAL.spin;

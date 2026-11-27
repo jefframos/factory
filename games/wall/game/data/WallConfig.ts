@@ -92,6 +92,25 @@ export const FLOATING = data.floating;
 export const AWAY = data.away;
 export const NUDGE = data.nudge;
 export const CREW = data.crew as unknown as CrewDef[];
+
+/** A dungeon prop's spot round a gate (game/wall/Dungeon.ts says what each part means). */
+export interface DungeonSpot {
+    model: string;
+    x: number;
+    y: number;
+    z: number;
+    size: number;
+    rot?: number;
+    /** Degrees its top leans back (towards the wall: a weapon stood against it), and tilts sideways (+: to the left). */
+    lean?: number;
+    tilt?: number;
+    light?: number;
+    lightAt?: number;
+}
+/** The dungeon's props round the gates: `on` (false: none at all), on every gate, and round wall 1's only. */
+export const DUNGEON = ((data as { dungeon?: unknown }).dungeon ?? { on: false, gates: [], first: [] }) as { on: boolean; gates: DungeonSpot[]; first: DungeonSpot[] };
+/** The crew come with the walls of each run (a rewind brings them back one at a time); false: from the best wall ever (the 4:48 build's way). */
+export const CREW_PER_RUN = (data as { crewPerRun?: boolean }).crewPerRun !== false;
 export const CREW_ROWS = data.crewRows;
 export const WEAK = data.weak;
 export const MEDAL = data.medal;
@@ -115,14 +134,34 @@ export interface PowerDef {
 }
 export const POWERS = data.powers as PowerDef[];
 
-/** The crew's ranks (for good, bought with gems): the hat each wears, its damage (x), its price. */
+/**
+ * The crew's ranks (for good, bought with gems): a level from 1 to `max` per kind, a gem or more each. The hats come at
+ * `hatAt` levels (hard hat at 1, viking at 40, crown at the last, which maxes it); each level adds `perLevel` to its damage,
+ * and each hat doubles it (`hatMult`): x2.2 at 1, x20 at 40, x88 at 100.
+ */
 export const RANKS = data.ranks;
-/** The most a kind's rank goes. */
-export const MAX_RANK = RANKS.hats.length;
-/** Gems for the next rank of a kind (its place down the crew's list makes it dearer). */
-export const rankCost = (def: CrewDef, rank: number): number => Math.ceil(RANKS.cost[rank] * RANKS.growth ** CREW.indexOf(def));
+/** The most a kind's rank level goes (its crown). */
+export const MAX_RANK = RANKS.max;
+/** The hat a rank level wears: 0 none, 1 hard hat, 2 viking, 3 crown. */
+export const hatOf = (level: number): number => RANKS.hatAt.filter((at) => level >= at).length;
+/** The level the next hat comes at, after this one (undefined: crowned). */
+export const nextHatAt = (level: number): number | undefined => RANKS.hatAt.find((at) => at > level);
+/** What a rank level does to a kind's damage (x). */
+export const rankMult = (level: number): number => (level > 0 ? (1 + RANKS.perLevel * level) * RANKS.hatMult ** hatOf(level) : 1);
+/** Gems for the level after `level` of a kind: more the further down the crew's list, and one more every `every` levels. */
+export const rankCost = (def: CrewDef, level: number): number => {
+    const { base, perKind, every } = RANKS.cost;
+    return Math.ceil((base + perKind * CREW.indexOf(def)) * (1 + Math.floor(level / every)));
+};
 /** The gems a boss at a wall drops. */
 export const gemsAt = (wall: number): number => data.enemies.boss.gems + Math.floor(wall / data.enemies.boss.gemsEvery);
+/** The gems what's behind a wall gives once it's beaten: a boss's (gemsAt), or a fight's (fewer); none if nothing's there. */
+export function fightGems(wall: number): number {
+    const kind = fightAt(wall);
+    if (kind === 'boss') return gemsAt(wall);
+    if (kind === 'minions') return data.enemies.minions.gems + Math.floor(wall / data.enemies.minions.gemsEvery);
+    return 0;
+}
 
 /** What the shop sells (where the platform has purchases): had for good, or used up as it's bought. */
 export interface ProductDef {

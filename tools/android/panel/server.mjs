@@ -128,6 +128,7 @@ function state() {
             admob: { appId: '', interstitial: '', rewarded: '', test: true, ...(android.admob ?? {}) },
             iap: Array.isArray(android.iap) ? android.iap : [],
             revenuecat: android.iap?.revenuecat ?? '',
+            revenuecatTest: android.iap?.revenuecatTest ?? '',
             analytics: android.analytics ?? null,
             hasEntry: !!app.android,
         },
@@ -146,6 +147,7 @@ function keysOf(app, android) {
         { id: 'rewarded', label: 'AdMob rewarded ad unit', ok: unit(admob.rewarded), where: 'AdMob › Apps › your app › Ad units › Rewarded (ca-app-pub-…/…)', link: 'https://support.google.com/admob/answer/7356092', field: 'ads' },
         { id: 'upload', label: 'Upload key (signs the AAB)', ok: !!app.signing?.set && app.signing.storeExists && app.signing.passwords, where: 'Made here once (Create a key below); back the .jks file and its password up', link: 'https://developer.android.com/studio/publish/app-signing#generate-key', field: 'signing' },
         { id: 'revenuecat', label: 'RevenueCat key (real purchases)', ok: !!android.iap?.revenuecat, where: 'RevenueCat › your project › API keys › Google Play public key (goog_…); empty: purchases mocked', link: 'https://app.revenuecat.com/', field: 'revenuecat' },
+        { id: 'revenuecatTest', label: 'RevenueCat Test Store key (debug builds)', ok: !!android.iap?.revenuecatTest, where: 'RevenueCat › your project › Apps & providers › Test Store › its API key (test_…); simulated purchases in run / APK builds, never in the AAB', link: 'https://www.revenuecat.com/docs/test-and-launch/sandbox/test-store', field: 'revenuecat' },
         { id: 'play', label: 'Google Play Console account', ok: null, where: 'To upload the AAB ($25 once); not a key, checked by you', link: 'https://play.google.com/console/signup' },
     ];
 }
@@ -239,13 +241,15 @@ function pick(kind) {
 }
 
 /** RevenueCat's public key for Google Play: into platforms.config.json (`android.iap`). */
-function saveRevenueCat({ revenuecat }) {
+function saveRevenueCat({ revenuecat, revenuecatTest }) {
     const key = String(revenuecat ?? '').trim();
+    const test = String(revenuecatTest ?? '').trim();
     if (key && !/^goog_[A-Za-z0-9]+$/.test(key)) throw new Error('RevenueCat\'s Google Play key starts with goog_.');
+    if (test && !/^test_[A-Za-z0-9]+$/.test(test)) throw new Error('RevenueCat\'s Test Store key starts with test_.');
     savePlatform((android) => {
-        android.iap = { ...(android.iap && !Array.isArray(android.iap) ? android.iap : {}), revenuecat: key };
+        android.iap = { ...(android.iap && !Array.isArray(android.iap) ? android.iap : {}), revenuecat: key, revenuecatTest: test };
     });
-    say(key ? '✔ RevenueCat key saved (purchases go through it once it\'s wired)' : '✔ RevenueCat key cleared: purchases mocked', 'ok');
+    say(`✔ RevenueCat keys saved: debug builds ${test ? 'Test Store' : 'mocked'}, AAB ${key ? 'Google Play' : 'mocked'}`, 'ok');
 }
 
 const iconPath = () => resolve(root, 'native', GAME, 'store', 'icon-512.png');

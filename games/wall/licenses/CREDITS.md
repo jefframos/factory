@@ -18,3 +18,4 @@
 | `applause` | `raw-assets/audio/` | as Mow's and our other games' | check before release |
 | UI sprites | `raw-assets/images/ui{tps}/` | Layer Lab kit (as Mow's) | as Mow's |
 | Baloo 2 | `raw-assets/fonts/` | Ek Type | SIL Open Font License 1.1 |
+| The dungeon props by the first gate (`dungeon{m}/barrel`, `mace`, `axe`) | `raw-assets/models/` | KayKit Resource Bits and Fantasy Weapons Bits by Kay Lousberg (library3d/files/KayKit_Bits_Bundle2_1.0), made by `tools/build-dungeon.mjs` | CC0 1.0 |

@@ -129,16 +129,27 @@ export class RewindButton extends PIXI.Container {
  * Medals won: a big one springs up in a burst of light, then bursts into small ones that scatter and stream to the button,
  * each with its ring. Owns itself: gone when it's over.
  */
+/** What flies: its icon, its glow, its number's colours, the ring it bursts in (a medal's gold; a gem's violet: GEM_FLY). */
+export interface FlyLook {
+    icon: string;
+    glow: number;
+    label: number;
+    stroke: number;
+    ring: number;
+}
+const MEDAL_FLY: FlyLook = { icon: 'ItemIcon_Badge_Gold', glow: 0xffd23c, label: 0xffe14a, stroke: 0x7a3a00, ring: 0xfff3b0 };
+export const GEM_FLY: FlyLook = { icon: 'ItemIcon_Gem_Diamond_Purple', glow: 0xb46bff, label: 0xe6b8ff, stroke: 0x3a0f6a, ring: 0xeed8ff };
+
 export class MedalFly extends PIXI.Container {
-    public constructor(from: PIXI.Point, to: PIXI.Point, count: number, private readonly arrived: (count: number, last: boolean) => void) {
+    public constructor(from: PIXI.Point, to: PIXI.Point, count: number, private readonly arrived: (count: number, last: boolean) => void, private readonly look: FlyLook = MEDAL_FLY) {
         super();
         this.eventMode = 'none';
         const rays = sprite('Image_Effect_Rotate', 560);
         const glow = sprite('ItemFrame_BgGlow', 420);
-        glow.tint = 0xffd23c;
-        const big = sprite('ItemIcon_Badge_Gold', FLY.big);
+        glow.tint = look.glow;
+        const big = sprite(look.icon, FLY.big);
         const size = big.scale.x;
-        const label = text(`+${count}`, 84, 0xffe14a, 0x7a3a00, 13);
+        const label = text(`+${count}`, 84, look.label, look.stroke, 13);
         for (const child of [rays, glow, big]) child.position.copyFrom(from);
         label.position.set(from.x, from.y + FLY.big * 0.62);
         this.addChild(rays, glow, big, label);
@@ -159,7 +170,7 @@ export class MedalFly extends PIXI.Container {
         big.visible = false;
         gsap.to([rays, glow], { alpha: 0, duration: 0.3 });
         gsap.to(label, { alpha: 0, y: label.y - 50, duration: 0.45, delay: 0.25 });
-        const ring = ringSprite(100, 16, 0xfff3b0);
+        const ring = ringSprite(100, 16, this.look.ring);
         ring.position.copyFrom(from);
         this.addChild(ring);
         gsap.fromTo(ring.scale, { x: 0.4, y: 0.4 }, { x: 2.2, y: 2.2, duration: 0.4, ease: 'power2.out' });
@@ -169,7 +180,7 @@ export class MedalFly extends PIXI.Container {
         const many = Math.min(FLY.most, count);
         let left = many;
         for (let i = 0; i < many; i++) {
-            const medal = sprite('ItemIcon_Badge_Gold', FLY.small);
+            const medal = sprite(this.look.icon, FLY.small);
             const size = medal.scale.x;
             const a = (i / many) * Math.PI * 2 + Math.random() * 0.5;
             const far = FLY.scatter * (0.65 + Math.random() * 0.5);

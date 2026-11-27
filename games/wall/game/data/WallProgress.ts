@@ -7,7 +7,7 @@
 
 import { SaveStorage } from 'core/platforms/SaveStorage';
 import PlatformHandler from 'core/platforms/PlatformHandler';
-import { AUTO, AWAY, BOOSTS, BoostDef, CREW, CrewDef, HOLD, MAX_RANK, PRODUCTS, ProductDef, RANKS, RELICS, rankCost, gemsAt, ENEMIES, REWIND, RelicDef, RelicId, SHOWS, WEAK, bricksOf, relicCost, relicValue, crewCost, givenLevel, ToolDef, punchCost, punchDamage, toolAt, toolsUpTo, medalsOf, wallAt } from './WallConfig';
+import { AUTO, AWAY, BOOSTS, BoostDef, CREW, CREW_PER_RUN, CrewDef, HOLD, MAX_RANK, PRODUCTS, ProductDef, RANKS, RELICS, hatOf, rankCost, rankMult, gemsAt, ENEMIES, REWIND, RelicDef, RelicId, SHOWS, WEAK, bricksOf, relicCost, relicValue, crewCost, givenLevel, ToolDef, punchCost, punchDamage, toolAt, toolsUpTo, medalsOf, wallAt } from './WallConfig';
 
 const KEY = 'wall.save';
 const VERSION = 1;
@@ -63,9 +63,18 @@ interface SaveData {
     ranks: Record<string, number>;
     /** The gems of the bosses passed before there were gems have been given (once). */
     gemsBackPaid: boolean;
+    /** How many of the crew a tap hires: 1, 10, or 0 for as many as there's cash for (MAX). */
+    buyMode: BuyMode;
+    /** The ranks are levels (1 to RANKS.max), not hats (1 to 3) as they were: old saves are moved over once. */
+    rankLevels: boolean;
 }
 
-const fresh = (): SaveData => ({ version: VERSION, wall: 1, cash: 0, punch: 0, best: 1, bricks: 0, crew: {}, boosts: [], medals: 0, runMedals: 0, rewinds: 0, steps: [], played: false, worn: {}, seen: {}, held: '', looks: [], fight: false, farming: false, offers: 0, playSec: 0, fights: 0, at: 0, relics: {}, bought: [], gems: 0, ranks: {}, gemsBackPaid: false });
+/** How many of the crew a tap hires: 1, 10, or 0 for MAX (as many as the cash buys). */
+export type BuyMode = 1 | 10 | 0;
+/** The modes, in the order the toggle goes round. */
+export const BUY_MODES: BuyMode[] = [1, 10, 0];
+
+const fresh = (): SaveData => ({ version: VERSION, wall: 1, cash: 0, punch: 0, best: 1, bricks: 0, crew: {}, boosts: [], medals: 0, runMedals: 0, rewinds: 0, steps: [], played: false, worn: {}, seen: {}, held: '', looks: [], fight: false, farming: false, offers: 0, playSec: 0, fights: 0, at: 0, relics: {}, bought: [], gems: 0, ranks: {}, gemsBackPaid: false, buyMode: 1, rankLevels: true });
 
 function read(): SaveData {
     try {
@@ -78,6 +87,11 @@ function read(): SaveData {
         if (!state.gemsBackPaid) {
             for (let n = ENEMIES.boss.from; n < state.best; n += ENEMIES.boss.every) state.gems += gemsAt(n);
             state.gemsBackPaid = true;
+        }
+        // (A save from when a rank was its hat, 1 to 3: the level that hat comes at now, so each keeps the hat it bought.)
+        if (!saved.rankLevels) {
+            for (const id of Object.keys(state.ranks)) state.ranks[id] = RANKS.hatAt[Math.min(RANKS.hatAt.length, state.ranks[id]) - 1] ?? 0;
+            state.rankLevels = true;
         }
         return state;
     } catch {
@@ -412,6 +426,16 @@ export const WallProgress = {
         return state.crew[id] ?? 0;
     },
 
+    /** That kind can be hired: its wall reached in this run (each run brings them back one at a time; `crewPerRun`), or ever. */
+    crewOpen(def: CrewDef): boolean {
+        return (CREW_PER_RUN ? state.wall : state.best) >= def.wall;
+    },
+
+    /** The next kind still to come (shown locked, with its wall), if any. */
+    get nextCrew(): CrewDef | undefined {
+        return CREW.find((def) => !this.crewOpen(def));
+    },
+
     get crewCount(): number {
         return Object.values(state.crew).reduce((sum, count) => sum + count, 0);
     },
@@ -419,7 +443,7 @@ export const WallProgress = {
     /** One of them's damage a second. */
     dpsEach(def: CrewDef): number {
         const { crewAll, crewOf } = boostTotals();
-        return def.dps * crewAll * (crewOf[def.id] ?? 1) * (this.rankOf(def.id) ? RANKS.mult[this.rankOf(def.id) - 1] : 1) * this.medalMult * this.relic('power') * this.relic('herd') * this.crewSpeed * frenzy;
+        return def.dps * crewAll * (crewOf[def.id] ?? 1) * rankMult(this.rankLevel(def.id)) * this.medalMult * this.relic('power') * this.relic('herd') * this.crewSpeed * frenzy;
     },
 
     /** All of the crew's damage a second. */
@@ -432,12 +456,58 @@ export const WallProgress = {
     },
 
     hire(def: CrewDef): boolean {
-        const cost = this.costOf(def);
-        if (state.best < def.wall || state.cash < cost) return false;
+        return this.hireMany(def, 1);
+    },
+
+    /** `count` more of a kind at once (all or none): false if it's not there or the cash isn't. */
+    hireMany(def: CrewDef, count: number): boolean {
+        const cost = this.costOfMany(def, count);
+        if (count < 1 || !this.crewOpen(def) || state.cash < cost) return false;
         state.cash -= cost;
-        state.crew[def.id] = this.owned(def.id) + 1;
+        state.crew[def.id] = this.owned(def.id) + count;
         changed();
         return true;
+    },
+
+    /** What `count` more of a kind cost together (each one more ×crewGrowth). */
+    costOfMany(def: CrewDef, count: number): number {
+        let sum = 0;
+        for (let i = 0; i < count; i++) sum += crewCost(def, this.owned(def.id) + i);
+        return sum;
+    },
+
+    /** How many of a kind the cash buys now (MAX). */
+    affordable(def: CrewDef): number {
+        let count = 0;
+        let sum = 0;
+        for (;;) {
+            sum += crewCost(def, this.owned(def.id) + count);
+            if (sum > state.cash || count >= 1000) return count;
+            count++;
+        }
+    },
+
+    get buyMode(): BuyMode {
+        return BUY_MODES.includes(state.buyMode) ? state.buyMode : 1;
+    },
+
+    /** A mode picked (the menu's tabs; kept). */
+    setBuyMode(mode: BuyMode): void {
+        if (!BUY_MODES.includes(mode) || mode === state.buyMode) return;
+        state.buyMode = mode;
+        changed();
+    },
+
+    /** The toggle: x1, x10, MAX, round again (kept). */
+    nextBuyMode(): BuyMode {
+        state.buyMode = BUY_MODES[(BUY_MODES.indexOf(this.buyMode) + 1) % BUY_MODES.length];
+        changed();
+        return state.buyMode;
+    },
+
+    /** How many a tap hires of a kind in the mode (MAX: what the cash buys, at least 1 so its price can be shown). */
+    buyCount(def: CrewDef): number {
+        return this.buyMode === 0 ? Math.max(1, this.affordable(def)) : this.buyMode;
     },
 
     /** One given (the first of the first kind, when it's there), if there's none yet; false if not. */
@@ -466,7 +536,7 @@ export const WallProgress = {
         const punch = state.punch > 0 && enough(punchCost(state.punch)) && this.punchHarder();
         const best = [...CREW].reverse();
         while (hired.length < AUTO.hires) {
-            const def = best.find((one) => state.best >= one.wall && enough(this.costOf(one)));
+            const def = best.find((one) => this.crewOpen(one) && enough(this.costOf(one)));
             if (!def || !this.hire(def)) break;
             hired.push(def);
         }
@@ -609,28 +679,38 @@ export const WallProgress = {
     get gems(): number {
         return state.gems;
     },
-    /** A kind's rank: 0, or the hat it wears (1 hard hat, 2 viking, 3 crown). */
+    /** The hat a kind wears: 0 none, 1 hard hat, 2 viking, 3 crown (from its rank level). */
     rankOf(id: string): number {
+        return hatOf(this.rankLevel(id));
+    },
+    /** A kind's rank level: 0 to MAX_RANK. */
+    rankLevel(id: string): number {
         return state.ranks[id] ?? 0;
+    },
+    /** Gems got (a fight beaten): kept for good. */
+    addGems(gems: number): void {
+        if (gems <= 0) return;
+        state.gems += gems;
+        changed();
     },
     /** The first boss has been passed, or there are gems, or a rank's been bought: the crew's menu is there. */
     get ranksKnown(): boolean {
         return state.gems > 0 || state.best > ENEMIES.boss.from || Object.values(state.ranks).some((rank) => rank > 0);
     },
     canRank(def: CrewDef): boolean {
-        const rank = this.rankOf(def.id);
-        return rank < MAX_RANK && state.best >= def.wall && state.gems >= rankCost(def, rank);
+        const level = this.rankLevel(def.id);
+        return level < MAX_RANK && state.best >= def.wall && state.gems >= rankCost(def, level);
     },
     /** A rank there to buy now (the crew's button is marked). */
     get rankToBuy(): boolean {
         return CREW.some((def) => this.canRank(def));
     },
-    /** The next rank of a kind, for gems; false if it can't be. */
+    /** The next rank level of a kind, for gems; false if it can't be. */
     buyRank(def: CrewDef): boolean {
         if (!this.canRank(def)) return false;
-        const rank = this.rankOf(def.id);
-        state.gems -= rankCost(def, rank);
-        state.ranks[def.id] = rank + 1;
+        const level = this.rankLevel(def.id);
+        state.gems -= rankCost(def, level);
+        state.ranks[def.id] = level + 1;
         changed();
         return true;
     },

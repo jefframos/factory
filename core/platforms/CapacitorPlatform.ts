@@ -17,6 +17,7 @@ import { Capacitor, type PluginListenerHandle } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { Preferences } from '@capacitor/preferences';
 import { AdMob, AdmobConsentStatus, InterstitialAdPluginEvents, RewardAdPluginEvents } from '@capacitor-community/admob';
+import { LOG_LEVEL, PRODUCT_CATEGORY, PURCHASES_ERROR_CODE, Purchases, type PurchasesError, type PurchasesStoreProduct } from '@revenuecat/purchases-capacitor';
 import SoundManager from '../audio/SoundManager';
 import { IPlatformConnection } from './IPlatformConnection';
 import { fakePurchase, fakeRewardedVideo } from './MockPlatform';
@@ -290,27 +291,76 @@ export default class CapacitorPlatform implements IPlatformConnection {
     // ---------------------------------------------------------------- purchases
 
     /**
-     * Purchases: Google Play's (through RevenueCat) once its key's set in platforms.config.json `iap.revenuecat`; till then
-     * mocked, as the ads are: the BUY / CANCEL screen, and what's had for good kept in the app's storage, so the shop can be
-     * tried on the phone with no store account.
+     * Purchases, through RevenueCat, in the app:
+     * - a debug build (android:run / android:apk: VITE_IAP_TEST) uses the Test Store key `iap.revenuecatTest`: RevenueCat's
+     *   own sheet with success / fail / cancel, no Play account needed;
+     * - the AAB uses the Google Play key `iap.revenuecat`: real Play Billing.
+     * With no key for the build (or in a browser) they're mocked, as the ads are: the BUY / CANCEL screen, and what's had for
+     * good kept in the app's storage. The store's product ids are the game's (shop.products ids), one-time products.
      */
     public canBuy(): boolean {
         return true;
     }
 
-    private get realStore(): boolean {
-        return this.native && !!PlatformHandler.IAP?.revenuecat;
+    /** The key this build uses (empty: mocked). */
+    private get storeKey(): string {
+        if (!this.native) return '';
+        const iap = PlatformHandler.IAP;
+        return (import.meta.env.VITE_IAP_TEST ? iap?.revenuecatTest : iap?.revenuecat) ?? '';
     }
 
-    public async productPrices(): Promise<Record<string, string>> {
-        // (Mocked: the game's own prices. RevenueCat's come with it.)
-        return {};
+    /** RevenueCat configured (once, at the first need): false and the purchases are mocked. */
+    private store: Promise<boolean> | null = null;
+    /** The store's products, by id, as fetched. */
+    private readonly products = new Map<string, PurchasesStoreProduct>();
+
+    private startStore(): Promise<boolean> {
+        this.store ??= (async () => {
+            const key = this.storeKey;
+            if (!key) {
+                note(`purchases mocked (no ${import.meta.env.VITE_IAP_TEST ? 'iap.revenuecatTest' : 'iap.revenuecat'} key)`);
+                return false;
+            }
+            try {
+                if (import.meta.env.VITE_IAP_TEST) await Purchases.setLogLevel({ level: LOG_LEVEL.DEBUG });
+                await Purchases.configure({ apiKey: key });
+                note(`RevenueCat up: ${key.startsWith('test_') ? 'Test Store (simulated purchases)' : 'Google Play'}`);
+                return true;
+            } catch (error) {
+                note('RevenueCat failed to start: purchases mocked', true, error);
+                return false;
+            }
+        })();
+        return this.store;
+    }
+
+    /** The store's products for these ids (those it knows), kept for the purchase. */
+    private async fetchProducts(ids: string[]): Promise<void> {
+        const missing = ids.filter((id) => !this.products.has(id));
+        if (!missing.length) return;
+        const { products } = await Purchases.getProducts({ productIdentifiers: missing, type: PRODUCT_CATEGORY.NON_SUBSCRIPTION });
+        for (const product of products) this.products.set(product.identifier, product);
+        const unknown = missing.filter((id) => !this.products.has(id));
+        if (unknown.length) note(`not in the store (RevenueCat › Products): ${unknown.join(', ')}`, true);
+    }
+
+    public async productPrices(ids: string[]): Promise<Record<string, string>> {
+        if (!(await this.startStore())) return {};
+        try {
+            await this.fetchProducts(ids);
+        } catch (error) {
+            note('store prices failed', true, error);
+        }
+        const prices: Record<string, string> = {};
+        for (const id of ids) {
+            const product = this.products.get(id);
+            if (product) prices[id] = product.priceString;
+        }
+        return prices;
     }
 
     public async purchase(id: string): Promise<boolean> {
-        if (this.realStore) {
-            console.warn('[Capacitor] RevenueCat is not wired yet: mocked purchase');
-        }
+        if (await this.startStore()) return this.storePurchase(id);
         log(`purchase "${id}" (mocked)`);
         SoundManager.instance.muteAllSounds();
         try {
@@ -325,7 +375,45 @@ export default class CapacitorPlatform implements IPlatformConnection {
         }
     }
 
+    /** Through RevenueCat: true once paid (and checked by RevenueCat); a cancel or a failure, false. */
+    private async storePurchase(id: string): Promise<boolean> {
+        SoundManager.instance.muteAllSounds();
+        try {
+            await this.fetchProducts([id]);
+            const product = this.products.get(id);
+            if (!product) {
+                note(`purchase "${id}": not in the store`, true);
+                return false;
+            }
+            await Purchases.purchaseStoreProduct({ product });
+            note(`purchase "${id}": bought`);
+            return true;
+        } catch (error) {
+            const e = error as Partial<PurchasesError> | undefined;
+            if (e?.userCancelled || String(e?.code) === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) note(`purchase "${id}": cancelled`);
+            else note(`purchase "${id}" failed`, true, error);
+            return false;
+        } finally {
+            SoundManager.instance.restoreSound();
+        }
+    }
+
+    /**
+     * What's owned for good (the game keeps its one-time products of these). RevenueCat's restore: on Android it's silent
+     * (no sign-in asked), and brings back what the Play account bought after a reinstall.
+     */
     public async restorePurchases(): Promise<string[]> {
+        if (await this.startStore()) {
+            try {
+                const { customerInfo } = Capacitor.getPlatform() === 'android' ? await Purchases.restorePurchases() : await Purchases.getCustomerInfo();
+                const owned = [...new Set(customerInfo.nonSubscriptionTransactions.map((t) => t.productIdentifier))];
+                note(`owned: ${owned.length ? owned.join(', ') : 'nothing'}`);
+                return owned;
+            } catch (error) {
+                note('restore failed', true, error);
+                return [];
+            }
+        }
         try {
             return JSON.parse((await this.getItem(MOCK_OWNED)) ?? '[]') as string[];
         } catch {

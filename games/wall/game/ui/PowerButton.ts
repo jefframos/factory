@@ -94,7 +94,9 @@ export class PowerButton extends PIXI.Container {
         this.pill.visible = !ready;
         this.video.visible = phase === 'charging' && PlatformHandler.ENABLE_VIDEO_ADS;
         this.hand.visible = ready && !WallProgress.stepDone(`power-used-${def.id}`);
-        this.hand.position.set(-4, 8 + Math.sin(this.clock * 7) * 8);
+        // (Its fingertip on the rim, low on the right: the icon and the label stay in sight.)
+        const tap = Math.abs(Math.sin(this.clock * 5)) * 7;
+        this.hand.position.set(POWER.size * 0.3 + tap, POWER.size * 0.24 + tap);
         if (!ready) write(this.time, `${Math.ceil(left)}s`);
         this.draw();
     }

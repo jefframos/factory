@@ -33,7 +33,8 @@
             "test": true
         },
         "iap": {
-            "revenuecat": "goog_yfgqQCOjEXSpNhojxjAmQlzGgaW"
+            "revenuecat": "goog_yfgqQCOjEXSpNhojxjAmQlzGgaW",
+            "revenuecatTest": "test_QxGLpeimPZTieGxkYnZFMAitRAQ"
         }
     },
     "youtube": {

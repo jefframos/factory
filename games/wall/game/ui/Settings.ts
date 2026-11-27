@@ -14,7 +14,45 @@ import { WallAudio } from '../audio/WallAudio';
 import { WallProgress } from '../data/WallProgress';
 import { frame, sprite, text, write } from './parts';
 
-const PANEL = { width: 600, header: 96 };
+/** `foot`: room between the inside and the frame's bottom edge. */
+const PANEL = { width: 600, header: 96, foot: 16 };
+/**
+ * The close button's red corner: its size, the panel frame's (CardFrame03_n_Bg at full size: a 4 px outline, its outer corner
+ * ~29 px round), its own inner corner's roundness, and the darker band along its bottom (the pack's buttons have one).
+ */
+const CORNER = { width: 96, height: 88, outline: 4, radius: 29, inner: 30, shade: 7, red: 0xe8343c, dark: 0xa8182a };
+
+/**
+ * The close button: a red corner filling the panel's top right (its outline over the frame's, its top and right on the frame's
+ * edges, its own round corner low on the left), the X in it. `right`, `top`: the panel's top-right corner.
+ */
+function closeCorner(right: number, top: number): PIXI.Container {
+    const made = new PIXI.Container();
+    const x0 = right - CORNER.width;
+    const x1 = right;
+    const y0 = top;
+    const shape = (g: PIXI.Graphics, bottom: number): PIXI.Graphics => g
+        .moveTo(x0, y0)
+        .lineTo(x1 - CORNER.radius, y0)
+        .arcTo(x1, y0, x1, y0 + CORNER.radius, CORNER.radius)
+        .lineTo(x1, bottom)
+        .lineTo(x0 + CORNER.inner, bottom)
+        .arcTo(x0, bottom, x0, bottom - CORNER.inner, CORNER.inner)
+        .closePath();
+    const y1 = top + CORNER.height;
+    // The darker band, the face over it (short of the bottom by the band), a shine, the outline (inside the edge, as the frame's).
+    const shade = shape(new PIXI.Graphics().beginFill(CORNER.dark), y1).endFill();
+    const face = shape(new PIXI.Graphics().beginFill(CORNER.red), y1 - CORNER.shade).endFill();
+    const shine = new PIXI.Graphics().beginFill(0xffffff, 0.3).drawEllipse(x0 + 30, y0 + 16, 12, 6).endFill();
+    const outline = shape(new PIXI.Graphics().lineStyle({ width: CORNER.outline, color: 0x000000, alignment: 0 }), y1);
+    const x = sprite('Icon_Close02', 46);
+    x.position.set((x0 + x1) / 2 + 2, (y0 + y1 - CORNER.shade) / 2 + 1);
+    made.addChild(shade, face, shine, outline, x);
+    made.eventMode = 'static';
+    made.cursor = 'pointer';
+    made.hitArea = new PIXI.Rectangle(x0, y0, CORNER.width, CORNER.height);
+    return made;
+}
 const ROW = { height: 92, side: 50 };
 const SWITCH = { width: 160, height: 66, handle: 92 };
 const CONSOLE = { width: 520, height: 300, lines: 12, size: 15 };
@@ -126,16 +164,17 @@ export class SettingsPanel extends PIXI.Container {
         this.consoleText = undefined;
         this.resetWords = undefined;
         this.shownLines = '';
-        const rows = 1 + (this.inApp ? 2 : 0);
-        this.height_ = PANEL.header + 30 + rows * ROW.height + (this.inApp ? CONSOLE.height + 60 : 0) + 30;
+        const rows = 2 + (this.inApp ? 2 : 0);
+        this.height_ = PANEL.header + 30 + rows * ROW.height + (this.inApp ? CONSOLE.height + 60 : 0) + 30 + PANEL.foot;
         const top = -this.height_ / 2;
         const back = frame('CardFrame03_n_Bg', [30, 29, 30, 33], PANEL.width, this.height_);
         back.tint = COLORS.panel;
         back.eventMode = 'static';
         back.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
-        const inside = frame('CardFrame03_n_InnerBg', [18, 18, 18, 18], PANEL.width - 26, this.height_ - PANEL.header - 14);
+        // (Its top under the header as before; its bottom kept off the frame's edge by PANEL.foot.)
+        const inside = frame('CardFrame03_n_InnerBg', [18, 18, 18, 18], PANEL.width - 26, this.height_ - PANEL.header - 14 - PANEL.foot);
         inside.tint = COLORS.inside;
-        inside.y += PANEL.header / 2 - 2;
+        inside.y += PANEL.header / 2 - 2 - PANEL.foot / 2;
         // The header: the gear and SETTINGS.
         const gear = sprite('Icon_Setting', 58);
         const title = text('SETTINGS', 44, 0xffffff, 0x0a2a6a, 8);
@@ -144,18 +183,23 @@ export class SettingsPanel extends PIXI.Container {
         head.addChild(gear, title);
         title.x = 40;
         head.position.set(-(title.width + 40) / 2 + 10, top + PANEL.header / 2 + 4);
-        const close = sprite('Icon_Close02', 50);
-        close.position.set(PANEL.width / 2 - 44, top + 44);
-        close.eventMode = 'static';
-        close.cursor = 'pointer';
+        // The close button: the X on a red corner, in the panel's top right.
+        const close = closeCorner(PANEL.width / 2, top);
         close.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
         close.on('pointertap', () => this.setOpen(false));
         this.body = new PIXI.Container();
         this.panel.addChild(back, inside, head, this.body, close);
         let y = top + PANEL.header + 30 + ROW.height / 2;
-        // The sound.
-        this.row(y, WallAudio.muted ? 'PictoIcon_Sound_Off' : 'PictoIcon_Sound', 'SOUND', new Switch(!WallAudio.muted, (on) => {
-            if (on === WallAudio.muted) WallAudio.toggleMuted();
+        // The music and the sound effects, each its own switch (its icon crossed out when off).
+        const music = this.row(y, WallAudio.musicOn ? 'PictoIcon_Music_1' : 'PictoIcon_Music_1_Off', 'MUSIC', new Switch(WallAudio.musicOn, (on) => {
+            WallAudio.setMusic(on);
+            music.texture = PIXI.Texture.from(on ? 'PictoIcon_Music_1' : 'PictoIcon_Music_1_Off');
+        }));
+        y += ROW.height;
+        const sounds = this.row(y, WallAudio.sfxOn ? 'PictoIcon_Sound' : 'PictoIcon_Sound_Off', 'SOUNDS', new Switch(WallAudio.sfxOn, (on) => {
+            WallAudio.setSfx(on);
+            sounds.texture = PIXI.Texture.from(on ? 'PictoIcon_Sound' : 'PictoIcon_Sound_Off');
+            if (on) WallAudio.play('claim', 0.5);
         }));
         y += ROW.height;
         if (!this.inApp) return;
@@ -191,8 +235,8 @@ export class SettingsPanel extends PIXI.Container {
         this.updateConsole();
     }
 
-    /** A row: its icon and words on the left, its control on the right. */
-    private row(y: number, icon: string, words: string, control: PIXI.Container): void {
+    /** A row: its icon and words on the left, its control on the right. Its icon, to change. */
+    private row(y: number, icon: string, words: string, control: PIXI.Container): PIXI.Sprite {
         const picture = sprite(icon, 46);
         picture.position.set(-PANEL.width / 2 + ROW.side + 10, y);
         const label = text(words, 32, 0xffffff, 0x0a2a6a, 7);
@@ -200,6 +244,7 @@ export class SettingsPanel extends PIXI.Container {
         label.position.set(-PANEL.width / 2 + ROW.side + 48, y);
         control.position.set(PANEL.width / 2 - ROW.side - 80, y);
         this.body.addChild(picture, label, control);
+        return picture;
     }
 
     private tapReset(): void {

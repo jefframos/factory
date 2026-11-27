@@ -13,7 +13,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, '../../..');
 const models = `${here}/../raw-assets/models`;
 const images = `${here}/../raw-assets/images/ui{tps}`;
-const CREW = ['chick', 'beaver', 'hog', 'monkey', 'cow', 'panda', 'elephant', 'giraffe'];
+const CREW = ['chick', 'beaver', 'hog', 'monkey', 'cow', 'panda', 'elephant', 'giraffe', 'polar', 'lion'];
 const linear = (v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
 const toSrgb = (v) => (v <= 0.0031308 ? v * 12.92 : 1.055 * v ** (1 / 2.4) - 0.055);
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);

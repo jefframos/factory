@@ -38,7 +38,23 @@ The plan for the stores (accounts, costs, in-app purchases, every step): [WALLBR
   colours every four levels (stone, copper, iron, gold, emerald ...).
 - **The wardrobe** (top right). Skin, shirt, gloves, rings, wrist and the tool held; things come with the walls, are bought,
   or are for a video (`ui/looks.json`). While playing, cards come up with something new (a gift, a sale, a video): taken, it's worn.
-- **The crew** (cash). Eight animals that headbutt or throw on their own, each there from a wall on.
+- **The crew** (cash). Eight animals that headbutt or throw on their own, each there from its wall in the run (a rewind
+  brings them back one at a time). Two early (chick 3, beaver 6), then further apart (hog 11, monkey 18, cow 27, panda 38,
+  elephant 51, giraffe 65, polar bear 82, lion 100), and each a big step: the first of a kind alone takes its wall down in about
+  30 s (its damage and price are set from that wall's HP). The next one waits in the row, dark, with its wall (NEXT, WALL 18).
+  Each card is in its animal's grade (chick and beaver green, hog and monkey blue, cow and panda purple, elephant and giraffe
+  gold, polar bear and lion red). From the beaver's wall a round ☰ over the row's top-left slides out tabs, x1, x10, MAX (as
+  many as the cash buys): how many a tap hires, kept in the save.
+- **The dungeon** ([game/wall/Dungeon.ts](game/wall/Dungeon.ts), `dungeon` in `ui/wall.json`): a few KayKit props by wall 1's
+  gate (CC0, `tools/build-dungeon.mjs`): barrels each side, a spiked mace and an axe leant against the wall by the posts. Out
+  at the sides, so a wide screen shows them all (an upright one, the edge of them). `first`: round wall 1's gate only;
+  `gates`: on every gate (none now). Each spot: model, x/y/z round the gate's foot, `size` (its height), `rot`, `lean`,
+  `tilt`, `light` (a glow). Off: `"on": false`.
+- **Crew ranks** (gems, for good): each animal levels 1 to 100 (`ranks`), every level adding 10% to its damage and each hat
+  doubling it: the hard hat at 1, viking at 40, the crown at 100, the last (x2.2, x20, x88). A level costs a gem or more, more
+  for the later animals and one more every 10 levels, so a crown takes hundreds of gems. Gems come from every fight: a fight 1
+  (+1 every 30 walls), a boss more (`gemsAt`); the gem turns behind the wall, and behind the enemies while they're fought, as a
+  thick 3D picture (as the medal), and flies to the crew's button when they're beaten.
 - **Boosts** (bricks, which walls bring). Each of the crew's at 1, 5, 15, 30... copies, and others: hits that add some of the
   crew's damage, cash, the weak spot, a longer combo.
 - **Rarity** (`rarity` in `ui/wall.json`): common, uncommon, rare, epic, legendary, mythic, prismatic, as the pack's collection
@@ -63,12 +79,16 @@ The plan for the stores (accounts, costs, in-app purchases, every step): [WALLBR
   on. Debug: `?debug=1` > Wall > +20 GEMS.
 - **Hold to punch** (`hold`; the button from the first rewind): a big HOLD button low on the right; held, the hands punch on their own (3 a second
   and IRON GRIP's), where AUTO would; a finger held on the wall does it too, where it is, from the very first wall.
-- **What comes when**, the first time through: one new thing a wall, a gift or something new on screen, never two, and no words to
-  read about it. 2 the red gloves, 3 the chick, 4 the weak spot (a TAP ring on it till it's hit), 5 a free weapon level, 6 the beaver,
-  7 a free weapon level, 8 floating cash, 9 boosts (bought for who leaves them three walls), 10 medals, 11 the hog, 12 enemies,
-  13 a free weapon level, 14 the wardrobe and its offers, 15 the monkey, 16 TWO HANDS, 17 golden chests, 18 a free weapon level,
-  19 buying nudges, 20 the first boss, 21 frenzy, 22 the cow, 23 a free weapon level, 24 AUTO HIT, then the panda at 26 (a finger held on the wall punches on its own from the start; the HOLD button comes with the first rewind), a weapon level
-  at 27, the elephant at 29, a weapon level at 31, the giraffe at 33 (each helper's card shows up with it). Free weapon levels only to
+- **What comes when**, the first time through: no words to read about any of it. A big thing (an animal, enemies, the wardrobe, TWO
+  HANDS, a boss) has its wall to itself; a free weapon level may share one with a small thing. 2 the red gloves, 3 the chick, 4 the
+  weak spot (a TAP ring on it till it's hit) and a free weapon level, 5 a free weapon level, 6 the beaver, 7 a free weapon level,
+  8 floating cash and a free weapon level, 9 boosts (bought for who leaves them three walls), 10 medals and a free weapon level,
+  11 the hog, 12 enemies, 13 a free weapon level, 14 the wardrobe and its offers, 15 a free weapon level, 16 TWO HANDS, 17 golden
+  chests and a free weapon level, 18 the monkey, 19 buying nudges, 20 the first boss, 21 frenzy, 22 a free weapon level, 24 AUTO HIT
+  (a finger held on the wall punches on its own from the start; the HOLD button comes with the first rewind), 25 a free weapon
+  level, 27 the cow, 31 a free weapon level, then the panda at 38, the elephant at 51, the giraffe at 65. (Walls 4-14 were softened
+  and the free levels made denser after the 4:48 → 4:01 drop: `data/`. The 4:48 build's whole balance, and a script that puts
+  it back section by section: [data/4-48/BALANCE.md](data/4-48/BALANCE.md).) Free weapon levels only to
   who hasn't bought them, free helpers (beaver, hog, monkey) only to who hasn't hired one. A rewind keeps half the weapon's level
   (its popup shows which weapon). Walls 4-30 take about 10-20 s each for a casual player (simulated; a boss up to half a minute).
 - **What floats by** (`ui/Floater`, `floating`, from wall 8): every 16-26 s bills (the wall's HP in cash), a frenzy (from wall 21: all damage

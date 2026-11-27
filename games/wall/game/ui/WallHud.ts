@@ -20,7 +20,7 @@ import { RelicButton, RelicPanel, relicsKnown } from './Relics';
 import { ShopButton, ShopPanel, shopOpen } from './Shop';
 import { SettingsButton, SettingsPanel } from './Settings';
 import { CREW_BUTTON, CrewButton, CrewPanel } from './CrewRanks';
-import { MedalFly, RewindButton, RewindPopup, RewindShow, rewindKnown } from './Rewind';
+import { GEM_FLY, MedalFly, RewindButton, RewindPopup, RewindShow, rewindKnown } from './Rewind';
 import { POWER, PowerButton } from './PowerButton';
 import { Powers } from '../data/Powers';
 import { TRAY_TOP, Tray, TrayActions } from './Tray';
@@ -444,6 +444,17 @@ export class WallHud extends PIXI.Container {
         this.addChildAt(fly, this.getChildIndex(this.wardrobe));
     }
 
+    /** A fight's gems: up from where the gem turned, then to the crew's button (which jumps as they come). */
+    public flyGems(from: PIXI.Point, count: number): void {
+        this.flying++;
+        WallAudio.play('tool', 0.9, 1.3);
+        const fly = new MedalFly(from, this.crewButton.target, count, (_some, last) => {
+            this.crewButton.got();
+            if (last) this.flying--;
+        }, GEM_FLY);
+        this.addChildAt(fly, this.getChildIndex(this.wardrobe));
+    }
+
     /** A wall's there to be hit, and the player's begun (the scene says). */
     public playing = false;
 
@@ -589,9 +600,12 @@ export class WallHud extends PIXI.Container {
         const zoneLeft = wide ? topLeft.x + BANNER.sides : this.rewindButton.x + REWIND_HALF + BANNER.gap;
         const zoneRight = side - POWER.size / 2 - BANNER.gap;
         const zoneTop = barY + UNDER.timed + BANNER.gap;
-        this.bannerWidth = Math.max(BANNER.least, Math.min(BANNER.most, zoneRight - zoneLeft));
-        // (Its top middle there: a set way under the safe area's top, not off the middle of the screen.)
-        this.banner.position.set((zoneLeft + zoneRight) / 2, zoneTop);
+        // (Centred on the screen, under the bar, as wide as the narrower side's room allows: the zone's own middle is off to
+        // one side on a wide screen, where the power-ups and cards take the right.)
+        const middle = screen.center.x;
+        const room = 2 * Math.min(middle - zoneLeft, zoneRight - middle);
+        this.bannerWidth = Math.max(BANNER.least, Math.min(BANNER.most, room));
+        this.banner.position.set(middle, zoneTop);
         this.wardrobe.reposition();
         // (The wardrobe top right; the sound on the other side, or beside it where the cash is there.)
         const right = topLeft.x + screen.width;

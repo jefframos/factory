@@ -157,7 +157,8 @@ button.small { padding: 4px 10px; font-size: 12px; font-weight: 500; }
 
       <form id="revenuecat" class="sub">
         <label for="rcKey">RevenueCat Google Play key (empty: purchases mocked)<input type="text" id="rcKey" placeholder="goog_…"></label>
-        <div class="buttons"><button type="submit">Save key</button></div>
+        <label for="rcTestKey">RevenueCat Test Store key: debug builds (run / APK) simulate purchases with it; never in the AAB<input type="text" id="rcTestKey" placeholder="test_…"></label>
+        <div class="buttons"><button type="submit">Save keys</button></div>
         <details class="howto">
           <summary>How to set up RevenueCat (real Google Play purchases)</summary>
           <p><b>What it is.</b> RevenueCat sits between the game and Google Play Billing: it checks each purchase on its servers and remembers what's owned, so you don't need a server of your own. Free until $2,500 of revenue a month, then 1%.</p>
@@ -178,7 +179,8 @@ button.small { padding: 4px 10px; font-size: 12px; font-weight: 500; }
             <li><b>Wait.</b> Google can take up to 36 hours before it works; "invalid" before then is normal. Still failing after: a new JSON key, uploaded again (<a href="https://www.revenuecat.com/docs/service-credentials/creating-play-service-credentials/troubleshooting" target="_blank" rel="noopener">troubleshooting</a>).</li>
             <li><b>Products in RevenueCat</b>: Product catalog › Products › import them from Play; an Offering with them (<a href="https://www.revenuecat.com/docs/getting-started/entitlements" target="_blank" rel="noopener">products and offerings</a>).</li>
           </ol>
-          <p class="hint">Until the key's set (and the game's RevenueCat code is wired), purchases stay mocked.</p>
+          <p><b>Testing without Play (debug builds).</b> RevenueCat › Apps &amp; providers › <b>Test Store</b>: add products there with the same ids as the game's shop (starter, no_ads, double_cash, auto_hold: non-consumable; medals_20, medals_60, medals_150: consumable) and paste its <span class="mono">test_</span> key above. <b>Run on device</b> / <b>Build APK</b> then show RevenueCat's purchase sheet (succeed / fail / cancel). The AAB always uses the goog_ key: the SDK crashes a release build that has a test_ key.</p>
+          <p class="hint">A build with no key for it (or the game in a browser) has mocked purchases.</p>
         </details>
       </form>
 
@@ -382,6 +384,7 @@ function renderKeys() {
       </div>
     </div>`).join('');
   if (document.activeElement !== $('rcKey')) $('rcKey').value = state.money.revenuecat || '';
+  if (document.activeElement !== $('rcTestKey')) $('rcTestKey').value = state.money.revenuecatTest || '';
   const signing = state.app.signing || {};
   $('signingNow').textContent = signing.set ? `· ${signing.storeExists ? 'set' : 'FILE MISSING'}: ${signing.storeFile} (${signing.keyAlias})` : '· none yet';
   if (!$('newKeyFile').value) $('newKeyFile').value = state.app.suggestedKey || '';
@@ -471,7 +474,7 @@ $('tabExisting').addEventListener('click', () => keyTab(false));
 const saved = (what) => { toast(what); document.activeElement?.blur(); load(); };
 $('revenuecat').addEventListener('submit', async (e) => {
   e.preventDefault();
-  try { await api('/api/revenuecat', { revenuecat: $('rcKey').value }); saved('RevenueCat key saved'); } catch (error) { toast(error.message, true); }
+  try { await api('/api/revenuecat', { revenuecat: $('rcKey').value, revenuecatTest: $('rcTestKey').value }); saved('RevenueCat keys saved'); } catch (error) { toast(error.message, true); }
 });
 $('createKey').addEventListener('submit', async (e) => {
   e.preventDefault();

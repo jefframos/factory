@@ -46,8 +46,10 @@ const app = resolve(root, 'native', GAME);
 if (!fs.existsSync(resolve(app, 'capacitor.config.json'))) fail(`${GAME} has no phone app yet (native/${GAME}/capacitor.config.json). See native/README.md.`);
 if (!fs.existsSync(resolve(app, 'android'))) fail(`native/${GAME}/android is missing: run "npx cap add android" in native/${GAME} first.`);
 
-// 1. The web part, built for the app.
-run('npx vite build', root, { ...env, VITE_PLATFORM: 'android' });
+// 1. The web part, built for the app. A debug build (run / APK / Android Studio) uses RevenueCat's Test Store key
+// (`iap.revenuecatTest`); the AAB never does (the SDK crashes a release build that has one): it uses the goog_ key.
+const release = flags.has('--aab');
+run('npx vite build', root, { ...env, VITE_PLATFORM: 'android', VITE_IAP_TEST: release ? '' : '1' });
 
 // 2. AdMob's app id into the Android project.
 const config = JSON.parse(fs.readFileSync(resolve(root, 'games', GAME, 'platforms.config.json'), 'utf8'));
@@ -62,6 +64,10 @@ xml = /<string name="admob_app_id">[^<]*<\/string>/.test(xml)
 fs.writeFileSync(strings, xml);
 const units = ['interstitial', 'rewarded'].filter((kind) => admob[kind]);
 console.log(`\n[android] AdMob: ${admob.appId ? 'app id set' : 'no app id (Google sample)'}; real ${units.length ? units.join(' + ') : 'none'}, the rest mocked${admob.test ? '; test ads' : ''}`);
+const iap = config.android?.iap ?? {};
+const iapKey = release ? iap.revenuecat : iap.revenuecatTest;
+console.log(`[android] Purchases: ${iapKey ? `RevenueCat ${release ? 'Google Play (goog_)' : 'Test Store (test_): simulated purchases'}` : `mocked (no ${release ? 'revenuecat' : 'revenuecatTest'} key)`}`);
+if (release && iap.revenuecat?.startsWith('test_')) fail('iap.revenuecat is a Test Store key: a release build with one crashes. Put the goog_ key there.');
 
 // 3. The game's icon and splash (games/<GAME>/icon/icon.png) over Capacitor's.
 await makeIcons(root, GAME);

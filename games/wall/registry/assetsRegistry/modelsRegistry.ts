@@ -80,6 +80,14 @@ const CrewHog = {
   nodes: {}
 } as const;
 
+const CrewLion = {
+  id: 'lion',
+  path: 'crew/lion',
+  fullPath: 'wall/models/crew/lion.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
 const CrewMonkey = {
   id: 'monkey',
   path: 'crew/monkey',
@@ -92,6 +100,38 @@ const CrewPanda = {
   id: 'panda',
   path: 'crew/panda',
   fullPath: 'wall/models/crew/panda.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const CrewPolar = {
+  id: 'polar',
+  path: 'crew/polar',
+  fullPath: 'wall/models/crew/polar.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const DungeonAxe = {
+  id: 'axe',
+  path: 'dungeon/axe',
+  fullPath: 'wall/models/dungeon/axe.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const DungeonBarrel = {
+  id: 'barrel',
+  path: 'dungeon/barrel',
+  fullPath: 'wall/models/dungeon/barrel.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const DungeonMace = {
+  id: 'mace',
+  path: 'dungeon/mace',
+  fullPath: 'wall/models/dungeon/mace.glb',
   format: 'glb',
   nodes: {}
 } as const;
@@ -309,8 +349,15 @@ export const MODELS = {
     HatHard: CrewHatHard,
     HatViking: CrewHatViking,
     Hog: CrewHog,
+    Lion: CrewLion,
     Monkey: CrewMonkey,
-    Panda: CrewPanda
+    Panda: CrewPanda,
+    Polar: CrewPolar
+  },
+  Dungeon: {
+    Axe: DungeonAxe,
+    Barrel: DungeonBarrel,
+    Mace: DungeonMace
   },
   Enemies: {
     Bat: EnemiesBat,
