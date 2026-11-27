@@ -20,7 +20,9 @@ const CARD = { width: 164, height: 218, art: 122 };
 const PICTURE = 192;
 const FRAMES = { gift: 'Green', buy: 'Blue', video: 'Purple' } as const;
 const FLAGS = { gift: 'GIFT!', buy: 'SALE!', video: 'NEW!' } as const;
-const TIMER = { width: CARD.width - 16, height: 24 };
+const TIMER = { width: CARD.width - 16, height: 16 };
+/** How far it reaches over and under its middle (its flag over it, its timer under it), at scale 1. */
+export const OFFER_REACH = { up: CARD.height / 2 + 22, down: CARD.height / 2 + 14 + TIMER.height / 2 };
 
 type Kind = keyof typeof FRAMES;
 
@@ -56,7 +58,7 @@ export class LookOffer extends PIXI.Container {
         const tail = flag(this.flagText, 100);
         tail.y = -CARD.height / 2;
         const timer = new PIXI.Container();
-        timer.y = CARD.height / 2 + 18;
+        timer.y = CARD.height / 2 + 14;
         this.left.x = -TIMER.width / 2;
         timer.addChild(this.left);
         this.body.addChild(this.focus, this.back, inside, this.rays, this.art, this.nameText, tail, timer);

@@ -75,6 +75,8 @@ export function readApp(root, game) {
     const nativePackage = resolve(dir, 'package.json');
     const plugins = fs.existsSync(nativePackage) ? Object.keys(JSON.parse(fs.readFileSync(nativePackage, 'utf8')).dependencies ?? {}) : [];
     const apk = resolve(dir, 'android/app/build/outputs/apk/debug/app-debug.apk');
+    const aab = resolve(dir, 'android/app/build/outputs/bundle/release/app-release.aab');
+    const signing = readSigning(resolve(dir, 'android/keystore.properties'));
     return {
         dir,
         exists: !!config,
@@ -88,7 +90,21 @@ export function readApp(root, game) {
         android: platforms.android ?? null,
         plugins: plugins.map((name) => ({ name, version: installedVersion(root, name) })),
         apk: fs.existsSync(apk) ? { path: apk, at: fs.statSync(apk).mtimeMs, size: fs.statSync(apk).size } : null,
+        aab: fs.existsSync(aab) ? { path: aab, at: fs.statSync(aab).mtimeMs, size: fs.statSync(aab).size } : null,
+        signing,
     };
+}
+
+/** The upload key as keystore.properties says it (never its passwords): its file, alias, whether the file's there. */
+export function readSigning(path) {
+    if (!fs.existsSync(path)) return { set: false };
+    const props = Object.fromEntries(fs.readFileSync(path, 'utf8').split(/\r?\n/).filter((line) => line.includes('=') && !line.trim().startsWith('#')).map((line) => {
+        const at = line.indexOf('=');
+        const value = line.slice(at + 1).trim().replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+        return [line.slice(0, at).trim(), value.replace(/\\(.)/g, '$1')];
+    }));
+    const storeFile = props.storeFile ?? '';
+    return { set: !!storeFile, storeFile, keyAlias: props.keyAlias ?? '', storeExists: !!storeFile && fs.existsSync(storeFile), passwords: !!props.storePassword && !!props.keyPassword };
 }
 
 function installedVersion(root, name) {

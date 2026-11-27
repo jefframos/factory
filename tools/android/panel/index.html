@@ -51,7 +51,21 @@ h2 .spacer { flex: 1; }
 form { display: grid; gap: 10px; }
 .row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
-input[type=text], input[type=number] { font: 13px var(--mono); padding: 7px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); width: 100%; min-width: 0; }
+.sub { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 14px; display: grid; gap: 10px; }
+.sub h3 { font-size: 14px; margin: 0; }
+.pick { display: flex; gap: 8px; }
+.pick input { flex: 1; }
+.howto { font-size: 13px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; }
+.howto summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+.howto p, .howto li { margin: 6px 0; line-height: 1.45; }
+.howto ol, .howto ul { padding-left: 20px; margin: 6px 0; }
+.howto a { color: var(--accent); }
+.hint { font-size: 12px; color: var(--muted); font-weight: 400; }
+.tabs { display: flex; gap: 6px; }
+.tab { font-weight: 500; padding: 6px 12px; }
+.tab.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.check .mark { color: var(--muted); }
+input[type=text], input[type=number], input[type=password] { font: 13px var(--mono); padding: 7px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); width: 100%; min-width: 0; }
 input:focus-visible, button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .toggle { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--fg); }
 .hint { font-size: 12px; color: var(--muted); margin: 0; }
@@ -136,6 +150,77 @@ button.small { padding: 4px 10px; font-size: 12px; font-weight: 500; }
         <div class="kind"><span>Analytics</span><span id="analyticsStatus"></span></div>
       </form>
     </section>
+
+    <section>
+      <h2>Keys <span class="spacer"></span><span class="pill" id="keysPill"></span></h2>
+      <div class="checks" id="keys"></div>
+
+      <form id="revenuecat" class="sub">
+        <label for="rcKey">RevenueCat Google Play key (empty: purchases mocked)<input type="text" id="rcKey" placeholder="goog_…"></label>
+        <div class="buttons"><button type="submit">Save key</button></div>
+        <details class="howto">
+          <summary>How to set up RevenueCat (real Google Play purchases)</summary>
+          <p><b>What it is.</b> RevenueCat sits between the game and Google Play Billing: it checks each purchase on its servers and remembers what's owned, so you don't need a server of your own. Free until $2,500 of revenue a month, then 1%.</p>
+          <p><b>You need first</b>: a <a href="https://play.google.com/console/signup" target="_blank" rel="noopener">Google Play Console account</a> with the app created (its package, the app id under Package), and the products made in Play Console › Monetize › Products (their ids as in the game's <span class="mono">shop</span>).</p>
+          <ol>
+            <li><b>RevenueCat project.</b> <a href="https://app.revenuecat.com/" target="_blank" rel="noopener">app.revenuecat.com</a> › new project › add an app › <b>Google Play</b> › its package name.</li>
+            <li><b>The public key (goes here).</b> Project › <b>API keys</b> › the Google Play key, starting <span class="mono">goog_</span>. Paste it above, Save. It's public: fine in the game.</li>
+            <li><b>Service account (RevenueCat's own, never in the game).</b> In <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">Google Cloud Console</a> (the same Google account as Play):
+              <ol>
+                <li>New project, e.g. "wallbreak-revenuecat".</li>
+                <li>APIs &amp; Services › Library: enable <b>Google Play Android Developer API</b>, <b>Google Play Developer Reporting API</b>, <b>Cloud Pub/Sub API</b>.</li>
+                <li>IAM &amp; Admin › Service accounts › <b>Create</b> ("revenuecat"), roles <b>Pub/Sub Editor</b> and <b>Monitoring Viewer</b>.</li>
+                <li>That account › Keys › Add key › <b>JSON</b>: it downloads. Keep it with your upload key's backups; never in the repo.</li>
+              </ol>
+              (RevenueCat's guide has a script that does these in Cloud Shell: <a href="https://www.revenuecat.com/docs/service-credentials/creating-play-service-credentials" target="_blank" rel="noopener">Google Play service credentials</a>.)</li>
+            <li><b>Let it into Play Console.</b> Users and permissions › Invite new users › the service account's email (…@…iam.gserviceaccount.com) › Account permissions: <i>View app information and download bulk reports</i>, <i>View financial data, orders, and cancellation survey responses</i>, <i>Manage orders and subscriptions</i>, <i>Manage store presence</i> › Invite. (<a href="https://www.revenuecat.com/docs/service-credentials/creating-play-service-credentials/google-play-checklists" target="_blank" rel="noopener">checklist</a>)</li>
+            <li><b>Upload the JSON to RevenueCat</b>: the Google Play app › Service account credentials JSON › Save.</li>
+            <li><b>Wait.</b> Google can take up to 36 hours before it works; "invalid" before then is normal. Still failing after: a new JSON key, uploaded again (<a href="https://www.revenuecat.com/docs/service-credentials/creating-play-service-credentials/troubleshooting" target="_blank" rel="noopener">troubleshooting</a>).</li>
+            <li><b>Products in RevenueCat</b>: Product catalog › Products › import them from Play; an Offering with them (<a href="https://www.revenuecat.com/docs/getting-started/entitlements" target="_blank" rel="noopener">products and offerings</a>).</li>
+          </ol>
+          <p class="hint">Until the key's set (and the game's RevenueCat code is wired), purchases stay mocked.</p>
+        </details>
+      </form>
+
+      <div class="sub">
+        <h3>Upload key <span class="hint" id="signingNow"></span></h3>
+        <details class="howto">
+          <summary>What is the upload key?</summary>
+          <p>Android apps are signed, so a phone knows an update comes from the same maker. With <b>Play App Signing</b> (on for every new app) there are two keys:</p>
+          <ul>
+            <li><b>The app signing key</b>: Google makes it and keeps it, and signs what players download. You never handle it.</li>
+            <li><b>The upload key</b>: yours. Every AAB you upload is signed with it, so Google knows it's from you. That's this one.</li>
+          </ul>
+          <p><b>Where it's used</b>: only here, to sign the AAB (Build AAB). Nothing to add anywhere else: the first AAB you upload in Play Console (Testing › Internal testing › Create release) registers it with Google. Debug builds and Run on device don't need it.</p>
+          <p><b>Keep it safe</b>: the .jks file and its password, backed up off this computer (a password manager, a drive). Never in the repo (it's public). Lost, Google can reset it, but you ask and wait a few days.</p>
+          <p><a href="https://developer.android.com/studio/publish/app-signing#app-signing-google-play" target="_blank" rel="noopener">Play App Signing</a> · <a href="https://support.google.com/googleplay/android-developer/answer/9842756" target="_blank" rel="noopener">Use Play App Signing</a> · <a href="https://developer.android.com/studio/publish/app-signing#generate-key" target="_blank" rel="noopener">Generate an upload key</a> · <a href="https://support.google.com/googleplay/android-developer/answer/9842756#reset" target="_blank" rel="noopener">Lost key: reset</a></p>
+        </details>
+        <div class="tabs">
+          <button type="button" class="tab on" id="tabCreate">Create a key</button>
+          <button type="button" class="tab" id="tabExisting">Use one I have</button>
+        </div>
+        <form id="createKey">
+          <label for="newKeyFile">Where to save it (outside the repo; back it up)</label>
+          <div class="pick"><input type="text" id="newKeyFile" aria-label="Where to save the key"><button type="button" id="pickFolder">Browse…</button></div>
+          <div class="row">
+            <label for="newKeyName">Your or your studio's name<input type="text" id="newKeyName"></label>
+            <label for="newKeyPass">Password (6+; keep it safe)<input type="password" id="newKeyPass" autocomplete="new-password"></label>
+          </div>
+          <p class="hint">Made with Java's keytool (alias <span class="mono">upload</span>, RSA 2048, 27 years). Lose it, and Google has to reset it: slow.</p>
+          <div class="buttons"><button type="submit">Create key</button></div>
+        </form>
+        <form id="existingKey" hidden>
+          <label for="keyFile">Key file (.jks or .keystore)</label>
+          <div class="pick"><input type="text" id="keyFile" aria-label="Key file"><button type="button" id="pickFile">Browse…</button></div>
+          <div class="row">
+            <label for="keyAlias">Alias<input type="text" id="keyAlias" placeholder="upload"></label>
+            <label for="storePass">Key store password<input type="password" id="storePass" autocomplete="off"></label>
+          </div>
+          <label for="keyPass">Key password (often the same)<input type="password" id="keyPass" autocomplete="off"></label>
+          <div class="buttons"><button type="submit">Save key</button></div>
+        </form>
+      </div>
+    </section>
   </div>
 
   <div class="col">
@@ -145,11 +230,13 @@ button.small { padding: 4px 10px; font-size: 12px; font-weight: 500; }
       <div class="buttons">
         <button class="primary" id="run">Run on device</button>
         <button id="apk">Build APK</button>
+        <button id="aab">Build AAB (Google Play)</button>
         <button id="install">Install APK on device</button>
         <button id="open">Open in Android Studio</button>
         <button id="sync">Build only</button>
       </div>
       <div class="apk" id="apkInfo"></div>
+      <div class="apk" id="aabInfo"></div>
     </section>
 
     <section>
@@ -239,6 +326,7 @@ function render() {
 
   renderDevices(state.devices, state.emulators);
   renderApk();
+  renderKeys();
   renderJob(state.job);
 }
 
@@ -270,11 +358,35 @@ function renderDevices(devices, emulators) {
 }
 
 function renderApk() {
-  const apk = state.app.apk;
-  $('apkInfo').innerHTML = apk
-    ? `APK: <span class="mono">${esc(apk.path)}</span> · ${(apk.size / 1048576).toFixed(1)} MB · ${new Date(apk.at).toLocaleString()} <button class="small" id="reveal">Show in folder</button>`
-    : 'No APK built yet.';
-  $('reveal')?.addEventListener('click', () => api('/api/reveal', {}).catch((e) => toast(e.message, true)));
+  const line = (file, label, id) => file
+    ? `${label}: <span class="mono">${esc(file.path)}</span> · ${(file.size / 1048576).toFixed(1)} MB · ${new Date(file.at).toLocaleString()} <button class="small" id="${id}">Show in folder</button>`
+    : `No ${label} built yet.`;
+  $('apkInfo').innerHTML = line(state.app.apk, 'APK', 'reveal');
+  $('aabInfo').innerHTML = line(state.app.aab, 'AAB', 'revealAab');
+  $('reveal')?.addEventListener('click', () => api('/api/reveal', { what: 'apk' }).catch((e) => toast(e.message, true)));
+  $('revealAab')?.addEventListener('click', () => api('/api/reveal', { what: 'aab' }).catch((e) => toast(e.message, true)));
+}
+
+/** Every key: set or missing, where it comes from, and a link there. */
+function renderKeys() {
+  const keys = state.keys;
+  const missing = keys.filter((k) => k.ok === false).length;
+  $('keysPill').textContent = missing ? `${missing} missing` : 'All set';
+  $('keysPill').className = `pill ${missing ? 'warn' : 'ok'}`;
+  $('keys').innerHTML = keys.map((k) => `
+    <div class="check ${k.ok === false ? 'bad' : k.ok ? 'ok' : ''}">
+      <span class="mark" aria-hidden="true">${k.ok === false ? '✗' : k.ok ? '✓' : '•'}</span>
+      <div><b>${esc(k.label)}</b>
+        <div class="detail">${esc(k.where)}</div>
+        <div class="fix"><a href="${esc(k.link)}" target="_blank" rel="noopener">${k.ok ? 'Open' : 'Get it'}</a>${k.field === 'ads' && !k.ok ? ' · then paste it in Ads above' : ''}</div>
+      </div>
+    </div>`).join('');
+  if (document.activeElement !== $('rcKey')) $('rcKey').value = state.money.revenuecat || '';
+  const signing = state.app.signing || {};
+  $('signingNow').textContent = signing.set ? `· ${signing.storeExists ? 'set' : 'FILE MISSING'}: ${signing.storeFile} (${signing.keyAlias})` : '· none yet';
+  if (!$('newKeyFile').value) $('newKeyFile').value = state.app.suggestedKey || '';
+  if (document.activeElement !== $('keyFile') && !$('keyFile').value) $('keyFile').value = signing.storeFile || '';
+  if (document.activeElement !== $('keyAlias') && !$('keyAlias').value) $('keyAlias').value = signing.keyAlias || 'upload';
 }
 
 function updateButtons() {
@@ -282,6 +394,9 @@ function updateButtons() {
   const build = ok('java') && ok('sdk') && ok('project') && ok('capacitor');
   $('run').disabled = running || !build || !selected;
   $('apk').disabled = running || !build;
+  const signed = state.keys?.find((k) => k.id === 'upload')?.ok;
+  $('aab').disabled = running || !build || !signed;
+  $('aab').title = signed ? '' : 'Set or create the upload key first (Keys)';
   $('install').disabled = running || !state.app.apk || !ok('adb') || !selected || !state.devices.some((d) => d.serial === selected);
   $('open').disabled = running || !ok('studio') || !ok('project');
   $('sync').disabled = running || !ok('project') || !ok('capacitor');
@@ -328,6 +443,52 @@ async function act(action) {
 
 $('run').addEventListener('click', () => act('run'));
 $('apk').addEventListener('click', () => act('apk'));
+$('aab').addEventListener('click', () => act('aab'));
+
+const keyTab = (create) => {
+  $('createKey').hidden = !create;
+  $('existingKey').hidden = create;
+  $('tabCreate').classList.toggle('on', create);
+  $('tabExisting').classList.toggle('on', !create);
+};
+$('tabCreate').addEventListener('click', () => keyTab(true));
+// The system's own pickers (the panel's server opens them: a page can't know a real path).
+$('pickFolder').addEventListener('click', async () => {
+  try {
+    const { path } = await api('/api/pick', { kind: 'folder' });
+    if (!path) return;
+    const name = ($('newKeyFile').value.split(/[\\/]/).pop() || '').toLowerCase().endsWith('.jks') ? $('newKeyFile').value.split(/[\\/]/).pop() : `${state.game}-upload.jks`;
+    $('newKeyFile').value = `${path.replace(/[\\/]$/, '')}${path.includes('/') ? '/' : '\\'}${name}`;
+  } catch (error) { toast(error.message, true); }
+});
+$('pickFile').addEventListener('click', async () => {
+  try {
+    const { path } = await api('/api/pick', { kind: 'file' });
+    if (path) $('keyFile').value = path;
+  } catch (error) { toast(error.message, true); }
+});
+$('tabExisting').addEventListener('click', () => keyTab(false));
+const saved = (what) => { toast(what); document.activeElement?.blur(); load(); };
+$('revenuecat').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try { await api('/api/revenuecat', { revenuecat: $('rcKey').value }); saved('RevenueCat key saved'); } catch (error) { toast(error.message, true); }
+});
+$('createKey').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    await api('/api/createKey', { storeFile: $('newKeyFile').value, name: $('newKeyName').value, password: $('newKeyPass').value });
+    $('newKeyPass').value = '';
+    saved('Upload key made: back the file and its password up');
+  } catch (error) { toast(error.message, true); }
+});
+$('existingKey').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    await api('/api/signing', { storeFile: $('keyFile').value, keyAlias: $('keyAlias').value, storePassword: $('storePass').value, keyPassword: $('keyPass').value });
+    $('storePass').value = $('keyPass').value = '';
+    saved('Upload key set');
+  } catch (error) { toast(error.message, true); }
+});
 $('install').addEventListener('click', () => act('install'));
 $('open').addEventListener('click', () => act('open'));
 $('sync').addEventListener('click', () => act('sync'));

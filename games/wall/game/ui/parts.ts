@@ -98,3 +98,35 @@ export function ringSprite(radius: number, width: number, color: number, edge?: 
     made.addChild(picture);
     return made;
 }
+
+/** A colour halfway (by `share`) to white. */
+const lighter = (color: number, share: number): number => {
+    const mix = (shift: number) => Math.round(((color >> shift) & 0xff) + (255 - ((color >> shift) & 0xff)) * share) << shift;
+    return mix(16) | mix(8) | mix(0);
+};
+
+/**
+ * A round button's face, to make it look special (the power-ups, HOLD): the pack's circle button (Button_Circle122, its black
+ * edge and bevel) in a colour, a soft light inside, and the pack's shine across its top.
+ */
+export class RoundFace extends PIXI.Container {
+    private readonly base: PIXI.Sprite;
+    private readonly light: PIXI.Sprite;
+
+    public constructor(size: number, color: number) {
+        super();
+        this.base = sprite('Button_Circle122', size);
+        this.light = sprite('ItemFrame_BgGlow', size * 0.82);
+        this.light.alpha = 0.55;
+        const shine = sprite('BorderFrame_Circle75_Light', size * 0.6);
+        shine.alpha = 0.4;
+        shine.y = -size * 0.2;
+        this.addChild(this.base, this.light, shine);
+        this.setColor(color);
+    }
+
+    public setColor(color: number): void {
+        this.base.tint = color;
+        this.light.tint = lighter(color, 0.55);
+    }
+}

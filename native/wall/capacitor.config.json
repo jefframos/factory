@@ -1,5 +1,5 @@
 {
-    "appId": "com.hyperchip.wallbreak",
+    "appId": "io.hyperchip.breakawall",
     "appName": "Break a Wall",
     "webDir": "../../dist/_builds_wall/android",
     "plugins": {

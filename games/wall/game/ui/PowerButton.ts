@@ -12,19 +12,21 @@ import { WallAnalytics } from '../analytics/WallAnalytics';
 import { WallAudio } from '../audio/WallAudio';
 import { Power, Powers } from '../data/Powers';
 import { WallProgress } from '../data/WallProgress';
-import { frame, sprite, text, write } from './parts';
+import { RoundFace, frame, ringSprite, sprite, text, write } from './parts';
 
-export const POWER = { size: 92, icon: 76, every: 130 };
+export const POWER = { size: 80, icon: 66, every: 112 };
 /** Its time: under it. */
 const PILL = { height: 30, below: 18, back: 0x100e18, track: 0x2b2d4d, active: 0xffb52e, charging: 0x3fb8ff };
-const FRAMES = { hands: 'Blue', auto: 'Purple', crew: 'Green' } as const;
-const frameName = (color: string) => `ItemFrame03_Single_${color}`;
+/** Its face's colour: ready (its own), on, charging. */
+const COLORS = { hands: 0x2fa8ff, auto: 0xb04cff, crew: 0x45cf3a, active: 0xffc21f, charging: 0x8a90a8 } as const;
 
 export class PowerButton extends PIXI.Container {
     private readonly body = new PIXI.Container();
-    private readonly focus = frame('ItemFrame_FocusLine', [36, 35, 36, 35], POWER.size + 14, POWER.size + 14);
-    private readonly back: PIXI.NineSlicePlane;
-    private readonly glow = sprite('ItemFrame_BgGlow', POWER.size - 8);
+    /** A gold ring round it while it's ready (and on). */
+    private readonly focus = ringSprite(POWER.size / 2 + 5, 6, 0xffe14a, { width: 10, color: 0x7a4a00, alpha: 0.5 });
+    private readonly back: RoundFace;
+    /** (Kept inside the circle.) */
+    private readonly glow = sprite('ItemFrame_BgGlow', POWER.size * 0.72);
     private readonly pill = new PIXI.Container();
     private readonly fill = frame('BasicFrame_Round12', [12, 12, 12, 12], POWER.size - 8, 22, 0.75);
     private readonly icon: PIXI.Sprite;
@@ -41,7 +43,7 @@ export class PowerButton extends PIXI.Container {
     public constructor(private readonly power: Power, private readonly said: (words: string, sub: string) => void) {
         super();
         const { id, short } = power.def;
-        this.back = frame(frameName(FRAMES[id]), [53, 53, 54, 56], POWER.size, POWER.size, 0.85);
+        this.back = new RoundFace(POWER.size, COLORS[id]);
         this.icon = sprite(power.def.icon ?? `Wall_power_${id}`, POWER.icon);
         this.icon.y = -7;
         this.label.text = short;
@@ -60,7 +62,7 @@ export class PowerButton extends PIXI.Container {
         this.addChild(this.body);
         this.eventMode = 'static';
         this.cursor = 'pointer';
-        this.hitArea = new PIXI.Rectangle(-POWER.size / 2 - 8, -POWER.size / 2 - 8, POWER.size + 16, POWER.size + 16);
+        this.hitArea = new PIXI.Circle(0, 0, POWER.size / 2 + 8);
         this.on('pointerdown', (event: PIXI.FederatedPointerEvent) => {
             // (Not a punch too.)
             event.stopPropagation();
@@ -102,7 +104,7 @@ export class PowerButton extends PIXI.Container {
         const { phase, def } = this.power;
         if (phase !== this.drawn) {
             this.drawn = phase;
-            this.back.texture = PIXI.Texture.from(frameName(phase === 'ready' ? FRAMES[def.id] : phase === 'active' ? 'Yellow' : 'Gray'));
+            this.back.setColor(phase === 'ready' ? COLORS[def.id] : COLORS[phase]);
             if (phase !== 'ready') this.fill.tint = PILL[phase];
         }
         if (phase !== 'ready') this.fill.width = Math.max(22, (POWER.size - 8) * Math.max(0, Powers.share(this.power))) / 0.75;

@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">Break a Wall</string>
     <string name="title_activity_main">Break a Wall</string>
-    <string name="package_name">com.hyperchip.wallbreak</string>
-    <string name="custom_url_scheme">com.hyperchip.wallbreak</string>
+    <string name="package_name">io.hyperchip.breakawall</string>
+    <string name="custom_url_scheme">io.hyperchip.breakawall</string>
     <string name="admob_app_id">ca-app-pub-4041750571630291~4554219334</string>
 </resources>

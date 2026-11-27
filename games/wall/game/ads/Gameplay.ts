@@ -8,7 +8,7 @@ import PlatformHandler from 'core/platforms/PlatformHandler';
 import { WallAudio } from '../audio/WallAudio';
 import { WallProgress } from '../data/WallProgress';
 
-type Block = 'wardrobe' | 'rewind' | 'relics' | 'shop' | 'settings' | 'ad';
+type Block = 'wardrobe' | 'rewind' | 'relics' | 'shop' | 'settings' | 'crew' | 'ad';
 
 const blocks = new Set<Block>();
 let begun = false;

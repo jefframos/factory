@@ -80,6 +80,18 @@ To see the game's console on the phone: Chrome on the computer, `chrome://inspec
 4. In Europe/UK AdMob needs a consent message: AdMob > Privacy & messaging > GDPR > create one. The app shows it on start.
 5. For the store: `test: false`, and an `app-ads.txt` on the developer website (the plan has the details).
 
+## Google Play: the AAB
+
+In the panel (`npm run android`), **Keys** lists every key the app needs, set or missing, with where to get it and a link:
+the AdMob ids, the **upload key**, the RevenueCat key (empty: purchases mocked), the Play Console account.
+
+1. **Upload key**, once: *Create a key* (Java's keytool makes `<game>-upload.jks`, alias `upload`) or *Use one I have*. It's
+   written to `native/<game>/android/keystore.properties`, which git ignores; the key file goes outside the repo. **Back the
+   .jks and its password up.**
+2. **Build AAB (Google Play)**, or `npm run android:aab`: the signed bundle at
+   `native/<game>/android/app/build/outputs/bundle/release/app-release.aab` (Show in folder).
+3. Before each upload: version code +1 (Package), AdMob test ads off for a real release.
+
 ## Before the store (not needed to play)
 
 - **The app id** `com.hyperchip.wallbreak` (`native/wall/capacitor.config.json`): change it now if it should be another; it can

@@ -7,7 +7,7 @@
 
 import { SaveStorage } from 'core/platforms/SaveStorage';
 import PlatformHandler from 'core/platforms/PlatformHandler';
-import { AUTO, AWAY, BOOSTS, BoostDef, CREW, CrewDef, HOLD, PRODUCTS, ProductDef, RELICS, REWIND, RelicDef, RelicId, SHOWS, WEAK, bricksOf, relicCost, relicValue, crewCost, givenLevel, ToolDef, punchCost, punchDamage, toolAt, toolsUpTo, medalsOf, wallAt } from './WallConfig';
+import { AUTO, AWAY, BOOSTS, BoostDef, CREW, CrewDef, HOLD, MAX_RANK, PRODUCTS, ProductDef, RANKS, RELICS, rankCost, gemsAt, ENEMIES, REWIND, RelicDef, RelicId, SHOWS, WEAK, bricksOf, relicCost, relicValue, crewCost, givenLevel, ToolDef, punchCost, punchDamage, toolAt, toolsUpTo, medalsOf, wallAt } from './WallConfig';
 
 const KEY = 'wall.save';
 const VERSION = 1;
@@ -58,9 +58,14 @@ interface SaveData {
     relics: Record<string, number>;
     /** The shop's one-time products had (bought, or restored from the store). */
     bought: string[];
+    /** Gems (bosses drop them), and each crew kind's rank (bought with them): both for good. */
+    gems: number;
+    ranks: Record<string, number>;
+    /** The gems of the bosses passed before there were gems have been given (once). */
+    gemsBackPaid: boolean;
 }
 
-const fresh = (): SaveData => ({ version: VERSION, wall: 1, cash: 0, punch: 0, best: 1, bricks: 0, crew: {}, boosts: [], medals: 0, runMedals: 0, rewinds: 0, steps: [], played: false, worn: {}, seen: {}, held: '', looks: [], fight: false, farming: false, offers: 0, playSec: 0, fights: 0, at: 0, relics: {}, bought: [] });
+const fresh = (): SaveData => ({ version: VERSION, wall: 1, cash: 0, punch: 0, best: 1, bricks: 0, crew: {}, boosts: [], medals: 0, runMedals: 0, rewinds: 0, steps: [], played: false, worn: {}, seen: {}, held: '', looks: [], fight: false, farming: false, offers: 0, playSec: 0, fights: 0, at: 0, relics: {}, bought: [], gems: 0, ranks: {}, gemsBackPaid: false });
 
 function read(): SaveData {
     try {
@@ -68,7 +73,13 @@ function read(): SaveData {
         if (saved?.version !== VERSION) return fresh();
         // (Medals were trophies at first.)
         const { trophies, runTrophies } = saved as { trophies?: number; runTrophies?: number };
-        return { ...fresh(), medals: trophies ?? 0, runMedals: runTrophies ?? 0, ...saved };
+        const state = { ...fresh(), medals: trophies ?? 0, runMedals: runTrophies ?? 0, ...saved };
+        // (A save from before gems: those of the bosses already passed on the way to its best wall, once.)
+        if (!state.gemsBackPaid) {
+            for (let n = ENEMIES.boss.from; n < state.best; n += ENEMIES.boss.every) state.gems += gemsAt(n);
+            state.gemsBackPaid = true;
+        }
+        return state;
     } catch {
         // A broken save starts fresh.
         return fresh();
@@ -315,6 +326,10 @@ export const WallProgress = {
         crewRush = mult;
         changed();
     },
+    /** The HOLD button's there: from the first rewind on (a finger held on the wall punches from the start). */
+    get holdButton(): boolean {
+        return HOLD.on && state.rewinds > 0;
+    },
     /** Hold to punch's punches a second (IRON GRIP adds). */
     get holdRate(): number {
         return HOLD.perSecond + this.relic('grip');
@@ -404,7 +419,7 @@ export const WallProgress = {
     /** One of them's damage a second. */
     dpsEach(def: CrewDef): number {
         const { crewAll, crewOf } = boostTotals();
-        return def.dps * crewAll * (crewOf[def.id] ?? 1) * this.medalMult * this.relic('power') * this.relic('herd') * this.crewSpeed * frenzy;
+        return def.dps * crewAll * (crewOf[def.id] ?? 1) * (this.rankOf(def.id) ? RANKS.mult[this.rankOf(def.id) - 1] : 1) * this.medalMult * this.relic('power') * this.relic('herd') * this.crewSpeed * frenzy;
     },
 
     /** All of the crew's damage a second. */
@@ -583,9 +598,41 @@ export const WallProgress = {
         changed();
     },
     /** A boss beaten: bricks more. */
-    bossReward(bricks: number): void {
+    bossReward(bricks: number, gems = 0): void {
         state.bricks += bricks;
+        state.gems += gems;
         changed();
+    },
+
+    // ---------------------------------------------------------------- the crew's ranks
+
+    get gems(): number {
+        return state.gems;
+    },
+    /** A kind's rank: 0, or the hat it wears (1 hard hat, 2 viking, 3 crown). */
+    rankOf(id: string): number {
+        return state.ranks[id] ?? 0;
+    },
+    /** The first boss has been passed, or there are gems, or a rank's been bought: the crew's menu is there. */
+    get ranksKnown(): boolean {
+        return state.gems > 0 || state.best > ENEMIES.boss.from || Object.values(state.ranks).some((rank) => rank > 0);
+    },
+    canRank(def: CrewDef): boolean {
+        const rank = this.rankOf(def.id);
+        return rank < MAX_RANK && state.best >= def.wall && state.gems >= rankCost(def, rank);
+    },
+    /** A rank there to buy now (the crew's button is marked). */
+    get rankToBuy(): boolean {
+        return CREW.some((def) => this.canRank(def));
+    },
+    /** The next rank of a kind, for gems; false if it can't be. */
+    buyRank(def: CrewDef): boolean {
+        if (!this.canRank(def)) return false;
+        const rank = this.rankOf(def.id);
+        state.gems -= rankCost(def, rank);
+        state.ranks[def.id] = rank + 1;
+        changed();
+        return true;
     },
 
     /** On to the next wall, with this one's bricks (how many: the answer). */

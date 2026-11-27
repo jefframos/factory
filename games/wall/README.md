@@ -56,13 +56,18 @@ The plan for the stores (accounts, costs, in-app purchases, every step): [WALLBR
   The starter pack, then NO ADS, DOUBLE CASH, AUTO HOLD (had for good, restored from the store at the start) and medal packs.
   **Try it locally with `?shop=1`**: the mock platform sells everything through a BUY / CANCEL screen and keeps what's had for
   good in the browser (`mock.purchases` in localStorage; clear it to buy again).
-- **Hold to punch** (`hold`, from wall 25): a big HOLD button low on the right; held, the hands punch on their own (3 a second
-  and IRON GRIP's), where AUTO would; a finger held on the wall does it too, where it is.
+- **Crew ranks** ([ui/CrewRanks.ts](game/ui/CrewRanks.ts), `ranks`): for good, through rewinds, bought with **gems** (bosses
+  drop them: `boss.gems`, one more every `gemsEvery` walls). Each kind's next rank: x2, x4, x8 damage, and a hat on all of
+  that kind (hard hat, viking hat, crown, out of library3d's stylized hats pack: `tools/build-hats.mjs`, sat on each head by
+  Crew's `headOf`). The CREW button sits under the shop's on the right (in the top row on a wide screen) from the first gems
+  on. Debug: `?debug=1` > Wall > +20 GEMS.
+- **Hold to punch** (`hold`; the button from the first rewind): a big HOLD button low on the right; held, the hands punch on their own (3 a second
+  and IRON GRIP's), where AUTO would; a finger held on the wall does it too, where it is, from the very first wall.
 - **What comes when**, the first time through: one new thing a wall, a gift or something new on screen, never two, and no words to
   read about it. 2 the red gloves, 3 the chick, 4 the weak spot (a TAP ring on it till it's hit), 5 a free weapon level, 6 the beaver,
   7 a free weapon level, 8 floating cash, 9 boosts (bought for who leaves them three walls), 10 medals, 11 the hog, 12 enemies,
   13 a free weapon level, 14 the wardrobe and its offers, 15 the monkey, 16 TWO HANDS, 17 golden chests, 18 a free weapon level,
-  19 buying nudges, 20 the first boss, 21 frenzy, 22 the cow, 23 a free weapon level, 24 AUTO HIT, 25 hold to punch (`hold`: a finger held down punches on its own, 3 a second, slower than AUTO and than tapping), then the panda at 26, a weapon level
+  19 buying nudges, 20 the first boss, 21 frenzy, 22 the cow, 23 a free weapon level, 24 AUTO HIT, then the panda at 26 (a finger held on the wall punches on its own from the start; the HOLD button comes with the first rewind), a weapon level
   at 27, the elephant at 29, a weapon level at 31, the giraffe at 33 (each helper's card shows up with it). Free weapon levels only to
   who hasn't bought them, free helpers (beaver, hog, monkey) only to who hasn't hired one. A rewind keeps half the weapon's level
   (its popup shows which weapon). Walls 4-30 take about 10-20 s each for a casual player (simulated; a boss up to half a minute).

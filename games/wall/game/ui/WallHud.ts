@@ -11,14 +11,15 @@ import { WallAnalytics } from '../analytics/WallAnalytics';
 import { fx } from '../config/Effects';
 import { Floater, FloaterActions, FloaterKind } from './Floater';
 import { Frenzy } from './Frenzy';
-import { HitPill } from './HitPill';
+import { HIT_PILL, HitPill } from './HitPill';
 import { HudBar } from './HudBar';
-import { LookOffer } from './LookOffer';
+import { LookOffer, OFFER_REACH } from './LookOffer';
 import { HOLD, SHOWS, short } from '../data/WallConfig';
 import { HoldButton, HOLD_BUTTON } from './HoldButton';
 import { RelicButton, RelicPanel, relicsKnown } from './Relics';
 import { ShopButton, ShopPanel, shopOpen } from './Shop';
 import { SettingsButton, SettingsPanel } from './Settings';
+import { CREW_BUTTON, CrewButton, CrewPanel } from './CrewRanks';
 import { MedalFly, RewindButton, RewindPopup, RewindShow, rewindKnown } from './Rewind';
 import { POWER, PowerButton } from './PowerButton';
 import { Powers } from '../data/Powers';
@@ -46,19 +47,27 @@ const TITLE_WIDTH = 225;
 const WALL_BADGE = { size: 76, in: 6, covers: 38, stroke: 0x1f49a8 };
 const FLOATS = 14;
 /** How far down the power-ups go for the shop's button over them. */
-const SHOP_ROOM = 96;
+/** The right column (upright): the gap between its buttons, and the crew's gems under its button. */
+const COLUMN = { gap: 10 };
+/** The left column: the gap between the relics' button and the crew's. */
+const LEFT_GAP = 22;
 /** The words in the middle: their zone's gap to what's around it, the sides on a wide screen, how narrow and wide it may be, and room for the line under. */
 const BANNER = { gap: 14, sides: 24, least: 300, most: 700, subGap: 4 };
 /** Half the rewind button (its column's right edge). */
 const REWIND_HALF = 59;
 /** The offer, upright, between the relics' button and the damage pills: room under and over it, its size (with its flag and timer), and how small or big it may be. */
-const OFFER_GAP = { below: 64, above: 64, tall: 268, wide: 172, least: 0.55, most: 0.85 };
+const OFFER_GAP = { below: 64, above: 26, wide: 172, least: 0.55, most: 0.85 };
 /** The circle that says where to tap, across half of it. */
 const TAP_RING = 58;
 const BUTTON_SIZE = 58;
-const WARDROBE_SIZE = 82;
+const WARDROBE_SIZE = 72;
 /** The settings' gear (where the sound's button was). */
 const SETTINGS_SIZE = 84;
+/** The shop's button (ui/Shop), and the gap between the buttons in the row up on the right (wide screens). */
+const SHOP_BUTTON = 80;
+const TOP_GAP = 12;
+/** Wide screens: the damage pills' room from the bottom left corner. */
+const PILLS_CORNER = { side: 28, bottom: 30 };
 
 export class WallHud extends PIXI.Container {
     private readonly title = text('', 26, 0xffffff);
@@ -82,6 +91,9 @@ export class WallHud extends PIXI.Container {
     public readonly holdButton = new HoldButton();
     /** The shop (where the platform has purchases), its button under the wardrobe's. */
     public readonly shopPanel: ShopPanel;
+    /** The crew's ranks (gems; hats), its button under the shop's. */
+    public readonly crewPanel: CrewPanel;
+    private readonly crewButton: CrewButton;
     /** The settings: the sound; in the app, RESET DATA and the ads' console. */
     public readonly settingsPanel: SettingsPanel;
     private readonly shopButton: ShopButton;
@@ -101,6 +113,11 @@ export class WallHud extends PIXI.Container {
     private readonly banner = new PIXI.Container();
     /** How wide the words in the middle may be (their zone, set by reposition). */
     private bannerWidth = 600;
+
+    /** The crew's ranks are there: gems have been got (a boss), or a rank bought. */
+    private get crewThere(): boolean {
+        return WallProgress.ranksKnown;
+    }
 
     /** The shop's there: the platform has purchases, and its wall's been reached. */
     private get shopThere(): boolean {
@@ -172,6 +189,11 @@ export class WallHud extends PIXI.Container {
         });
         // (What a relic changes shows by itself: the tray reads the progress each frame.)
         this.relicPanel = new RelicPanel((open) => (this.tray.visible = !open), () => undefined);
+        this.crewPanel = new CrewPanel((open) => (this.tray.visible = !open));
+        this.crewButton = new CrewButton(() => {
+            WallAnalytics.buttonTapped('crew');
+            this.crewPanel.setOpen(true);
+        });
         this.shopPanel = new ShopPanel((open) => (this.tray.visible = !open), (def) => this.announce(`${def.name}!`, '', 1.2));
         this.shopButton = new ShopButton(() => {
             WallAnalytics.buttonTapped('shop');
@@ -222,7 +244,7 @@ export class WallHud extends PIXI.Container {
         // (The settings, where the sound's button was: the sound's in them.)
         this.settingsPanel = new SettingsPanel((open) => (this.tray.visible = !open));
         this.sound = new SettingsButton(SETTINGS_SIZE, () => this.settingsPanel.setOpen(true));
-        this.addChild(this.frenzy.glow, this.flash, this.floater, this.barBack, ...this.floats, this.timer, this.frenzy, this.combo, this.tap, this.retry, this.tray, this.hitPill, this.sound, this.wardrobeButton, this.rewindButton, this.relicButton, this.holdButton, this.shopButton, ...this.powers, this.offer, this.banner, this.wardrobe, this.rewindPopup, this.relicPanel, this.shopPanel, this.settingsPanel, this.rewindShow);
+        this.addChild(this.frenzy.glow, this.flash, this.floater, this.barBack, ...this.floats, this.timer, this.frenzy, this.combo, this.tap, this.retry, this.tray, this.hitPill, this.sound, this.wardrobeButton, this.rewindButton, this.relicButton, this.holdButton, this.shopButton, this.crewButton, ...this.powers, this.offer, this.banner, this.wardrobe, this.rewindPopup, this.relicPanel, this.shopPanel, this.crewPanel, this.settingsPanel, this.rewindShow);
         [this.barBack, this.combo, this.banner, this.tap].forEach((child) => (child.eventMode = 'none'));
         this.reposition();
     }
@@ -427,7 +449,7 @@ export class WallHud extends PIXI.Container {
 
     /** Something's open over the wall. */
     public get busy(): boolean {
-        return this.wardrobe.isOpen || this.rewindPopup.isOpen || this.relicPanel.isOpen || this.shopPanel.isOpen || this.settingsPanel.isOpen || this.rewindShow.visible;
+        return this.wardrobe.isOpen || this.rewindPopup.isOpen || this.relicPanel.isOpen || this.shopPanel.isOpen || this.crewPanel.isOpen || this.settingsPanel.isOpen || this.rewindShow.visible;
     }
 
     /** How many new things there are to wear, on the wardrobe's button. */
@@ -448,7 +470,13 @@ export class WallHud extends PIXI.Container {
         this.tray.update(delta);
         // (From the first upgrade on: there's something to see it grow by.)
         this.hitPill.visible = WallProgress.best > 1 && !this.wardrobe.isOpen && !this.rewindPopup.isOpen && !this.relicPanel.isOpen;
-        this.hitPill.position.copyFrom(this.tray.hitSpot);
+        // (Upright, over the weapon's card; on a wide screen down in the bottom left, which is free there, so the right isn't
+        // crowded: the crew's pill over it.)
+        const screen = Game.safeScreenData ?? Game.overlayScreenData;
+        if (screen && screen.width > screen.height * 1.15) {
+            this.hitPill.position.set(screen.topLeft.x + PILLS_CORNER.side + HIT_PILL.width / 2, screen.topLeft.y + screen.height - PILLS_CORNER.bottom - HIT_PILL.height / 2);
+        } else this.hitPill.position.copyFrom(this.tray.hitSpot);
+        this.placeCrew();
         this.placeOffer();
         this.powers.forEach((button) => button.update(delta, !this.busy));
         if (this.hitPill.visible) this.hitPill.update(delta, this.combo.visible ? this.comboShown : 1);
@@ -469,7 +497,7 @@ export class WallHud extends PIXI.Container {
             this.relicButton.update(delta);
         }
         // (Hold to punch's button: from its wall on, while there's something to hit.)
-        this.holdButton.visible = HOLD.on && WallProgress.best >= HOLD.wall && !this.busy;
+        this.holdButton.visible = WallProgress.holdButton && !this.busy;
         if (this.holdButton.visible) WallAnalytics.buttonShown('hold');
         this.holdButton.latching = WallProgress.autoHold;
         this.settingsPanel.update(delta);
@@ -479,6 +507,12 @@ export class WallHud extends PIXI.Container {
         if (this.shopButton.visible) {
             WallAnalytics.buttonShown('shop');
             this.shopButton.update(delta);
+        }
+        // (The crew's ranks: from the first gems on.)
+        this.crewButton.visible = this.crewThere && !this.busy;
+        if (this.crewButton.visible) {
+            WallAnalytics.buttonShown('crew');
+            this.crewButton.update(delta);
         }
         this.rewindPopup.update(delta);
         this.offer.update(delta, this.playing && !this.busy, this.busy);
@@ -492,14 +526,26 @@ export class WallHud extends PIXI.Container {
      * Upright, the offer goes down the left: in the gap between the relics' button and the weapon's damage over its card,
      * as big as fits there (it follows the cards as they come).
      */
+    /** The crew's button under the relics', as theirs (beside it on a wide screen); in their place before there are relics (a rewind). */
+    private placeCrew(): void {
+        const screen = Game.safeScreenData ?? Game.overlayScreenData;
+        if (!screen) return;
+        const wide = screen.width > screen.height * 1.15;
+        if (relicsKnown()) this.crewButton.position.set(this.relicButton.x + (wide ? 150 : 0), this.relicButton.y + (wide ? 0 : CREW_BUTTON + LEFT_GAP));
+        else this.crewButton.position.copyFrom(this.relicButton.position);
+    }
+
     private placeOffer(): void {
         const screen = Game.safeScreenData ?? Game.overlayScreenData;
         if (!screen || screen.width > screen.height * 1.15) return;
-        const top = this.relicButton.y + OFFER_GAP.below;
-        const bottom = this.hitPill.y - OFFER_GAP.above;
-        const scale = Math.max(OFFER_GAP.least, Math.min(OFFER_GAP.most, (bottom - top) / OFFER_GAP.tall));
+        // (Between the relics' button and the top of the damage pills, both of them, a clear gap over and under.)
+        // (Under the crew's button when it's there, the relics' when not.)
+        const top = (this.crewThere ? this.crewButton.y : this.relicButton.y) + OFFER_GAP.below;
+        const bottom = this.hitPill.y - this.hitPill.reachUp - OFFER_GAP.above;
+        const tall = OFFER_REACH.up + OFFER_REACH.down;
+        const scale = Math.max(OFFER_GAP.least, Math.min(OFFER_GAP.most, (bottom - top) / tall));
         this.offer.scale.set(scale);
-        this.offer.position.set(screen.topLeft.x + 14 + (OFFER_GAP.wide * scale) / 2, (top + bottom) / 2);
+        this.offer.position.set(screen.topLeft.x + 14 + (OFFER_GAP.wide * scale) / 2, bottom - OFFER_REACH.down * scale);
     }
 
     public reposition(): void {
@@ -520,8 +566,13 @@ export class WallHud extends PIXI.Container {
         this.rewindPopup.reposition();
         // Down the right side (on a wide screen, by the cards): the power-ups, and under them what's offered.
         const side = topLeft.x + screen.width - (wide ? 290 + 24 + 80 : 14 + POWER.size / 2);
-        // (Under the shop's button, when there's one.)
-        const powersTop = topLeft.y + (wide ? 160 : 182) + (this.shopThere && !wide ? SHOP_ROOM : 0);
+        // The right column, upright: the wardrobe's button, then the shop's and the crew's (those that are there), then the
+        // power-ups. (On a wide screen the first are in a row up top instead.)
+        const wardrobeY = topLeft.y + 54;
+        let columnY = wardrobeY + WARDROBE_SIZE / 2 + COLUMN.gap;
+        const shopY = columnY + SHOP_BUTTON / 2;
+        if (this.shopThere) columnY += SHOP_BUTTON + COLUMN.gap;
+        const powersTop = wide ? topLeft.y + 160 : Math.max(topLeft.y + 182, columnY + POWER.size / 2 + 6);
         this.powers.forEach((button, i) => button.position.set(side, powersTop + i * POWER.every));
         if (wide) this.offer.position.set(side - 20, topLeft.y + 160 + this.powers.length * POWER.every + 72);
         this.rewindShow.reposition();
@@ -544,12 +595,16 @@ export class WallHud extends PIXI.Container {
         this.wardrobe.reposition();
         // (The wardrobe top right; the sound on the other side, or beside it where the cash is there.)
         const right = topLeft.x + screen.width;
-        this.wardrobeButton.position.set(right - 18 - WARDROBE_SIZE / 2, topLeft.y + 54);
+        this.wardrobeButton.position.set(right - 18 - WARDROBE_SIZE / 2, wardrobeY);
         // (The shop's under the wardrobe's; on a wide screen, beside it.)
-        this.shopButton.position.set(wide ? this.wardrobeButton.x - WARDROBE_SIZE - 12 : this.wardrobeButton.x, wide ? this.wardrobeButton.y : this.wardrobeButton.y + WARDROBE_SIZE / 2 + 10 + 48);
+        this.shopButton.position.set(wide ? this.wardrobeButton.x - WARDROBE_SIZE / 2 - TOP_GAP - SHOP_BUTTON / 2 : this.wardrobeButton.x, wide ? this.wardrobeButton.y : shopY);
+        this.crewPanel.reposition();
         this.shopPanel.reposition();
         this.settingsPanel.reposition();
-        this.sound.position.set(wide ? right - 22 - WARDROBE_SIZE - 16 - BUTTON_SIZE / 2 : topLeft.x + 14 + SETTINGS_SIZE / 2, topLeft.y + 48);
+        // (Upright, the settings top left; on a wide screen in the row on the right, centred on the wardrobe's line, past the
+        // shop's when it's there.)
+        const rowLeft = this.shopThere ? this.shopButton.x - SHOP_BUTTON / 2 : this.wardrobeButton.x - WARDROBE_SIZE / 2;
+        this.sound.position.set(wide ? rowLeft - TOP_GAP - SETTINGS_SIZE / 2 : topLeft.x + 14 + SETTINGS_SIZE / 2, wide ? this.wardrobeButton.y : topLeft.y + 48);
     }
 
     public override destroy(): void {

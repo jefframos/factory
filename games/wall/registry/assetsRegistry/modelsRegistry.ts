@@ -48,6 +48,30 @@ const CrewGiraffe = {
   nodes: {}
 } as const;
 
+const CrewHatCrown = {
+  id: 'hat-crown',
+  path: 'crew/hat-crown',
+  fullPath: 'wall/models/crew/hat-crown.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const CrewHatHard = {
+  id: 'hat-hard',
+  path: 'crew/hat-hard',
+  fullPath: 'wall/models/crew/hat-hard.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const CrewHatViking = {
+  id: 'hat-viking',
+  path: 'crew/hat-viking',
+  fullPath: 'wall/models/crew/hat-viking.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
 const CrewHog = {
   id: 'hog',
   path: 'crew/hog',
@@ -281,6 +305,9 @@ export const MODELS = {
     Cow: CrewCow,
     Elephant: CrewElephant,
     Giraffe: CrewGiraffe,
+    HatCrown: CrewHatCrown,
+    HatHard: CrewHatHard,
+    HatViking: CrewHatViking,
     Hog: CrewHog,
     Monkey: CrewMonkey,
     Panda: CrewPanda

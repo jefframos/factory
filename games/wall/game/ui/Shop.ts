@@ -18,7 +18,7 @@ import { PRODUCTS, ProductDef } from '../data/WallConfig';
 import { WallProgress } from '../data/WallProgress';
 import { fit, frame, plainText, sprite, text } from './parts';
 
-const BUTTON = 96;
+const BUTTON = 80;
 const PANEL = { width: 660, height: 1040 };
 const OFFER = { width: 600, height: 176 };
 const CARD = { width: 188, height: 222, gap: 18, icon: 104 };

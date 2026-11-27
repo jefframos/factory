@@ -23,7 +23,7 @@
     "android": {
         "className": "CapacitorPlatform",
         "importPath": "core/platforms/CapacitorPlatform",
-        "gameId": "com.hyperchip.wallbreak",
+        "gameId": "io.hyperchip.breakawall",
         "enableAds": true,
         "folderPath": "wall",
         "admob": {
@@ -33,7 +33,7 @@
             "test": true
         },
         "iap": {
-            "revenuecat": ""
+            "revenuecat": "goog_yfgqQCOjEXSpNhojxjAmQlzGgaW"
         }
     },
     "youtube": {

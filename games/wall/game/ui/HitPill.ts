@@ -64,6 +64,11 @@ export class HitPill extends PIXI.Container {
         });
     }
 
+    /** How far it reaches up from its middle: the hit's pill, and the crew's over it when that's there. */
+    public get reachUp(): number {
+        return HIT_PILL.height / 2 + (this.total.visible ? TOTAL.gap + TOTAL.height : 0);
+    }
+
     /** `combo`: times the damage now (1: none). */
     public update(delta: number, combo: number): void {
         this.combo = combo;

@@ -11,6 +11,7 @@
 | Skeletons (`enemies{m}/skeleton-*`) | `raw-assets/models/` | KayKit Skeletons (library3d/packs-characters/pack2) | CC0 |
 | Golem, turtle, bat, stone monster (`enemies{m}/`) | `raw-assets/models/` | As Mob has them: Kevin Iglesias Humanoid Giant, RPG Monster DUO, Level 1 Monster Pack, amusedART Stone Monster (library3d/packs-characters, Unity Asset Store) | check before release: inside the game only, not as files in a public repo |
 | `hit-wood` | `raw-assets/audio/` | Feel NiceVibrations samples (library3d/sounds) | Unity Asset Store EULA: inside the game only |
+| The crew's hats (`crew{m}/hat-hard`, `hat-viking`, `hat-crown`; `Wall_hat_*` icons) | `raw-assets/models/`, `raw-assets/images/ui{tps}/` | "3D Props Stylized Hats Pack" (library3d/files/hats, from Fab), made by `tools/build-hats.mjs` | owned (bought), per its Fab license: inside the game only, not as files in a public repo |
 | The crew's models | `raw-assets/models/crew{m}/` | library3d `animals` (its License.txt names no author) | check before release |
 | `break`, `collapse`, `boom` | `raw-assets/audio/` | library3d/sounds (dig, ragdoll-impacts, down) | check before release |
 | `music`, `combo`, `beat`, `clear`, `win` | `raw-assets/audio/` (made by `tools/build-music.py`, `build-jingles.py`) | ours | ours |

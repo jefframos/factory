@@ -73,6 +73,11 @@ export class Crew {
     private readonly quaternion = new THREE.Quaternion();
     private readonly euler = new THREE.Euler();
     private readonly scale = new THREE.Vector3();
+    /** The ranks' hats (hard hat, viking, crown): one InstancedMesh each, across every kind that has that rank. */
+    private readonly hats: (THREE.InstancedMesh | undefined)[] = [];
+    /** Where each kind's hat sits, in its model's own units: on its head's top, as wide as its head (from setModel). */
+    private readonly heads: (THREE.Matrix4 | undefined)[] = [];
+    private readonly hatMatrix = new THREE.Matrix4();
 
     public constructor(private readonly actions: CrewActions) {
         const shadow = new THREE.CircleGeometry(0.5, 16).rotateX(-Math.PI / 2);
@@ -96,6 +101,19 @@ export class Crew {
         mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
         mesh.count = 0;
         this.meshes[kind] = mesh;
+        this.group.add(mesh);
+        this.heads[kind] = headOf(geometry);
+    }
+
+    /** A rank's hat, loaded (1 hard hat, 2 viking, 3 crown). */
+    public setHat(rank: number, model: THREE.Object3D): void {
+        const geometry = onePiece(model);
+        if (!geometry || this.hats[rank - 1]) return;
+        const mesh = new THREE.InstancedMesh(geometry, new THREE.MeshLambertMaterial({ vertexColors: true }), MAX_SHOWN);
+        mesh.frustumCulled = false;
+        mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        mesh.count = 0;
+        this.hats[rank - 1] = mesh;
         this.group.add(mesh);
     }
 
@@ -150,6 +168,7 @@ export class Crew {
     public update(delta: number, active: boolean, running = false): void {
         this.clock += delta;
         const counts = CREW.map(() => 0);
+        const hatCounts = [0, 0, 0];
         let shadow = 0;
         for (const member of this.members) {
             const def = CREW[member.kind];
@@ -167,6 +186,11 @@ export class Crew {
             this.position.y += middle;
             this.scale.set(size * (1 + squash * 0.7), size * (1 - squash), size * (1 + squash * 0.7));
             if (mesh) mesh.setMatrixAt(counts[member.kind]++, this.matrix.compose(this.position, this.quaternion, this.scale));
+            // Its rank's hat, on its head, moving with it.
+            const rank = WallProgress.rankOf(def.id);
+            const hat = rank ? this.hats[rank - 1] : undefined;
+            const head = this.heads[member.kind];
+            if (hat && head && mesh) hat.setMatrixAt(hatCounts[rank - 1]++, this.hatMatrix.multiplyMatrices(this.matrix, head));
             const near = 1 / (1 + member.at.y * 0.5);
             this.matrix.makeScale(size * 1.25 * near, 1, size * 1.25 * near).setPosition(member.at.x, 0.015, member.at.z);
             this.shadows.setMatrixAt(shadow++, this.matrix);
@@ -176,6 +200,12 @@ export class Crew {
             mesh.count = counts[kind];
             mesh.visible = counts[kind] > 0;
             mesh.instanceMatrix.needsUpdate = true;
+        });
+        this.hats.forEach((hat, i) => {
+            if (!hat) return;
+            hat.count = hatCounts[i];
+            hat.visible = hatCounts[i] > 0;
+            hat.instanceMatrix.needsUpdate = true;
         });
         this.shadows.count = shadow;
         this.shadows.visible = shadow > 0;
@@ -295,6 +325,39 @@ export class Crew {
 }
 
 /** A model's meshes as one geometry: positions, normals, colours, where they stand. */
+/** A hat on a head: how far down into the head's top it sits (of the model's height), and how much wider than the head it is. */
+const HAT = { sink: 0.07, top: 0.22, wider: 1.15 };
+
+/**
+ * Where a hat goes on a model (the crew are big-headed: the head's the top of it, facing +z): the middle of its top, sunk
+ * in a little, as wide as the head there.
+ */
+function headOf(geometry: THREE.BufferGeometry): THREE.Matrix4 {
+    const position = geometry.attributes.position;
+    geometry.computeBoundingBox();
+    const { min, max } = geometry.boundingBox!;
+    const height = max.y - min.y;
+    let x = 0;
+    let z = 0;
+    let count = 0;
+    let left = Infinity;
+    let right = -Infinity;
+    for (let i = 0; i < position.count; i++) {
+        if (position.getY(i) < max.y - HAT.top * height) continue;
+        x += position.getX(i);
+        z += position.getZ(i);
+        count++;
+        left = Math.min(left, position.getX(i));
+        right = Math.max(right, position.getX(i));
+    }
+    const width = count ? (right - left) * HAT.wider : (max.x - min.x) * 0.6;
+    return new THREE.Matrix4().compose(
+        new THREE.Vector3(count ? x / count : 0, max.y - HAT.sink * height, count ? z / count : 0),
+        new THREE.Quaternion(),
+        new THREE.Vector3(width, width, width),
+    );
+}
+
 function onePiece(model: THREE.Object3D): THREE.BufferGeometry | null {
     model.updateMatrixWorld(true);
     const positions: number[] = [];

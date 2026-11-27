@@ -216,6 +216,11 @@ export const WallAnalytics = {
         send('shop', id, action);
     },
 
+    /** A crew kind's rank bought with gems. */
+    rank(id: string, rank: number): void {
+        send('rank', id, `rank-${rank}`);
+    },
+
     /** A relic's level bought with medals. */
     relic(id: string, level: number): void {
         send('relic', id, `level-${level}`);
@@ -273,11 +278,11 @@ export const WallAnalytics = {
     },
 
     /** A button's there. */
-    buttonShown(what: 'wardrobe' | 'rewind' | 'relics' | 'hold' | 'shop'): void {
+    buttonShown(what: 'wardrobe' | 'rewind' | 'relics' | 'hold' | 'shop' | 'crew'): void {
         shownOnce('button', what);
     },
 
-    buttonTapped(what: 'wardrobe' | 'rewind' | 'relics' | 'shop'): void {
+    buttonTapped(what: 'wardrobe' | 'rewind' | 'relics' | 'shop' | 'crew'): void {
         sendOnce('button', what, 'interact');
     },
 

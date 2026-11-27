@@ -1,0 +1,34 @@
+platforms.config.json
+so this is my revenua cat test api: test_QxGLpeimPZTieGxkYnZFMAitRAQ, how can i have a debug build to test this? i need to be able to simulate purchase in a debug build, also, i dont know how to setup the iap properly
+Web SearchRevenueCat Test Store test_ API key Capacitor purchases simulate purchase
+Allowed: revenuecat.com
+OUT
+Web search results for query: "RevenueCat Test Store test_ API key Capacitor purchases simulate purchase"
+
+Links: [{"title":"RevenueCat Test Store","url":"https://www.revenuecat.com/docs/test-and-launch/sandbox/test-store"},{"title":"Simplify in-app purchase unit testing with RevenueCat’s Test Store","url":"https://www.revenuecat.com/blog/engineering/testing-test-store"},{"title":"Configuring the SDK","url":"https://www.revenuecat.com/docs/getting-started/configuring-sdk"},{"title":"Monetize faster with RevenueCat Test Store by testing purchases without App Store or Play Console","url":"https://www.revenuecat.com/blog/company/revenuecat-test-store"},{"title":"Testing Use Cases","url":"https://www.revenuecat.com/docs/guides/testing-guide/use-cases"},{"title":"Capacitor","url":"https://www.revenuecat.com/docs/getting-started/installation/capacitor"},{"title":"Testing subscriptions on Compose Multiplatform: one test suite for iOS and Android","url":"https://www.revenuecat.com/blog/engineering/testing-subscription-cmp"},{"title":"Building a tip jar feature with RevenueCat","url":"https://www.revenuecat.com/blog/engineering/building-a-tip-jar-feature-with-revenuecat"},{"title":"SDK Quickstart","url":"https://www.revenuecat.com/docs/getting-started/quickstart"},{"title":"Revenuecat Test Store failing with preview builds.","url":"https://community.revenuecat.com/sdks-51/revenuecat-test-store-failing-with-preview-builds-7806"}]
+
+The search turned up general RevenueCat Test Store documentation but no Capacitor-specific code for simulating a purchase.
+
+- **Key format:** Test Store keys start with `test_`, unlike `goog_` or `appl_` keys. It looks like test_... instead of goog_... or appl_...
+- **Setup:** In the dashboard, create a new Test Store and you will be presented with an API key to use in the SDK. The Capacitor install docs show `Purchases.configure({ apiKey, appUserID })` with a placeholder key, so the Test Store key goes in that same field. Simply use your Test Store API key when initializing the SDK, and test purchases will work automatically.
+- **Simulating a purchase:** The Test Store doesn't open the native store sheet. Your app presents a modal with metadata about the product being purchased, along with buttons to simulate a successful purchase, a failed purchase, or cancel the purchase entirely.
+- **Release builds:** The Capacitor SDK doesn't expose the override that allows the Test Store in release builds. On those platforms, use the Test Store API key in debug builds only, and use your platform-specific API key with the platform sandbox for release builds. A release build with a test key is treated as a leak. If a release build initializes with a Test Store key, the SDK will show an alert and crash the app.
+- **Preview builds:** The RevenueCat Test Store is a simulated purchase flow for development only. It does not use StoreKit. A community answer says the intended place for it is Local/dev-client builds (developmentClient: true / Debug), and that a preview build compiled as Release will reject a test key.
+
+Next step: keep the `test_` key in a debug-only configuration, and use the platform `appl_`/`goog_` keys for release or TestFlight builds. The search didn't confirm a Capacitor-specific simulate-purchase API, so the modal flow is the documented way to simulate a purchase.
+
+
+REMINDER: You MUST include the sources above in your response to the user using markdown hyperlinks.
+Bash Check the RevenueCat Capacitor plugin version
+IN
+npm view @revenuecat/purchases-capacitor version peerDependencies --json 2>/dev/null | head -20
+
+OUT
+{
+  "version": "15.0.0",
+  "peerDependencies": {
+    "@capacitor/core": ">=8.0.0"
+  }
+}
+RevenueCat's Test Store works for this: a test_ key makes debug builds show a purchase window with Success, Fail and Cancel. Release builds must use the goog_ key instead, since the SDK crashes on a test_ key in release. I'm installing the RevenueCat plugin next.
+Bash Install RevenueCat plugin and find its API

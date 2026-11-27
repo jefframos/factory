@@ -2,13 +2,13 @@
 //
 // Hold to punch, by the thumb: a big button low on the right. Held down, the hands punch on their own (WallScene, HOLD
 // punches a second plus IRON GRIP's), where AUTO would; let go anywhere, they stop. Pressed, it sinks and glows, its punches a second over it. There from
-// wall HOLD.wall on. Held, it hurries on between walls too (HOLD.rush): ▶▶ in its corner.
+// the first rewind on. Held, it hurries on between walls too (HOLD.rush): ▶▶ in its corner.
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
-import { frame, sprite, text } from './parts';
+import { RoundFace, sprite, text } from './parts';
 
-export const HOLD_BUTTON = { size: 128, icon: 82 };
+export const HOLD_BUTTON = { size: 112, icon: 72 };
 
 export class HoldButton extends PIXI.Container {
     /** It's held down now (or latched on, with AUTO HOLD). */
@@ -29,7 +29,8 @@ export class HoldButton extends PIXI.Container {
         const { size } = HOLD_BUTTON;
         this.glow.tint = 0xffb04a;
         this.glow.alpha = 0;
-        const back = frame('ItemFrame03_Single_Red', [53, 53, 54, 56], size, size, 0.9);
+        // (Round, as the power-ups: the pack's circle in red, a light in it, its shine.)
+        const back = new RoundFace(size, 0xff3d4a);
         const fist = sprite('Wall_fists', HOLD_BUTTON.icon);
         fist.y = -10;
         this.words.y = size / 2 - 24;
@@ -43,8 +44,8 @@ export class HoldButton extends PIXI.Container {
             arrow.x = x;
             forward.addChild(arrow);
         }
-        forward.position.set(-size / 2 + 6, -size / 2 + 6);
-        this.lock.position.set(size / 2 - 12, -size / 2 + 12);
+        forward.position.set(-size * 0.36, -size * 0.36);
+        this.lock.position.set(size * 0.36, -size * 0.36);
         this.lock.visible = false;
         this.body.addChild(this.glow, back, fist, this.words, forward, this.lock);
         this.addChild(this.body);

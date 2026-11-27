@@ -115,6 +115,15 @@ export interface PowerDef {
 }
 export const POWERS = data.powers as PowerDef[];
 
+/** The crew's ranks (for good, bought with gems): the hat each wears, its damage (x), its price. */
+export const RANKS = data.ranks;
+/** The most a kind's rank goes. */
+export const MAX_RANK = RANKS.hats.length;
+/** Gems for the next rank of a kind (its place down the crew's list makes it dearer). */
+export const rankCost = (def: CrewDef, rank: number): number => Math.ceil(RANKS.cost[rank] * RANKS.growth ** CREW.indexOf(def));
+/** The gems a boss at a wall drops. */
+export const gemsAt = (wall: number): number => data.enemies.boss.gems + Math.floor(wall / data.enemies.boss.gemsEvery);
+
 /** What the shop sells (where the platform has purchases): had for good, or used up as it's bought. */
 export interface ProductDef {
     id: string;

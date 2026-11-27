@@ -5,6 +5,7 @@
 //   npm run android:open     ... then open the project in Android Studio (Run ▶ puts it on the phone)
 //   npm run android:run      ... then install and start it on the phone plugged in (USB debugging on); --target <serial>
 //   npm run android:apk      ... then build a debug APK to copy to a phone by hand
+//   npm run android:aab      ... then build the signed App Bundle for Google Play (the upload key: keystore.properties)
 //
 // AdMob: the app id goes into the Android project from the game's platforms.config.json (`android.admob.appId`); with none
 // set, Google's sample app id is used, so the app still starts (AdMob would close it without one) and every ad is mocked.
@@ -101,5 +102,13 @@ if (flags.has('--apk')) {
     needJava();
     gradle('assembleDebug');
     console.log(`\n[android] APK: native/${GAME}/android/app/build/outputs/apk/debug/app-debug.apk`);
+}
+if (flags.has('--aab')) {
+    // Google Play's: signed with the upload key (keystore.properties, from the panel's Keys).
+    needJava();
+    if (!fs.existsSync(resolve(app, 'android/keystore.properties'))) fail('No upload key: set or create one in the Android panel (npm run android > Keys), then build again.');
+    if (admob.test) console.log('\n[android] note: AdMob test ads are on (fine for internal testing; turn them off for the real release)');
+    gradle('bundleRelease');
+    console.log(`\n[android] AAB: native/${GAME}/android/app/build/outputs/bundle/release/app-release.aab`);
 }
 console.log('\n[android] done');

@@ -24,7 +24,7 @@ import { Gameplay } from '../ads/Gameplay';
 import { WallAnalytics } from '../analytics/WallAnalytics';
 import { buildEffectsPanel, fx } from '../config/Effects';
 import { Crew } from '../crew/Crew';
-import { AUTO, HOLD, BoostDef, CAMERA, CASH, FLOATING, CREW, CREW_ROWS, CrewDef, TOOL_TYPES, POWERS, WALL, WEAK, ENEMIES, bossAt, bossKind, bossNumber, bossWall, enemiesOn, enemyModels, fightAt, fightModels, hitNumber, isBossWall, short, switchEnemies, toolAt, toolGrade, gradeColor, gradedName, toolsAfter, toolsUpTo, medalsOf, punchMult, REWIND, roomAt, wallAt } from '../data/WallConfig';
+import { AUTO, HOLD, RANKS, gemsAt, BoostDef, CAMERA, CASH, FLOATING, CREW, CREW_ROWS, CrewDef, TOOL_TYPES, POWERS, WALL, WEAK, ENEMIES, bossAt, bossKind, bossNumber, bossWall, enemiesOn, enemyModels, fightAt, fightModels, hitNumber, isBossWall, short, switchEnemies, toolAt, toolGrade, gradeColor, gradedName, toolsAfter, toolsUpTo, medalsOf, punchMult, REWIND, roomAt, wallAt } from '../data/WallConfig';
 import { wornLook } from '../data/Looks';
 import { ModelQueue, ModelWant } from '../data/ModelQueue';
 import { WallProgress } from '../data/WallProgress';
@@ -250,6 +250,7 @@ export default class WallScene extends ThreeScene {
         // (The phone's back button: what's open over the wall closes; nothing is, and the app goes to the background.)
         PlatformHandler.backButton = () => {
             if (this.hud.settingsPanel.isOpen) this.hud.settingsPanel.setOpen(false);
+            else if (this.hud.crewPanel.isOpen) this.hud.crewPanel.setOpen(false);
             else if (this.hud.shopPanel.isOpen) this.hud.shopPanel.setOpen(false);
             else if (this.hud.relicPanel.isOpen) this.hud.relicPanel.setOpen(false);
             else if (this.hud.rewindPopup.isOpen) this.hud.rewindPopup.setOpen(false);
@@ -405,9 +406,10 @@ export default class WallScene extends ThreeScene {
         if (boss) {
             const { cash, bricks } = ENEMIES.boss;
             const bonus = Math.round(wallAt(number).hp * cash * this.cashMult());
+            const gems = gemsAt(number);
             WallProgress.addCash(bonus);
-            WallProgress.bossReward(bricks);
-            words = `+$${short(bonus)}   +${bricks} BRICKS`;
+            WallProgress.bossReward(bricks, gems);
+            words = `+$${short(bonus)}   +${gems} GEMS`;
             this.hud.tray.won(this.toHud(0, 0.1));
             this.hud.flashScreen(0.5, 0.3);
             WallAudio.play('collapse');
@@ -549,7 +551,7 @@ export default class WallScene extends ThreeScene {
         // (At a boss's gate, once that's been said.)
         this.offerRewind(wait + (gate ? GATE_SEEN_SEC : 0));
         // (Hold to punch, the first time: once what's given has been seen.)
-        if (WallProgress.best >= HOLD.wall) gsap.delayedCall(wait + 0.5, () => !this.destroyed_ && this.teachHold());
+        if (WallProgress.holdButton) gsap.delayedCall(wait + 0.5, () => !this.destroyed_ && this.teachHold());
     }
 
     /**
@@ -590,18 +592,19 @@ export default class WallScene extends ThreeScene {
     };
 
     /**
-     * Hold to punch (from wall HOLD.wall): a finger kept down punches where it is, HOLD.perSecond, after HOLD.after seconds
-     * (slower than AUTO and than tapping: for resting, not for winning). With two hands on, each one's two.
+     * Hold to punch: a finger kept down on the wall punches where it is, from the very start, HOLD.perSecond after HOLD.after
+     * seconds (slower than AUTO and than tapping: for resting, not for winning). The HOLD button (from the first rewind) does it
+     * where AUTO would, and hurries on between walls too. With two hands on, each one's two.
      */
     private updateHold(delta: number): void {
         // (Held, the way between walls goes faster too: back to where it was in a moment.)
-        const rushing = this.hud.holdButton.pressed && HOLD.on && WallProgress.best >= HOLD.wall;
+        const rushing = this.hud.holdButton.pressed && WallProgress.holdButton;
         if (this.between?.isActive()) this.between.timeScale(rushing ? HOLD.rush : 1);
-        if (!HOLD.on || WallProgress.best < HOLD.wall) return;
+        if (!HOLD.on) return;
         if ((this.phase !== 'playing' && this.phase !== 'fighting') || this.hud.busy) return;
         const rate = WallProgress.holdRate;
-        // The button, low on the right: where AUTO would hit.
-        if (this.hud.holdButton.pressed) {
+        // The button, low on the right (from the first rewind on): where AUTO would hit, and the way between walls hurried.
+        if (this.hud.holdButton.pressed && WallProgress.holdButton) {
             this.holdButtonIn -= delta;
             if (this.holdButtonIn > 0) return;
             this.holdButtonIn = 1 / rate;
@@ -616,7 +619,7 @@ export default class WallScene extends ThreeScene {
             return;
         }
         this.holdButtonIn = 0;
-        // A finger kept down on the wall: where it is.
+        // A finger kept down on the wall, from the start: where it is.
         const held = this.held;
         if (!held) return;
         held.for += delta;
@@ -630,7 +633,7 @@ export default class WallScene extends ThreeScene {
 
     /** Hold to punch, the first time it's there: said once. */
     private teachHold(): void {
-        if (!HOLD.on || WallProgress.best < HOLD.wall || !WallProgress.markStep('hold-shown')) return;
+        if (!WallProgress.holdButton || !WallProgress.markStep('hold-shown')) return;
         this.hud.announce('HOLD TO PUNCH!', '', 1.4);
         this.hud.holdButton.bump();
     }
@@ -1130,7 +1133,9 @@ export default class WallScene extends ThreeScene {
         if (this.destroyed_) return [];
         const { wall, rewinds, punchLevel } = WallProgress;
         const crew = (there: (def: CrewDef) => boolean) => CREW.filter(there).map(({ id }) => this.crewWant(id));
-        const wants = [...this.modelsInSight(), ...crew((def) => WallProgress.owned(def.id) > 0)];
+        // (The ranks' hats that are worn.)
+        const hats = RANKS.hats.map((_, i) => i + 1).filter((rank) => CREW.some((def) => WallProgress.rankOf(def.id) >= rank)).map((rank) => this.hatWant(rank));
+        const wants = [...this.modelsInSight(), ...crew((def) => WallProgress.owned(def.id) > 0), ...hats];
         if (!this.begun) return wants;
         const fights: string[][] = [];
         for (let n = wall; n <= wall + MODELS_AHEAD.walls && fights.length < MODELS_AHEAD.fights; n++) {
@@ -1150,6 +1155,12 @@ export default class WallScene extends ThreeScene {
 
     private enemyWants(ids: string[]): ModelWant[] {
         return ids.map((id) => ({ key: `enemy ${id}`, get: () => this.fight.enemies.load(id) }));
+    }
+
+    /** A rank's hat (1 hard hat, 2 viking, 3 crown). */
+    private hatWant(rank: number): ModelWant {
+        const id = RANKS.hats[rank - 1];
+        return { key: `hat ${id}`, get: async () => this.crew.setHat(rank, await ModelLoaderManager.instance.loadModel(`${CREW_MODELS}hat-${id}.glb`)) };
     }
 
     private crewWant(id: string): ModelWant {
@@ -1443,6 +1454,7 @@ export default class WallScene extends ThreeScene {
             WallProgress.saveNow();
             window.location.reload();
         });
+        panel.button('+20 GEMS', () => WallProgress.bossReward(0, 20));
         panel.button('NEW GAME', () => WallProgress.reset());
     }
 
